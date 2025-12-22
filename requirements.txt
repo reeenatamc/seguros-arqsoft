@@ -1,6 +1,26 @@
-asgiref==3.11.0
-Django==5.2.8
-django-unfold==0.72.0
-pillow==12.0.0
-python-dotenv==1.2.1
-sqlparse==0.5.3
+asgiref
+Django
+django-unfold
+pillow
+python-dotenv
+sqlparse
+
+# Para import/export de datos
+django-import-export
+
+# Para reportes en Excel
+openpyxl
+xlsxwriter
+
+# Para reportes en PDF
+reportlab
+# xhtml2pdf  # Opcional - requiere cairo en macOS (brew install cairo pkg-config)
+
+# Para tareas asíncronas y alertas
+celery
+redis
+django-celery-beat
+django-celery-results
+
+# Para envío de correos
+django-ses

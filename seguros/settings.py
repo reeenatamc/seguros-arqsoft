@@ -32,7 +32,22 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production'
 # DEBUG is loaded from .env file (defaults to False for security)
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS can be set in .env as a comma-separated list
+# Example: ALLOWED_HOSTS=localhost,127.0.0.1,example.com
+# If DEBUG is True and ALLOWED_HOSTS is not set, it defaults to ['*'] for local development
+# If DEBUG is False, you MUST set ALLOWED_HOSTS in .env
+allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '')
+if allowed_hosts_env:
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',')]
+elif DEBUG:
+    # For local development with DEBUG=True, allow all hosts
+    ALLOWED_HOSTS = ['*']
+else:
+    # If DEBUG=False and no ALLOWED_HOSTS is set, raise an error
+    raise ValueError(
+        "ALLOWED_HOSTS must be set in .env when DEBUG=False. "
+        "Add ALLOWED_HOSTS=localhost,127.0.0.1,yourdomain.com to your .env file"
+    )
 
 
 # Application definition
@@ -48,6 +63,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # Third-party packages
+    'import_export',
+    'django_celery_beat',
+    'django_celery_results',
     
     # Your custom apps go here (add your project-specific apps below this line)
     'app',
@@ -151,3 +171,114 @@ MEDIA_ROOT = BASE_DIR / 'media'  # Directory where uploaded files will be stored
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ==============================================================================
+# CELERY CONFIGURATION
+# ==============================================================================
+# Redis as message broker and result backend
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
+
+# Celery configuration
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = False
+
+# Celery Beat configuration
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Task time limits (in seconds)
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 20 * 60  # 20 minutes
+
+
+# ==============================================================================
+# EMAIL CONFIGURATION
+# ==============================================================================
+# Email backend configuration
+# For development, use console backend
+# For production, configure SMTP or AWS SES
+
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'  # Default to console for development
+)
+
+# SMTP Configuration (if using SMTP backend)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+
+# Default email addresses
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'seguros@utpl.edu.ec')
+SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
+
+# Site URL for links in emails
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
+
+
+# ==============================================================================
+# LOGGING CONFIGURATION
+# ==============================================================================
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'django.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'app': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
+# Create logs directory if it doesn't exist
+import os
+logs_dir = BASE_DIR / 'logs'
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)
+
+
