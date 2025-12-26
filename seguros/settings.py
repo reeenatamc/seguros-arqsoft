@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'import_export',
     'django_celery_beat',
     'django_celery_results',
+    'simple_history',  # Auditoría de cambios
     
     # Your custom apps go here (add your project-specific apps below this line)
     'app',
@@ -81,6 +82,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',  # Para auditoría de cambios
 ]
 
 ROOT_URLCONF = 'seguros.urls'
@@ -96,6 +98,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'app.context_processors.alertas_context',
             ],
         },
     },
@@ -222,6 +225,11 @@ SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
 # Site URL for links in emails
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
 
+# Login settings
+LOGIN_URL = '/admin/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/admin/login/'
+
 
 # ==============================================================================
 # LOGGING CONFIGURATION
@@ -281,4 +289,190 @@ logs_dir = BASE_DIR / 'logs'
 if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)
 
+
+# ===========================================
+# AUTHENTICATION SETTINGS
+# ===========================================
+
+# URL donde redirigir después de un login exitoso
+LOGIN_REDIRECT_URL = '/'  # Redirige al dashboard
+
+# URL del login (usado por @login_required y otras vistas)
+LOGIN_URL = '/login/'
+
+# URL donde redirigir después de un logout
+LOGOUT_REDIRECT_URL = '/login/'
+
+# Tiempo de sesión (opcional, en segundos)
+# SESSION_COOKIE_AGE = 86400  # 24 horas (por defecto)
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Mantener sesión al cerrar navegador
+
+
+# ==============================================================================
+# DJANGO UNFOLD CONFIGURATION
+# ==============================================================================
+from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
+
+UNFOLD = {
+    "SITE_TITLE": "Sistema de Seguros UTPL",
+    "SITE_HEADER": "Seguros UTPL",
+    "SITE_SUBHEADER": "Gestión Integral de Pólizas y Siniestros",
+    "SITE_URL": "/",
+    "SITE_SYMBOL": "security",  # Icono principal
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    "SHOW_BACK_BUTTON": False,
+    "BORDER_RADIUS": "8px",
+    "THEME": None,  # Permite cambio de tema (light/dark)
+    
+    # Colores basados en la paleta del proyecto
+    "COLORS": {
+        "primary": {
+            "50": "#f0f7ff",   # brand-50
+            "100": "#e0effe",   # brand-100
+            "200": "#b3d9fc",
+            "300": "#80c2fa",
+            "400": "#4dabf7",
+            "500": "#0c8de6",   # brand-500 (principal)
+            "600": "#0070c4",   # brand-600
+            "700": "#01599f",   # brand-700
+            "800": "#064b83",   # brand-800
+            "900": "#0a3f6d",   # brand-900
+            "950": "#052d4d",
+        },
+        "base": {
+            "50": "#f8fafc",
+            "100": "#f1f5f9",
+            "200": "#e2e8f0",
+            "300": "#cbd5e1",
+            "400": "#94a3b8",
+            "500": "#64748b",
+            "600": "#475569",
+            "700": "#334155",
+            "800": "#1e293b",
+            "900": "#0f172a",
+            "950": "#020617",
+        },
+        "font": {
+            "subtle-light": "#64748b",
+            "subtle-dark": "#94a3b8",
+            "default-light": "#334155",
+            "default-dark": "#cbd5e1",
+            "important-light": "#0f172a",
+            "important-dark": "#f8fafc",
+        },
+    },
+    
+    # Navegación personalizada
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "title": _("Gestión Principal"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Dashboard"),
+                        "icon": "dashboard",
+                        "link": reverse_lazy("admin:index"),
+                    },
+                    {
+                        "title": _("Pólizas"),
+                        "icon": "verified",
+                        "link": reverse_lazy("admin:app_poliza_changelist"),
+                    },
+                    {
+                        "title": _("Siniestros"),
+                        "icon": "warning",
+                        "link": reverse_lazy("admin:app_siniestro_changelist"),
+                    },
+                    {
+                        "title": _("Facturas"),
+                        "icon": "receipt",
+                        "link": reverse_lazy("admin:app_factura_changelist"),
+                    },
+                    {
+                        "title": _("Pagos"),
+                        "icon": "payments",
+                        "link": reverse_lazy("admin:app_pago_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Catálogos"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Compañías Aseguradoras"),
+                        "icon": "business",
+                        "link": reverse_lazy("admin:app_companiaaseguradora_changelist"),
+                    },
+                    {
+                        "title": _("Corredores de Seguros"),
+                        "icon": "handshake",
+                        "link": reverse_lazy("admin:app_corredorseguros_changelist"),
+                    },
+                    {
+                        "title": _("Tipos de Póliza"),
+                        "icon": "category",
+                        "link": reverse_lazy("admin:app_tipopoliza_changelist"),
+                    },
+                    {
+                        "title": _("Tipos de Siniestro"),
+                        "icon": "label",
+                        "link": reverse_lazy("admin:app_tiposiniestro_changelist"),
+                    },
+                    {
+                        "title": _("Responsables/Custodios"),
+                        "icon": "person",
+                        "link": reverse_lazy("admin:app_responsablecustodio_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Documentos y Alertas"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Documentos"),
+                        "icon": "description",
+                        "link": reverse_lazy("admin:app_documento_changelist"),
+                    },
+                    {
+                        "title": _("Alertas"),
+                        "icon": "notifications",
+                        "link": reverse_lazy("admin:app_alerta_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Configuración"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Configuración del Sistema"),
+                        "icon": "settings",
+                        "link": reverse_lazy("admin:app_configuracionsistema_changelist"),
+                    },
+                    {
+                        "title": _("Usuarios"),
+                        "icon": "people",
+                        "link": reverse_lazy("admin:auth_user_changelist"),
+                    },
+                    {
+                        "title": _("Grupos"),
+                        "icon": "groups",
+                        "link": reverse_lazy("admin:auth_group_changelist"),
+                    },
+                ],
+            },
+        ],
+    },
+}
 

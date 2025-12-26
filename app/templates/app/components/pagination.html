@@ -1,0 +1,66 @@
+{% if page_obj.has_other_pages %}
+<nav class="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3 sm:px-6 rounded-b-2xl">
+    <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+        <div>
+            <p class="text-sm text-slate-600">
+                Mostrando 
+                <span class="font-semibold text-slate-800">{{ page_obj.start_index }}</span>
+                a
+                <span class="font-semibold text-slate-800">{{ page_obj.end_index }}</span>
+                de
+                <span class="font-semibold text-slate-800">{{ page_obj.paginator.count }}</span>
+                resultados
+            </p>
+        </div>
+        <div>
+            <ul class="flex items-center gap-1">
+                {% if page_obj.has_previous %}
+                    <li>
+                        <a href="?page=1{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                           class="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                            <i class="fas fa-angles-left"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                           class="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li>
+                            <span class="px-4 py-2 text-sm font-semibold text-white bg-brand-600 rounded-lg">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li>
+                            <a href="?page={{ num }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                               class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                                {{ num }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <li>
+                        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                           class="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                           class="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                            <i class="fas fa-angles-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endif %}
+

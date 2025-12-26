@@ -1,0 +1,361 @@
+{% extends 'app/layouts/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Contenedor de datos para los gráficos -->
+<div id="dashboard-charts-data" class="hidden"
+    data-comparativo-labels='{{ graficos_comparativo.labels|safe }}'
+    data-comparativo-polizas='{{ graficos_comparativo.data_polizas|safe }}'
+    data-comparativo-facturas='{{ graficos_comparativo.data_facturas|safe }}'
+    data-comparativo-siniestros='{{ graficos_comparativo.data_siniestros|safe }}'
+    data-polizas-labels='{{ graficos_polizas.labels|safe }}'
+    data-polizas-data='{{ graficos_polizas.data|safe }}'
+    data-polizas-colors='{{ graficos_polizas.colors|safe }}'
+    data-facturas-labels='{{ graficos_facturas.labels|safe }}'
+    data-facturas-data='{{ graficos_facturas.data|safe }}'
+    data-facturas-colors='{{ graficos_facturas.colors|safe }}'
+    data-siniestros-tipo-labels='{{ graficos_siniestros_tipo.labels|safe }}'
+    data-siniestros-tipo-data='{{ graficos_siniestros_tipo.data|safe }}'
+    data-facturacion-labels='{{ graficos_facturacion.labels|safe }}'
+    data-facturacion-monto='{{ graficos_facturacion.data_facturado|safe }}'
+    data-facturacion-cantidad='{{ graficos_facturacion.data_cantidad|safe }}'
+    data-siniestros-mes-labels='{{ graficos_siniestros.labels|safe }}'
+    data-siniestros-mes-data='{{ graficos_siniestros.data_count|safe }}'
+    data-polizas-tipo-labels='{{ graficos_polizas_tipo.labels|safe }}'
+    data-polizas-tipo-data='{{ graficos_polizas_tipo.data|safe }}'
+    data-polizas-tipo-colors='{{ graficos_polizas_tipo.colors|safe }}'
+></div>
+
+<div class="space-y-6 animate-fade-in">
+    <!-- KPIs principales -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div class="stat-card bg-white rounded-2xl shadow-card hover:shadow-card-hover p-6 border border-slate-100 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div class="relative">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-file-shield text-xl text-emerald-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-2xl font-bold text-slate-800">{{ stats.polizas.vigentes }}</p>
+                        <p class="text-sm text-slate-500">Pólizas Vigentes</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+                        <i class="fas fa-clock text-[10px]"></i> {{ stats.polizas.por_vencer }} por vencer
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-2xl shadow-card hover:shadow-card-hover p-6 border border-slate-100 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div class="relative">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-file-invoice-dollar text-xl text-amber-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-2xl font-bold text-slate-800">{{ stats.facturas.pendientes }}</p>
+                        <p class="text-sm text-slate-500">Facturas Pendientes</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                        <i class="fas fa-exclamation-circle text-[10px]"></i> {{ stats.facturas.vencidas }} vencidas
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-2xl shadow-card hover:shadow-card-hover p-6 border border-slate-100 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-red-500/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div class="relative">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-car-burst text-xl text-red-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-2xl font-bold text-slate-800">{{ stats.siniestros.activos }}</p>
+                        <p class="text-sm text-slate-500">Siniestros Activos</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                        <i class="fas fa-hourglass-half text-[10px]"></i> {{ stats.siniestros.en_evaluacion }} en evaluación
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-2xl shadow-card hover:shadow-card-hover p-6 border border-slate-100 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-brand-500/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div class="relative">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-bell text-xl text-brand-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-2xl font-bold text-slate-800">{{ stats.alertas.total_activas }}</p>
+                        <p class="text-sm text-slate-500">Alertas Activas</p>
+                    </div>
+                </div>
+                <a href="{% url 'alertas_lista' %}" class="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700">
+                    Ver alertas <i class="fas fa-arrow-right text-xs"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- KPIs financieros -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div class="bg-gradient-to-br from-brand-600 to-brand-800 rounded-2xl p-5 text-white shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur">
+                    <i class="fas fa-shield-halved text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-white/70 uppercase tracking-wide">Suma Asegurada</p>
+                    <p class="text-xl font-bold">${{ kpis.suma_total_asegurada|floatformat:0|default:"0" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl p-5 text-white shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur">
+                    <i class="fas fa-coins text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-white/70 uppercase tracking-wide">Facturado Año</p>
+                    <p class="text-xl font-bold">${{ kpis.total_facturado_anio|floatformat:0|default:"0" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur">
+                    <i class="fas fa-hand-holding-dollar text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-white/70 uppercase tracking-wide">Indemnizado</p>
+                    <p class="text-xl font-bold">${{ kpis.total_indemnizado_anio|floatformat:0|default:"0" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl p-5 text-white shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur">
+                    <i class="fas fa-percent text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-white/70 uppercase tracking-wide">Siniestralidad</p>
+                    <p class="text-xl font-bold">{{ kpis.tasa_siniestralidad|floatformat:1|default:"0" }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráfico principal - Actividad comparativa -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div>
+                <h3 class="font-semibold text-slate-800">Actividad del Sistema</h3>
+                <p class="text-sm text-slate-500">Últimos 6 meses</p>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+                <span class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                    Pólizas
+                </span>
+                <span class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                    Facturas
+                </span>
+                <span class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                    Siniestros
+                </span>
+            </div>
+        </div>
+        <div class="p-5">
+            <canvas id="comparativoChart" height="100"></canvas>
+        </div>
+    </div>
+    
+    <!-- Gráficos secundarios -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Pólizas por Estado -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Pólizas por Estado</h3>
+            </div>
+            <div class="p-5 flex items-center justify-center">
+                <div class="w-full max-w-[220px]">
+                    <canvas id="polizasEstadoChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Facturas por Estado -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Facturas por Estado</h3>
+            </div>
+            <div class="p-5 flex items-center justify-center">
+                <div class="w-full max-w-[220px]">
+                    <canvas id="facturasEstadoChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Siniestros por Tipo -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Siniestros por Tipo</h3>
+            </div>
+            <div class="p-5 flex items-center justify-center">
+                <div class="w-full max-w-[220px]">
+                    <canvas id="siniestrosTipoChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos de tendencia -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Facturación mensual -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Facturación Mensual</h3>
+                <p class="text-sm text-slate-500">Últimos 12 meses</p>
+            </div>
+            <div class="p-5">
+                <canvas id="facturacionChart" height="180"></canvas>
+            </div>
+        </div>
+        
+        <!-- Siniestros mensual -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Siniestros por Mes</h3>
+                <p class="text-sm text-slate-500">Tendencia últimos 12 meses</p>
+            </div>
+            <div class="p-5">
+                <canvas id="siniestrosMesChart" height="180"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráfico de tipos de póliza -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="p-5 border-b border-slate-100">
+            <h3 class="font-semibold text-slate-800">Distribución por Tipo de Póliza</h3>
+        </div>
+        <div class="p-5" style="min-height: 280px;">
+            <canvas id="polizasTipoChart" height="250"></canvas>
+        </div>
+    </div>
+    
+    <!-- Listas de actividad -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Pólizas por vencer -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                    <i class="fas fa-calendar-xmark text-amber-500"></i>
+                    Pólizas por Vencer
+                </h3>
+                <a href="{% url 'polizas_lista' %}?estado=por_vencer" class="text-sm font-medium text-brand-600 hover:text-brand-700">
+                    Ver todas
+                </a>
+            </div>
+            <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                {% for poliza in polizas_por_vencer %}
+                    <div class="p-4 hover:bg-slate-50 transition">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-file-shield text-amber-600"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-slate-800 truncate">{{ poliza.numero_poliza }}</p>
+                                    <p class="text-sm text-slate-500 truncate">{{ poliza.compania_aseguradora }}</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">
+                                    <i class="fas fa-clock text-[10px]"></i>
+                                    {{ poliza.dias_para_vencer }}d
+                                </span>
+                                <p class="text-xs text-slate-400 mt-1">{{ poliza.fecha_fin|date:"d/m/Y" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="p-8 text-center">
+                        <i class="fas fa-check-circle text-4xl text-emerald-400 mb-3"></i>
+                        <p class="text-slate-500">No hay pólizas próximas a vencer</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Siniestros recientes -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                    <i class="fas fa-car-burst text-red-500"></i>
+                    Siniestros Recientes
+                </h3>
+                <a href="{% url 'siniestros_lista' %}" class="text-sm font-medium text-brand-600 hover:text-brand-700">
+                    Ver todos
+                </a>
+            </div>
+            <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                {% for siniestro in siniestros_recientes %}
+                    <div class="p-4 hover:bg-slate-50 transition">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-triangle-exclamation text-red-600"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-slate-800 truncate">{{ siniestro.numero_siniestro }}</p>
+                                    <p class="text-sm text-slate-500 truncate">{{ siniestro.bien_nombre }}</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
+                                    {% if siniestro.estado == 'registrado' %}bg-blue-100 text-blue-700
+                                    {% elif siniestro.estado == 'en_evaluacion' %}bg-purple-100 text-purple-700
+                                    {% elif siniestro.estado == 'aprobado' %}bg-emerald-100 text-emerald-700
+                                    {% elif siniestro.estado == 'documentacion_pendiente' %}bg-amber-100 text-amber-700
+                                    {% else %}bg-slate-100 text-slate-700{% endif %}">
+                                    {{ siniestro.get_estado_display }}
+                                </span>
+                                <p class="text-xs text-slate-400 mt-1">{{ siniestro.fecha_siniestro|date:"d/m/Y" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="p-8 text-center">
+                        <i class="fas fa-check-circle text-4xl text-emerald-400 mb-3"></i>
+                        <p class="text-slate-500">No hay siniestros recientes</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard-charts.js' %}"></script>
+{% endblock %}
+

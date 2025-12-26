@@ -1,140 +1,192 @@
 from celery import shared_task
 from django.core.management import call_command
 from django.utils import timezone
-from .models import Poliza, Factura, Siniestro
+from django.db.models import F, Q, Case, When, Value, CharField
+from datetime import timedelta
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-@shared_task(bind=True)
+@shared_task(bind=True, max_retries=3)
 def generar_alertas_automaticas(self):
-    """
-    Tarea periódica que genera alertas para pólizas, facturas y siniestros.
-    Se ejecuta diariamente a las 8:00 AM.
-    """
     try:
         logger.info('Iniciando generación de alertas automáticas')
         call_command('generar_alertas', tipo='todas')
         logger.info('Generación de alertas completada exitosamente')
-        return 'Alertas generadas exitosamente'
+        return {'status': 'success', 'message': 'Alertas generadas exitosamente'}
     except Exception as e:
         logger.error(f'Error al generar alertas: {str(e)}')
-        raise
+        raise self.retry(exc=e, countdown=60)
 
 
-@shared_task(bind=True)
+@shared_task(bind=True, max_retries=3)
 def enviar_alertas_email(self):
-    """
-    Tarea periódica que envía las alertas pendientes por correo electrónico.
-    Se ejecuta dos veces al día (8:30 AM y 2:00 PM).
-    """
     try:
         logger.info('Iniciando envío de alertas por email')
         call_command('enviar_alertas_email', max=100)
         logger.info('Envío de alertas por email completado')
-        return 'Alertas enviadas por email exitosamente'
+        return {'status': 'success', 'message': 'Alertas enviadas por email exitosamente'}
     except Exception as e:
         logger.error(f'Error al enviar alertas por email: {str(e)}')
-        raise
+        raise self.retry(exc=e, countdown=60)
 
 
-@shared_task(bind=True)
+@shared_task(bind=True, max_retries=3)
 def actualizar_estados_polizas(self):
-    """
-    Tarea periódica que actualiza el estado de todas las pólizas.
-    Se ejecuta diariamente a las 7:00 AM.
-    """
+    from .models import Poliza, ConfiguracionSistema
+    
     try:
         logger.info('Iniciando actualización de estados de pólizas')
         
-        polizas = Poliza.objects.all()
-        actualizadas = 0
+        hoy = timezone.now().date()
+        dias_alerta = ConfiguracionSistema.get_config('DIAS_ALERTA_VENCIMIENTO_POLIZA', 30)
+        fecha_alerta = hoy + timedelta(days=dias_alerta)
         
-        for poliza in polizas:
-            estado_anterior = poliza.estado
-            poliza.actualizar_estado()
-            
-            if estado_anterior != poliza.estado:
-                poliza.save()
-                actualizadas += 1
+        vencidas = Poliza.objects.filter(
+            fecha_fin__lt=hoy,
+            estado__in=['vigente', 'por_vencer']
+        ).update(estado='vencida')
         
-        mensaje = f'Se actualizaron {actualizadas} pólizas de {polizas.count()} totales'
+        por_vencer = Poliza.objects.filter(
+            fecha_inicio__lte=hoy,
+            fecha_fin__gte=hoy,
+            fecha_fin__lte=fecha_alerta,
+            estado='vigente'
+        ).update(estado='por_vencer')
+        
+        vigentes = Poliza.objects.filter(
+            fecha_inicio__lte=hoy,
+            fecha_fin__gt=fecha_alerta,
+            estado__in=['vencida', 'por_vencer']
+        ).exclude(estado='cancelada').update(estado='vigente')
+        
+        mensaje = f'Actualizadas: {vencidas} vencidas, {por_vencer} por vencer, {vigentes} vigentes'
         logger.info(mensaje)
-        return mensaje
+        
+        return {
+            'status': 'success',
+            'vencidas': vencidas,
+            'por_vencer': por_vencer,
+            'vigentes': vigentes
+        }
     except Exception as e:
         logger.error(f'Error al actualizar estados de pólizas: {str(e)}')
-        raise
+        raise self.retry(exc=e, countdown=60)
 
 
-@shared_task(bind=True)
+@shared_task(bind=True, max_retries=3)
 def actualizar_estados_facturas(self):
-    """
-    Tarea periódica que actualiza el estado de todas las facturas.
-    Se ejecuta cada 6 horas.
-    """
+    from .models import Factura
+    from django.db.models import Sum, Subquery, OuterRef
+    from decimal import Decimal
+    
     try:
         logger.info('Iniciando actualización de estados de facturas')
+        hoy = timezone.now().date()
         
-        facturas = Factura.objects.exclude(estado='pagada')
-        actualizadas = 0
+        vencidas = Factura.objects.filter(
+            estado__in=['pendiente', 'parcial'],
+            fecha_vencimiento__lt=hoy
+        ).update(estado='vencida')
         
-        for factura in facturas:
-            estado_anterior = factura.estado
-            factura.actualizar_estado()
+        facturas_pendientes = Factura.objects.filter(
+            estado__in=['pendiente', 'parcial', 'vencida']
+        ).prefetch_related('pagos')
+        
+        facturas_pagadas = []
+        facturas_parciales = []
+        facturas_pendientes_ids = []
+        
+        for factura in facturas_pendientes:
+            total_pagado = factura.pagos.filter(estado='aprobado').aggregate(
+                total=Sum('monto')
+            )['total'] or Decimal('0.00')
             
-            if estado_anterior != factura.estado:
-                factura.save()
-                actualizadas += 1
+            if total_pagado >= factura.monto_total:
+                facturas_pagadas.append(factura.pk)
+            elif total_pagado > Decimal('0.00'):
+                facturas_parciales.append(factura.pk)
+            elif factura.fecha_vencimiento >= hoy:
+                facturas_pendientes_ids.append(factura.pk)
         
-        mensaje = f'Se actualizaron {actualizadas} facturas de {facturas.count()} totales'
+        pagadas_count = Factura.objects.filter(pk__in=facturas_pagadas).update(estado='pagada')
+        parciales_count = Factura.objects.filter(pk__in=facturas_parciales).update(estado='parcial')
+        pendientes_count = Factura.objects.filter(pk__in=facturas_pendientes_ids).update(estado='pendiente')
+        
+        mensaje = f'Actualizadas: {vencidas} vencidas, {pagadas_count} pagadas, {parciales_count} parciales'
         logger.info(mensaje)
-        return mensaje
+        
+        return {
+            'status': 'success',
+            'vencidas': vencidas,
+            'pagadas': pagadas_count,
+            'parciales': parciales_count,
+            'pendientes': pendientes_count
+        }
     except Exception as e:
         logger.error(f'Error al actualizar estados de facturas: {str(e)}')
-        raise
+        raise self.retry(exc=e, countdown=60)
 
 
-@shared_task(bind=True)
+@shared_task(bind=True, max_retries=3)
 def generar_reporte_siniestros_mensual(self):
-    """
-    Tarea que genera un reporte mensual de siniestros.
-    Puede ser ejecutada manualmente o programada mensualmente.
-    """
     try:
         logger.info('Iniciando generación de reporte mensual de siniestros')
         call_command('generar_reporte_siniestros', periodo='mensual')
         logger.info('Reporte mensual de siniestros generado exitosamente')
-        return 'Reporte mensual generado exitosamente'
+        return {'status': 'success', 'message': 'Reporte mensual generado exitosamente'}
     except Exception as e:
         logger.error(f'Error al generar reporte mensual: {str(e)}')
-        raise
+        raise self.retry(exc=e, countdown=60)
 
 
-@shared_task(bind=True)
+@shared_task(bind=True, max_retries=3)
 def limpiar_alertas_antiguas(self, dias=90):
-    """
-    Tarea que elimina alertas antiguas ya atendidas.
-    Por defecto elimina alertas de más de 90 días.
-    """
+    from .models import Alerta
+    
     try:
         logger.info(f'Iniciando limpieza de alertas antiguas (más de {dias} días)')
         
-        from datetime import timedelta
-        from .models import Alerta
-        
         fecha_limite = timezone.now() - timedelta(days=dias)
-        alertas_antiguas = Alerta.objects.filter(
+        cantidad = Alerta.objects.filter(
             estado='atendida',
             fecha_creacion__lt=fecha_limite
-        )
-        
-        cantidad = alertas_antiguas.count()
-        alertas_antiguas.delete()
+        ).delete()[0]
         
         mensaje = f'Se eliminaron {cantidad} alertas antiguas'
         logger.info(mensaje)
-        return mensaje
+        
+        return {'status': 'success', 'eliminadas': cantidad}
     except Exception as e:
         logger.error(f'Error al limpiar alertas antiguas: {str(e)}')
+        raise self.retry(exc=e, countdown=60)
+
+
+@shared_task(bind=True)
+def actualizar_descuentos_pronto_pago(self):
+    from .models import Factura
+    from decimal import Decimal
+    
+    try:
+        logger.info('Actualizando descuentos por pronto pago')
+        
+        facturas = Factura.objects.filter(estado='pendiente')
+        actualizadas = 0
+        
+        for factura in facturas:
+            descuento_anterior = factura.descuento_pronto_pago
+            factura.calcular_descuento_pronto_pago()
+            
+            if descuento_anterior != factura.descuento_pronto_pago:
+                factura.calcular_monto_total()
+                Factura.objects.filter(pk=factura.pk).update(
+                    descuento_pronto_pago=factura.descuento_pronto_pago,
+                    monto_total=factura.monto_total
+                )
+                actualizadas += 1
+        
+        return {'status': 'success', 'actualizadas': actualizadas}
+    except Exception as e:
+        logger.error(f'Error al actualizar descuentos: {str(e)}')
         raise

@@ -1,0 +1,888 @@
+:root {
+    --brand-50: #f0f7ff;
+    --brand-100: #e0effe;
+    --brand-500: #0c8de6;
+    --brand-600: #0070c4;
+    --brand-700: #01599f;
+    --brand-800: #064b83;
+    --brand-900: #0a3f6d;
+    
+    --gold-400: #fbbf24;
+    --gold-500: #f59e0b;
+    --gold-600: #d97706;
+    
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    
+    --transition-fast: 150ms;
+    --transition-normal: 300ms;
+    --transition-slow: 500ms;
+}
+
+/* ===========================================
+   SCROLLBAR PERSONALIZADO
+   =========================================== */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 3px;
+    transition: background-color var(--transition-fast);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+}
+
+::selection {
+    background-color: var(--brand-500);
+    color: white;
+}
+
+/* ===========================================
+   BASE
+   =========================================== */
+body {
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===========================================
+   ANIMACIONES KEYFRAMES
+   =========================================== */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes bounceIn {
+    0% { opacity: 0; transform: scale(0.3); }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes blob {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(20px, -20px) scale(1.1); }
+    50% { transform: translate(0, 20px) scale(1); }
+    75% { transform: translate(-20px, -10px) scale(0.9); }
+}
+
+@keyframes slideInFromBottom {
+    from { opacity: 0; transform: translateY(100%); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-3deg); }
+    75% { transform: rotate(3deg); }
+}
+
+/* ===========================================
+   CLASES DE ANIMACIÓN
+   =========================================== */
+.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+.animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+.animate-fade-in-down { animation: fadeInDown 0.4s ease-out forwards; }
+.animate-fade-in-left { animation: fadeInLeft 0.4s ease-out forwards; }
+.animate-fade-in-right { animation: fadeInRight 0.4s ease-out forwards; }
+.animate-scale-in { animation: scaleIn 0.3s ease-out forwards; }
+.animate-bounce-in { animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
+.animate-shimmer { animation: shimmer 2s infinite; }
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-spin { animation: spin 1s linear infinite; }
+.animate-blob { animation: blob 7s infinite; }
+.animate-wiggle { animation: wiggle 1s ease-in-out infinite; }
+
+/* Delays */
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+.animation-delay-500 { animation-delay: 500ms; }
+.animation-delay-1000 { animation-delay: 1s; }
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
+
+/* ===========================================
+   SIDEBAR
+   =========================================== */
+.sidebar-link {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-link:hover {
+    transform: translateX(4px);
+}
+
+.sidebar-link.active {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+}
+
+/* ===========================================
+   STAT CARDS
+   =========================================== */
+.stat-card {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.7s ease;
+}
+
+.stat-card:hover::before {
+    left: 100%;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+/* ===========================================
+   EFECTOS GLASS
+   =========================================== */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.glass-dark {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* ===========================================
+   GRADIENTES
+   =========================================== */
+.gradient-brand {
+    background: linear-gradient(135deg, #064b83 0%, #0070c4 50%, #0c8de6 100%);
+}
+
+.gradient-gold {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.gradient-success {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.gradient-danger {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+.gradient-purple {
+    background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+}
+
+.gradient-mesh {
+    background: 
+        radial-gradient(at 40% 20%, hsla(212, 93%, 49%, 0.1) 0px, transparent 50%),
+        radial-gradient(at 80% 0%, hsla(43, 96%, 56%, 0.1) 0px, transparent 50%),
+        radial-gradient(at 0% 50%, hsla(212, 93%, 49%, 0.05) 0px, transparent 50%),
+        radial-gradient(at 80% 50%, hsla(160, 84%, 39%, 0.1) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, hsla(212, 93%, 49%, 0.1) 0px, transparent 50%);
+}
+
+/* ===========================================
+   BADGES
+   =========================================== */
+.badge-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    position: relative;
+}
+
+.badge-glow {
+    box-shadow: 0 0 10px currentColor;
+}
+
+/* ===========================================
+   BOTONES
+   =========================================== */
+.btn-primary {
+    background: linear-gradient(135deg, #064b83 0%, #0070c4 100%);
+    color: white;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1.25rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(12, 141, 230, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 10px 25px rgba(12, 141, 230, 0.35);
+    transform: translateY(-2px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background-color: #f1f5f9;
+    color: #475569;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1.25rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+/* Ripple effect */
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-ripple::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+    background-repeat: no-repeat;
+    background-position: 50%;
+    transform: scale(10);
+    opacity: 0;
+    transition: transform 0.5s, opacity 1s;
+}
+
+.btn-ripple:active::after {
+    transform: scale(0);
+    opacity: 0.3;
+    transition: 0s;
+}
+
+/* ===========================================
+   INPUTS
+   =========================================== */
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(12, 141, 230, 0.15);
+    border-color: var(--brand-500);
+}
+
+button:focus-visible,
+a:focus-visible {
+    outline: 2px solid var(--brand-500);
+    outline-offset: 2px;
+}
+
+/* ===========================================
+   DATE INPUTS - Estilos personalizados
+   =========================================== */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+    position: relative;
+    background-color: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1rem 0.625rem 2.75rem;
+    font-size: 0.875rem;
+    color: #1e293b;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    font-family: inherit;
+    min-width: 160px;
+}
+
+input[type="date"]:hover,
+input[type="datetime-local"]:hover,
+input[type="time"]:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+input[type="time"]:focus {
+    background-color: #ffffff;
+    border-color: var(--brand-500);
+    box-shadow: 0 0 0 3px rgba(12, 141, 230, 0.15);
+    outline: none;
+}
+
+input[type="date"]:disabled,
+input[type="datetime-local"]:disabled,
+input[type="time"]:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Contenedor para date input con icono */
+.date-input-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.date-input-wrapper i {
+    transition: color 0.2s ease;
+}
+
+.date-input-wrapper:focus-within i {
+    color: var(--brand-500);
+}
+
+.date-input-wrapper input[type="date"],
+.date-input-wrapper input[type="datetime-local"],
+.date-input-wrapper input[type="time"] {
+    padding-left: 2.75rem;
+}
+
+/* Estilos para el calendario nativo (webkit) */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0;
+    position: absolute;
+    right: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    z-index: 2;
+}
+
+/* Estilos para Firefox */
+input[type="date"]::-moz-calendar-picker-indicator,
+input[type="datetime-local"]::-moz-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0;
+    position: absolute;
+    right: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    z-index: 2;
+}
+
+/* Placeholder personalizado para date inputs */
+input[type="date"]:invalid::-webkit-datetime-edit,
+input[type="datetime-local"]:invalid::-webkit-datetime-edit {
+    color: #94a3b8;
+}
+
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="datetime-local"]::-webkit-datetime-edit-text {
+    color: #1e293b;
+    padding: 0 0.25rem;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field,
+input[type="datetime-local"]::-webkit-datetime-edit-month-field,
+input[type="datetime-local"]::-webkit-datetime-edit-day-field,
+input[type="datetime-local"]::-webkit-datetime-edit-year-field {
+    color: #1e293b;
+    padding: 0 0.25rem;
+}
+
+input[type="date"]:focus::-webkit-datetime-edit-month-field,
+input[type="date"]:focus::-webkit-datetime-edit-day-field,
+input[type="date"]:focus::-webkit-datetime-edit-year-field,
+input[type="datetime-local"]:focus::-webkit-datetime-edit-month-field,
+input[type="datetime-local"]:focus::-webkit-datetime-edit-day-field,
+input[type="datetime-local"]:focus::-webkit-datetime-edit-year-field {
+    background-color: rgba(12, 141, 230, 0.1);
+    border-radius: 0.25rem;
+}
+
+/* ===========================================
+   CARDS
+   =========================================== */
+.card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+    transform: translateY(-2px);
+}
+
+.card-interactive {
+    cursor: pointer;
+}
+
+.card-interactive:hover {
+    border-color: var(--brand-200);
+    box-shadow: 0 0 0 1px var(--brand-200), 0 20px 25px -5px rgba(0, 0, 0, 0.08);
+}
+
+/* ===========================================
+   TABLAS
+   =========================================== */
+table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table-row-hover:hover {
+    background: linear-gradient(90deg, rgba(12, 141, 230, 0.05) 0%, transparent 100%);
+}
+
+/* ===========================================
+   TOOLTIPS
+   =========================================== */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 5px);
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    background: #1f2937;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 1px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1f2937;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+[data-tooltip]:hover::after {
+    transform: translateX(-50%) translateY(-5px);
+}
+
+/* ===========================================
+   LOADING STATES
+   =========================================== */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e2e8f0;
+    border-top-color: var(--brand-500);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* ===========================================
+   RESPONSIVE
+   =========================================== */
+@media (max-width: 768px) {
+    .sidebar-mobile-hidden {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar-mobile-visible {
+        transform: translateX(0);
+    }
+}
+
+/* ===========================================
+   PRINT STYLES
+   =========================================== */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    body {
+        background: white;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+    }
+    
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ===========================================
+   CUSTOM DROPDOWN STYLES
+   =========================================== */
+.custom-dropdown {
+    min-width: 180px;
+}
+
+.custom-dropdown-trigger:focus {
+    outline: none;
+}
+
+.custom-dropdown-menu {
+    box-shadow: 0 10px 40px -5px rgba(0, 0, 0, 0.1), 
+                0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* ===========================================
+   HOVER EFFECTS
+   =========================================== */
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+.hover-glow {
+    transition: box-shadow 0.3s ease;
+}
+
+.hover-glow:hover {
+    box-shadow: 0 0 20px rgba(12, 141, 230, 0.3);
+}
+
+.hover-scale {
+    transition: transform 0.3s ease;
+}
+
+.hover-scale:hover {
+    transform: scale(1.05);
+}
+
+/* ===========================================
+   TEXT EFFECTS
+   =========================================== */
+.text-gradient {
+    background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.text-shine {
+    background: linear-gradient(90deg, var(--brand-600), var(--gold-500), var(--brand-600));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s linear infinite;
+}
+
+/* ===========================================
+   FLATPICKR - Datepicker Personalizado
+   =========================================== */
+
+/* Contenedor del calendario - más compacto y elegante */
+.flatpickr-calendar {
+    background: white !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #e2e8f0 !important;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+    padding: 0.75rem !important;
+    width: 280px !important;
+    animation: fadeInDown 0.25s ease-out !important;
+}
+
+/* Header del calendario - más sutil */
+.flatpickr-months {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+    padding: 0.75rem 0.5rem !important;
+    margin: -0.75rem -0.75rem 0.5rem -0.75rem !important;
+}
+
+.flatpickr-month {
+    color: #1e293b !important;
+    fill: #1e293b !important;
+}
+
+.flatpickr-current-month {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    font-size: 0.9375rem !important;
+}
+
+.flatpickr-prev-month,
+.flatpickr-next-month {
+    color: #64748b !important;
+    fill: #64748b !important;
+    padding: 0.375rem !important;
+    border-radius: 0.375rem !important;
+    transition: all 0.2s ease !important;
+    width: 28px !important;
+    height: 28px !important;
+}
+
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+    background: #e2e8f0 !important;
+    color: #0c8de6 !important;
+    fill: #0c8de6 !important;
+}
+
+/* Días de la semana - más compactos */
+.flatpickr-weekdays {
+    background: transparent !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 0.5rem 0 !important;
+    margin-bottom: 0.25rem !important;
+}
+
+.flatpickr-weekday {
+    color: #64748b !important;
+    font-weight: 600 !important;
+    font-size: 0.6875rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* Días del calendario - más compactos y sutiles */
+.flatpickr-days {
+    padding: 0.25rem 0 !important;
+}
+
+.dayContainer {
+    padding: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+}
+
+.flatpickr-day {
+    border-radius: 0.375rem !important;
+    border: none !important;
+    color: #334155 !important;
+    font-weight: 500 !important;
+    font-size: 0.8125rem !important;
+    transition: all 0.15s ease !important;
+    margin: 0.0625rem !important;
+    height: 32px !important;
+    line-height: 32px !important;
+}
+
+.flatpickr-day:hover {
+    background: #f1f5f9 !important;
+    border-color: transparent !important;
+    color: #0c8de6 !important;
+}
+
+.flatpickr-day.today {
+    border: 1.5px solid #0c8de6 !important;
+    background: #f0f7ff !important;
+    color: #0c8de6 !important;
+    font-weight: 600 !important;
+}
+
+.flatpickr-day.selected {
+    background: #0c8de6 !important;
+    color: white !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 8px rgba(12, 141, 230, 0.25) !important;
+}
+
+.flatpickr-day.selected:hover {
+    background: #0070c4 !important;
+}
+
+.flatpickr-day.inRange {
+    background: #e0effe !important;
+    color: #0c8de6 !important;
+    border-color: transparent !important;
+}
+
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+    background: #0c8de6 !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+.flatpickr-day.flatpickr-disabled {
+    color: #cbd5e1 !important;
+    cursor: not-allowed !important;
+    opacity: 0.4 !important;
+}
+
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+    color: #cbd5e1 !important;
+    opacity: 0.4 !important;
+}
+
+/* Botones de acción */
+.flatpickr-time {
+    border-top: 1px solid #f1f5f9 !important;
+    padding-top: 0.5rem !important;
+    margin-top: 0.5rem !important;
+}
+
+.flatpickr-time input {
+    border-radius: 0.375rem !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 0.375rem !important;
+    font-weight: 500 !important;
+    color: #1e293b !important;
+    font-size: 0.8125rem !important;
+}
+
+.flatpickr-time input:hover {
+    background: #f8fafc !important;
+}
+
+.flatpickr-time input:focus {
+    border-color: #0c8de6 !important;
+    box-shadow: 0 0 0 2px rgba(12, 141, 230, 0.1) !important;
+}
+
+/* Animación de entrada */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

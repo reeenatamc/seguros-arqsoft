@@ -1,0 +1,131 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Alertas{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-fade-in">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Alertas</h1>
+            <p class="text-slate-500 mt-1">Gestiona las notificaciones del sistema</p>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-4">
+        <form method="GET" class="flex flex-col sm:flex-row gap-4">
+            <select name="estado" onchange="this.form.submit()" 
+                    class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                <option value="">Todos los estados</option>
+                <option value="pendiente" {% if estado_filtro == 'pendiente' %}selected{% endif %}>Pendientes</option>
+                <option value="enviada" {% if estado_filtro == 'enviada' %}selected{% endif %}>Enviadas</option>
+                <option value="leida" {% if estado_filtro == 'leida' %}selected{% endif %}>Leídas</option>
+                <option value="atendida" {% if estado_filtro == 'atendida' %}selected{% endif %}>Atendidas</option>
+            </select>
+            <select name="tipo" onchange="this.form.submit()" 
+                    class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                <option value="">Todos los tipos</option>
+                <option value="vencimiento_poliza" {% if tipo_filtro == 'vencimiento_poliza' %}selected{% endif %}>Vencimiento de Póliza</option>
+                <option value="pago_pendiente" {% if tipo_filtro == 'pago_pendiente' %}selected{% endif %}>Pago Pendiente</option>
+                <option value="documentacion_pendiente" {% if tipo_filtro == 'documentacion_pendiente' %}selected{% endif %}>Documentación Pendiente</option>
+                <option value="respuesta_aseguradora" {% if tipo_filtro == 'respuesta_aseguradora' %}selected{% endif %}>Respuesta Aseguradora</option>
+                <option value="pronto_pago" {% if tipo_filtro == 'pronto_pago' %}selected{% endif %}>Pronto Pago</option>
+            </select>
+            {% if estado_filtro or tipo_filtro %}
+                <a href="{% url 'alertas_lista' %}" class="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition text-sm font-medium">
+                    <i class="fas fa-times mr-2"></i>Limpiar
+                </a>
+            {% endif %}
+        </form>
+    </div>
+    
+    <div class="space-y-4">
+        {% for alerta in alertas %}
+            <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden hover:shadow-lg transition {% if alerta.estado == 'pendiente' %}border-l-4 border-l-amber-400{% endif %}">
+                <div class="p-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
+                            {% if alerta.tipo_alerta == 'vencimiento_poliza' %}bg-amber-100 text-amber-600
+                            {% elif alerta.tipo_alerta == 'pago_pendiente' %}bg-red-100 text-red-600
+                            {% elif alerta.tipo_alerta == 'documentacion_pendiente' %}bg-orange-100 text-orange-600
+                            {% elif alerta.tipo_alerta == 'respuesta_aseguradora' %}bg-purple-100 text-purple-600
+                            {% elif alerta.tipo_alerta == 'pronto_pago' %}bg-emerald-100 text-emerald-600
+                            {% else %}bg-blue-100 text-blue-600{% endif %}">
+                            <i class="fas 
+                                {% if alerta.tipo_alerta == 'vencimiento_poliza' %}fa-calendar-xmark
+                                {% elif alerta.tipo_alerta == 'pago_pendiente' %}fa-credit-card
+                                {% elif alerta.tipo_alerta == 'documentacion_pendiente' %}fa-file-circle-exclamation
+                                {% elif alerta.tipo_alerta == 'respuesta_aseguradora' %}fa-clock-rotate-left
+                                {% elif alerta.tipo_alerta == 'pronto_pago' %}fa-tag
+                                {% else %}fa-bell{% endif %} text-xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <h3 class="font-semibold text-slate-800">{{ alerta.titulo }}</h3>
+                                    <p class="text-sm text-slate-600 mt-1">{{ alerta.mensaje }}</p>
+                                </div>
+                                <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0
+                                    {% if alerta.estado == 'pendiente' %}bg-amber-100 text-amber-700
+                                    {% elif alerta.estado == 'enviada' %}bg-blue-100 text-blue-700
+                                    {% elif alerta.estado == 'leida' %}bg-purple-100 text-purple-700
+                                    {% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                                    {{ alerta.get_estado_display }}
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-4 mt-4">
+                                <span class="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                                    <i class="fas fa-clock"></i>
+                                    {{ alerta.fecha_creacion|timesince }} atrás
+                                </span>
+                                {% if alerta.poliza %}
+                                    <a href="/admin/app/poliza/{{ alerta.poliza.id }}/change/" 
+                                       class="inline-flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 font-medium">
+                                        <i class="fas fa-file-shield"></i>
+                                        {{ alerta.poliza.numero_poliza }}
+                                    </a>
+                                {% endif %}
+                                {% if alerta.factura %}
+                                    <a href="/admin/app/factura/{{ alerta.factura.id }}/change/" 
+                                       class="inline-flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 font-medium">
+                                        <i class="fas fa-file-invoice-dollar"></i>
+                                        {{ alerta.factura.numero_factura }}
+                                    </a>
+                                {% endif %}
+                                {% if alerta.siniestro %}
+                                    <a href="/admin/app/siniestro/{{ alerta.siniestro.id }}/change/" 
+                                       class="inline-flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 font-medium">
+                                        <i class="fas fa-car-burst"></i>
+                                        {{ alerta.siniestro.numero_siniestro }}
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% if alerta.estado in 'pendiente,enviada' %}
+                    <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex justify-end">
+                        <form action="{% url 'alerta_marcar_leida' alerta.pk %}" method="POST" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">
+                                <i class="fas fa-check"></i>
+                                Marcar como leída
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-12 text-center">
+                <div class="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-bell-slash text-4xl text-slate-400"></i>
+                </div>
+                <p class="text-slate-600 font-medium">No hay alertas</p>
+                <p class="text-slate-400 text-sm mt-1">Las alertas aparecerán aquí cuando se generen</p>
+            </div>
+        {% endfor %}
+    </div>
+    
+    {% include 'app/components/pagination.html' with page_obj=alertas %}
+</div>
+{% endblock %}
+
