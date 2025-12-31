@@ -1,0 +1,405 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión | Seguros UTPL</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            300: '#7cc8fb',
+                            400: '#36aaf5',
+                            500: '#0c8de6',
+                            600: '#0070c4',
+                            700: '#01599f',
+                            800: '#064b83',
+                            900: '#0a3f6d',
+                            950: '#072849',
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #064b83 0%, #0070c4 50%, #0c8de6 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Animación de fondo con círculos flotantes */
+        .bg-animation {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        .bg-circle:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .bg-circle:nth-child(2) {
+            width: 200px;
+            height: 200px;
+            top: 60%;
+            right: 10%;
+            animation-delay: 5s;
+        }
+        
+        .bg-circle:nth-child(3) {
+            width: 250px;
+            height: 250px;
+            bottom: 10%;
+            left: 50%;
+            animation-delay: 10s;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.1;
+            }
+            33% {
+                transform: translate(30px, -30px) scale(1.1);
+                opacity: 0.15;
+            }
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+                opacity: 0.12;
+            }
+        }
+        
+        /* Card de login con glassmorphism */
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Animaciones */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        
+        .animate-scale-in {
+            animation: scaleIn 0.6s ease-out forwards;
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+        
+        .animate-slide-in {
+            animation: slideInRight 0.6s ease-out forwards;
+            animation-delay: 0.4s;
+            opacity: 0;
+        }
+        
+        /* Inputs mejorados */
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-wrapper input {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .input-wrapper input:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(12, 141, 230, 0.15);
+            border-color: #0c8de6;
+            background-color: #ffffff;
+            transform: translateY(-2px);
+        }
+        
+        .input-wrapper input:focus + i,
+        .input-wrapper:focus-within i {
+            color: #0c8de6;
+            transform: scale(1.1);
+        }
+        
+        .input-icon {
+            transition: all 0.3s ease;
+        }
+        
+        /* Botón con efecto hover mejorado */
+        .btn-login {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-login:hover::before {
+            left: 100%;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(12, 141, 230, 0.4);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        /* Toggle de contraseña */
+        .password-toggle {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .password-toggle:hover {
+            color: #0c8de6;
+            transform: scale(1.1);
+        }
+        
+        /* Checkbox personalizado */
+        input[type="checkbox"] {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #cbd5e1;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        input[type="checkbox"]:checked {
+            background: linear-gradient(135deg, #0070c4 0%, #0c8de6 100%);
+            border-color: #0c8de6;
+        }
+        
+        input[type="checkbox"]:checked::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 10px;
+        }
+        
+        /* Logo animado */
+        .logo-container {
+            animation: float-logo 6s ease-in-out infinite;
+        }
+        
+        @keyframes float-logo {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-10px) rotate(5deg);
+            }
+        }
+        
+        /* Efecto de brillo en el header */
+        .header-glow {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header-glow::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 10s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-brand-900 to-brand-700 flex items-center justify-center px-4">
+
+    <div class="w-full max-w-md">
+      <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+  
+        <!-- Header -->
+        <div class="px-8 pt-10 pb-8 text-center border-b border-slate-100">
+          <div class="mx-auto mb-4 w-14 h-14 rounded-xl bg-brand-600 flex items-center justify-center">
+            <i class="fas fa-shield-halved text-white text-2xl"></i>
+          </div>
+          <h1 class="text-2xl font-bold text-slate-800">Seguros UTPL</h1>
+          <p class="text-sm text-slate-500 mt-1">
+            Acceso al sistema de gestión
+          </p>
+        </div>
+  
+        <!-- Form -->
+        <div class="px-8 py-8">
+  
+          {% if form.errors %}
+          <div class="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            Credenciales incorrectas. Verifica usuario y contraseña.
+          </div>
+          {% endif %}
+  
+          <form method="post" class="space-y-6">
+            {% csrf_token %}
+  
+            <!-- Usuario -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">
+                Usuario
+              </label>
+              <input
+                type="text"
+                name="username"
+                required
+                autofocus
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 placeholder-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 transition"
+                placeholder="usuario@utpl.edu.ec"
+              >
+            </div>
+  
+            <!-- Contraseña -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                name="password"
+                required
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 placeholder-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 transition"
+                placeholder="••••••••"
+              >
+            </div>
+  
+            <!-- Recordarme -->
+            <div class="flex items-center gap-2">
+              <input type="checkbox" name="remember_me" class="rounded border-slate-300 text-brand-600 focus:ring-brand-600">
+              <span class="text-sm text-slate-600">Recordarme</span>
+            </div>
+  
+            <!-- Botón -->
+            <button
+              type="submit"
+              class="w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 transition shadow-lg shadow-brand-600/30"
+            >
+              Iniciar sesión
+            </button>
+          </form>
+  
+          <!-- Admin -->
+          <div class="mt-6 text-center">
+            <a href="/admin/" class="text-sm text-slate-500 hover:text-brand-600 transition">
+              Acceder al panel de administración
+            </a>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Footer -->
+      <p class="text-center text-white/70 text-xs mt-6">
+        © 2024 Universidad Técnica Particular de Loja
+      </p>
+    </div>
+  
+  </body>
+  
+</html>

@@ -1,0 +1,210 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Reporte de Siniestros{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-fade-in">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Reporte de Siniestros</h1>
+            <p class="text-slate-500 mt-1">Análisis de siniestros y tendencias</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{% url 'reportes_siniestros_pdf' %}?{% for k, v in filtros.items %}{{ k }}={{ v }}&{% endfor %}" 
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-medium text-sm">
+                <i class="fas fa-file-pdf"></i>
+                Exportar PDF
+            </a>
+            <a href="{% url 'siniestros_exportar' %}?formato=excel{% for k, v in filtros.items %}&{{ k }}={{ v }}{% endfor %}" 
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-medium text-sm">
+                <i class="fas fa-file-excel"></i>
+                Exportar Excel
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-4">
+        <form method="GET" class="flex flex-wrap gap-4">
+            <select name="estado" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                <option value="">Todos los estados</option>
+                <option value="registrado" {% if filtros.estado == 'registrado' %}selected{% endif %}>Registrado</option>
+                <option value="documentacion_pendiente" {% if filtros.estado == 'documentacion_pendiente' %}selected{% endif %}>Doc. Pendiente</option>
+                <option value="enviado_aseguradora" {% if filtros.estado == 'enviado_aseguradora' %}selected{% endif %}>Enviado</option>
+                <option value="en_evaluacion" {% if filtros.estado == 'en_evaluacion' %}selected{% endif %}>En Evaluación</option>
+                <option value="aprobado" {% if filtros.estado == 'aprobado' %}selected{% endif %}>Aprobado</option>
+                <option value="liquidado" {% if filtros.estado == 'liquidado' %}selected{% endif %}>Liquidado</option>
+                <option value="cerrado" {% if filtros.estado == 'cerrado' %}selected{% endif %}>Cerrado</option>
+            </select>
+            <select name="tipo" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                <option value="">Todos los tipos</option>
+                {% for t in tipos %}
+                    <option value="{{ t.id }}" {% if filtros.tipo == t.id|stringformat:"s" %}selected{% endif %}>{{ t.get_nombre_display }}</option>
+                {% endfor %}
+            </select>
+            <div class="date-input-wrapper relative">
+                <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none z-10"></i>
+                <input type="text" name="fecha_desde" value="{{ filtros.fecha_desde|default:'' }}" 
+                       class="date-picker pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all w-36" 
+                       title="Fecha desde" readonly>
+            </div>
+            <div class="date-input-wrapper relative">
+                <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none z-10"></i>
+                <input type="text" name="fecha_hasta" value="{{ filtros.fecha_hasta|default:'' }}" 
+                       class="date-picker pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all w-36" 
+                       title="Fecha hasta" readonly>
+            </div>
+            <button type="submit" class="px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition text-sm font-medium">
+                <i class="fas fa-filter mr-2"></i>Aplicar
+            </button>
+            {% if filtros %}
+                <a href="{% url 'reportes_siniestros' %}" class="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition text-sm font-medium">
+                    Limpiar
+                </a>
+            {% endif %}
+        </form>
+    </div>
+    
+    <!-- Resumen -->
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-4">
+        <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-card">
+            <p class="text-sm text-slate-500">Total</p>
+            <p class="text-2xl font-bold text-slate-800 mt-1">{{ totales.cantidad|default:0 }}</p>
+        </div>
+        <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+            <p class="text-sm text-blue-600">Activos</p>
+            <p class="text-2xl font-bold text-blue-700 mt-1">{{ totales.activos|default:0 }}</p>
+        </div>
+        <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
+            <p class="text-sm text-emerald-600">Cerrados</p>
+            <p class="text-2xl font-bold text-emerald-700 mt-1">{{ totales.cerrados|default:0 }}</p>
+        </div>
+        <div class="bg-red-50 rounded-xl p-4 border border-red-100">
+            <p class="text-sm text-red-600">Rechazados</p>
+            <p class="text-2xl font-bold text-red-700 mt-1">{{ totales.rechazados|default:0 }}</p>
+        </div>
+        <div class="bg-amber-50 rounded-xl p-4 border border-amber-100">
+            <p class="text-sm text-amber-600">Monto Estimado</p>
+            <p class="text-xl font-bold text-amber-700 mt-1">${{ totales.monto_estimado|floatformat:0|default:0 }}</p>
+        </div>
+        <div class="bg-purple-50 rounded-xl p-4 border border-purple-100">
+            <p class="text-sm text-purple-600">Indemnizado</p>
+            <p class="text-xl font-bold text-purple-700 mt-1">${{ totales.monto_indemnizado|floatformat:0|default:0 }}</p>
+        </div>
+    </div>
+    
+    <!-- Por tipo y estado -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Por Tipo de Siniestro</h3>
+            </div>
+            <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                {% for item in por_tipo %}
+                    <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition">
+                        <div>
+                            <p class="font-medium text-slate-800">{{ item.tipo_siniestro__nombre|title }}</p>
+                            <p class="text-sm text-slate-500">{{ item.cantidad }} casos</p>
+                        </div>
+                        <p class="font-semibold text-red-600">${{ item.monto|floatformat:0|default:0 }}</p>
+                    </div>
+                {% empty %}
+                    <div class="p-8 text-center text-slate-500">Sin datos</div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Por Estado</h3>
+            </div>
+            <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                {% for item in por_estado %}
+                    <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full
+                                {% if item.estado == 'registrado' %}bg-blue-500
+                                {% elif item.estado == 'documentacion_pendiente' %}bg-amber-500
+                                {% elif item.estado == 'enviado_aseguradora' %}bg-purple-500
+                                {% elif item.estado == 'en_evaluacion' %}bg-cyan-500
+                                {% elif item.estado == 'aprobado' %}bg-emerald-500
+                                {% elif item.estado == 'rechazado' %}bg-red-500
+                                {% elif item.estado == 'liquidado' %}bg-green-500
+                                {% else %}bg-slate-400{% endif %}"></span>
+                            <p class="font-medium text-slate-800">{{ item.estado|title }}</p>
+                        </div>
+                        <span class="text-slate-600 font-semibold">{{ item.cantidad }}</span>
+                    </div>
+                {% empty %}
+                    <div class="p-8 text-center text-slate-500">Sin datos</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detalle -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="p-5 border-b border-slate-100">
+            <h3 class="font-semibold text-slate-800">Detalle de Siniestros</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Siniestro</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Tipo</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Bien</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Estimado</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Indemnizado</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Días</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for s in siniestros %}
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="px-4 py-3">
+                            <p class="font-medium text-slate-800">{{ s.numero_siniestro }}</p>
+                            <p class="text-xs text-slate-500">{{ s.poliza.numero_poliza }}</p>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-slate-600">{{ s.tipo_siniestro }}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">{{ s.bien_nombre|truncatechars:25 }}</td>
+                        <td class="px-4 py-3 text-right font-medium text-slate-800">${{ s.monto_estimado|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-medium {% if s.monto_indemnizado %}text-emerald-600{% else %}text-slate-400{% endif %}">
+                            {% if s.monto_indemnizado %}${{ s.monto_indemnizado|floatformat:2 }}{% else %}-{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold
+                                {% if s.dias_desde_registro < 15 %}bg-emerald-100 text-emerald-700
+                                {% elif s.dias_desde_registro < 30 %}bg-amber-100 text-amber-700
+                                {% else %}bg-red-100 text-red-700{% endif %}">
+                                {{ s.dias_desde_registro }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
+                                {% if s.estado == 'registrado' %}bg-blue-100 text-blue-700
+                                {% elif s.estado == 'documentacion_pendiente' %}bg-amber-100 text-amber-700
+                                {% elif s.estado == 'enviado_aseguradora' %}bg-purple-100 text-purple-700
+                                {% elif s.estado == 'en_evaluacion' %}bg-cyan-100 text-cyan-700
+                                {% elif s.estado == 'aprobado' %}bg-emerald-100 text-emerald-700
+                                {% elif s.estado == 'rechazado' %}bg-red-100 text-red-700
+                                {% elif s.estado == 'liquidado' %}bg-green-100 text-green-800
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ s.get_estado_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-12 text-center text-slate-500">No hay datos para mostrar</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'app/components/pagination.html' with page_obj=siniestros %}
+    </div>
+</div>
+{% endblock %}
+

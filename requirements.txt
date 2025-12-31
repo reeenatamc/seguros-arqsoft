@@ -5,6 +5,12 @@ pillow
 python-dotenv
 sqlparse
 
+# Para auditoría de cambios
+django-simple-history
+
+# Para validación de archivos (tipo MIME real)
+python-magic
+
 # Para import/export de datos
 django-import-export
 

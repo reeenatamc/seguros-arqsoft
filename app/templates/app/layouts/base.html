@@ -1,0 +1,541 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} | Seguros UTPL</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            300: '#7cc8fb',
+                            400: '#36aaf5',
+                            500: '#0c8de6',
+                            600: '#0070c4',
+                            700: '#01599f',
+                            800: '#064b83',
+                            900: '#0a3f6d',
+                            950: '#072849',
+                        },
+                        gold: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                        },
+                        slate: {
+                            850: '#172033',
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                        'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.02)',
+                        'glow': '0 0 40px rgba(12, 141, 230, 0.15)',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+                        'fade-in-down': 'fadeInDown 0.5s ease-out forwards',
+                        'slide-in-left': 'slideInLeft 0.4s ease-out forwards',
+                        'slide-in-right': 'slideInRight 0.4s ease-out forwards',
+                        'scale-in': 'scaleIn 0.3s ease-out forwards',
+                        'bounce-in': 'bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards',
+                        'blob': 'blob 7s infinite',
+                        'shimmer': 'shimmer 2s infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Flatpickr CSS y JS para datepicker personalizado -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    
+    <style>
+        /* Scrollbar personalizado */
+        * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+        *::-webkit-scrollbar { width: 6px; height: 6px; }
+        *::-webkit-scrollbar-track { background: transparent; }
+        *::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+        *::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+        
+        /* Animaciones keyframes */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes bounceIn {
+            0% { opacity: 0; transform: scale(0.3); }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes blob {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(20px, -20px) scale(1.1); }
+            50% { transform: translate(0, 20px) scale(1); }
+            75% { transform: translate(-20px, -10px) scale(0.9); }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        /* Delays de animación */
+        .animation-delay-100 { animation-delay: 100ms; }
+        .animation-delay-200 { animation-delay: 200ms; }
+        .animation-delay-300 { animation-delay: 300ms; }
+        .animation-delay-400 { animation-delay: 400ms; }
+        .animation-delay-500 { animation-delay: 500ms; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animation-delay-4000 { animation-delay: 4s; }
+        
+        /* Sidebar Core - usando clases específicas para expand/collapse */
+        #sidebar {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        #sidebar.sidebar-expanded {
+            width: 280px;
+        }
+        
+        #sidebar.sidebar-collapsed {
+            width: 72px;
+        }
+        
+        /* Main content transition (solo para suavizar cambios si se necesitan en el futuro) */
+        #main-content {
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar-container.collapsed .submenu { display: none; }
+        
+        /* Nav items */
+        .nav-item { 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: relative;
+            overflow: hidden;
+        }
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+            transition: width 0.3s ease;
+        }
+        .nav-item:hover::before { width: 100%; }
+        .nav-item:hover { transform: translateX(5px); }
+        .nav-item.active { 
+            background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); 
+            color: #0a3f6d !important;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+        .nav-item.active .nav-icon { background: rgba(10, 63, 109, 0.2); }
+        
+        /* Tarjetas */
+        .stat-card { 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        .stat-card:hover::after { left: 100%; }
+        .stat-card:hover { 
+            transform: translateY(-8px) scale(1.02); 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Efectos glass */
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        
+        /* Gradientes */
+        .gradient-brand { background: linear-gradient(135deg, #064b83 0%, #0070c4 50%, #0c8de6 100%); }
+        .gradient-gold { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); }
+        .gradient-success { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+        .gradient-danger { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); }
+        .gradient-purple { background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%); }
+        
+        /* Badges */
+        .badge-pulse { 
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; 
+            position: relative;
+        }
+        .badge-pulse::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            background: inherit;
+            animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        /* Botones */
+        .btn-primary {
+            background: linear-gradient(135deg, #0c8de6 0%, #0070c4 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn-primary:hover::before { left: 100%; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(12, 141, 230, 0.3); }
+        
+        /* Inputs mejorados */
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(12, 141, 230, 0.2);
+            border-color: #0c8de6;
+        }
+        
+        /* Tablas */
+        .table-row-hover {
+            transition: all 0.2s ease;
+        }
+        .table-row-hover:hover {
+            background: linear-gradient(90deg, #f0f7ff 0%, transparent 100%);
+            transform: scale(1.01);
+        }
+        
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        /* Custom Dropdown Styles */
+        .custom-dropdown { min-width: 180px; }
+        .custom-dropdown-trigger:focus { outline: none; }
+        .custom-dropdown-menu {
+            box-shadow: 0 10px 40px -5px rgba(0, 0, 0, 0.1), 
+                        0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .custom-dropdown-menu::-webkit-scrollbar { width: 6px; }
+        .custom-dropdown-menu::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+        .custom-dropdown-menu::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-dropdown-option:focus { outline: none; background-color: #f1f5f9; }
+        
+        /* Tooltip */
+        [data-tooltip] {
+            position: relative;
+        }
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-5px);
+            background: #1f2937;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+        [data-tooltip]:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-10px);
+        }
+        
+        /* Ripple effect */
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        .ripple::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+            background-repeat: no-repeat;
+            background-position: 50%;
+            transform: scale(10);
+            opacity: 0;
+            transition: transform 0.5s, opacity 1s;
+        }
+        .ripple:active::after {
+            transform: scale(0);
+            opacity: 0.3;
+            transition: 0s;
+        }
+        
+        /* Smooth page transitions */
+        .page-content {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        .page-content > * {
+            opacity: 0;
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        .page-content > *:nth-child(1) { animation-delay: 0.1s; }
+        .page-content > *:nth-child(2) { animation-delay: 0.2s; }
+        .page-content > *:nth-child(3) { animation-delay: 0.3s; }
+        .page-content > *:nth-child(4) { animation-delay: 0.4s; }
+        .page-content > *:nth-child(5) { animation-delay: 0.5s; }
+        .page-content > *:nth-child(n+6) { animation-delay: 0.6s; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="h-full bg-slate-50 font-sans antialiased">
+    <div class="flex h-screen overflow-hidden">
+        {% include 'app/partials/sidebar.html' %}
+        
+        <div id="main-content" class="flex-1 flex flex-col overflow-hidden transition-all duration-300">
+            {% include 'app/partials/header.html' %}
+            
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gradient-to-br from-slate-50 via-slate-100/50 to-slate-50">
+                <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl page-content">
+                    {% if messages %}
+                        <div class="space-y-3 mb-6">
+                        {% for message in messages %}
+                                <div class="message-alert flex items-center gap-3 p-4 rounded-xl border shadow-sm transform transition-all duration-500 hover:scale-[1.02]
+                                    {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-800
+                                    {% elif message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800
+                                    {% elif message.tags == 'warning' %}bg-amber-50 border-amber-200 text-amber-800
+                                    {% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
+                                        {% if message.tags == 'error' %}bg-red-100
+                                        {% elif message.tags == 'success' %}bg-emerald-100
+                                        {% elif message.tags == 'warning' %}bg-amber-100
+                                        {% else %}bg-blue-100{% endif %}">
+                                        <i class="fas {% if message.tags == 'error' %}fa-circle-xmark text-red-600{% elif message.tags == 'success' %}fa-circle-check text-emerald-600{% elif message.tags == 'warning' %}fa-triangle-exclamation text-amber-600{% else %}fa-circle-info text-blue-600{% endif %}"></i>
+                                    </div>
+                                    <span class="font-medium flex-1">{{ message }}</span>
+                                    <button onclick="this.parentElement.style.transform='translateX(100%)'; this.parentElement.style.opacity='0'; setTimeout(() => this.parentElement.remove(), 300)" 
+                                            class="flex-shrink-0 hover:opacity-70 transition p-1 rounded-full hover:bg-black/5">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script>
+        // Sidebar state - load from localStorage
+        let sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            
+            // Apply initial state solo con clases; el layout se maneja con flex
+            if (sidebarCollapsed) {
+                sidebar.classList.remove('sidebar-expanded');
+                sidebar.classList.add('sidebar-collapsed');
+            } else {
+                sidebar.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('sidebar-expanded');
+            }
+        });
+        
+        // Sidebar toggle functions
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            
+            sidebarCollapsed = !sidebarCollapsed;
+            localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+            
+            if (sidebarCollapsed) {
+                sidebar.classList.remove('sidebar-expanded');
+                sidebar.classList.add('sidebar-collapsed');
+            } else {
+                sidebar.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('sidebar-expanded');
+            }
+        }
+        
+        function openSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('translate-x-0');
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            overlay.classList.add('opacity-100', 'pointer-events-auto');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            sidebar.classList.add('-translate-x-full');
+            sidebar.classList.remove('translate-x-0');
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            overlay.classList.remove('opacity-100', 'pointer-events-auto');
+            document.body.style.overflow = '';
+        }
+        
+        // Submenu toggle
+        function toggleSubmenu(name) {
+            const sidebar = document.getElementById('sidebar');
+            // Don't toggle submenus when sidebar is collapsed
+            if (sidebar.classList.contains('sidebar-collapsed')) return;
+            
+            const menu = document.getElementById(name + '-menu');
+            const arrow = document.getElementById(name + '-arrow');
+            
+            if (menu.style.maxHeight === '0px' || !menu.style.maxHeight || menu.style.maxHeight === '') {
+                menu.style.maxHeight = '400px';
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+            } else {
+                menu.style.maxHeight = '0px';
+                if (arrow) arrow.style.transform = 'rotate(-90deg)';
+            }
+        }
+        
+        // Ripple effect
+        document.querySelectorAll('.ripple').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const ripple = document.createElement('span');
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                ripple.className = 'ripple-effect';
+                
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+        
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+        
+        // Auto-hide messages after 5 seconds
+        document.querySelectorAll('.message-alert').forEach(alert => {
+            setTimeout(() => {
+                alert.style.transform = 'translateX(100%)';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            }, 5000);
+        });
+    </script>
+    
+    <script src="{% static 'js/app.js' %}?v=4"></script>
+    <script src="{% static 'js/dropdowns.js' %}?v=8"></script>
+    <script src="{% static 'js/datepicker.js' %}?v=1"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
