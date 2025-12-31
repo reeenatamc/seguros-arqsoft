@@ -1,0 +1,209 @@
+{% extends 'app/layouts/base.html' %}
+{% load static %}
+
+{% block title %}Renovaciones de Pólizas{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Renovaciones de Pólizas</h1>
+            <p class="text-slate-500 mt-1">Gestión del proceso de renovación de pólizas</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{% url 'admin:app_policyrenewal_add' %}" 
+               class="btn-primary px-4 py-2.5 rounded-xl text-white font-medium flex items-center gap-2 shadow-lg">
+                <i class="fas fa-plus"></i>
+                <span>Nueva Renovación</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="stat-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-sync-alt text-blue-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-900">{{ stats.total }}</p>
+                    <p class="text-xs text-slate-500">Total</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <i class="fas fa-clock text-amber-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-900">{{ stats.pending }}</p>
+                    <p class="text-xs text-slate-500">Pendientes</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <i class="fas fa-cog text-purple-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-900">{{ stats.in_progress }}</p>
+                    <p class="text-xs text-slate-500">En Proceso</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-900">{{ stats.overdue }}</p>
+                    <p class="text-xs text-slate-500">Vencidas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 p-4">
+        <form method="GET" class="flex flex-wrap items-center gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <input type="text" name="q" value="{{ query }}" 
+                       placeholder="Buscar por número o póliza..."
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 transition-all">
+            </div>
+            
+            <select name="status" class="px-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500">
+                <option value="">Todos los estados</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            
+            <select name="decision" class="px-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500">
+                <option value="">Todas las decisiones</option>
+                {% for value, label in decision_choices %}
+                <option value="{{ value }}" {% if selected_decision == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            
+            <button type="submit" class="btn-primary px-4 py-2.5 rounded-xl text-white font-medium">
+                <i class="fas fa-search mr-2"></i>Filtrar
+            </button>
+        </form>
+    </div>
+
+    <!-- Tabla -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Renovación</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Póliza Original</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Fecha Límite</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Días</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Estado</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Decisión</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for renewal in renewals %}
+                    <tr class="table-row-hover hover:bg-slate-50/50">
+                        <td class="px-6 py-4">
+                            <span class="font-semibold text-slate-900">{{ renewal.renewal_number }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div>
+                                <p class="font-medium text-slate-800">{{ renewal.original_policy.numero_poliza }}</p>
+                                <p class="text-xs text-slate-500">{{ renewal.original_policy.compania_aseguradora }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-slate-600">
+                            {{ renewal.due_date|date:"d M Y" }}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if renewal.is_overdue %}
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Vencido
+                            </span>
+                            {% elif renewal.days_until_due <= 7 %}
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                {{ renewal.days_until_due }} días
+                            </span>
+                            {% elif renewal.days_until_due <= 15 %}
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                {{ renewal.days_until_due }} días
+                            </span>
+                            {% else %}
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {{ renewal.days_until_due }} días
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium
+                                {% if renewal.status == 'pending' %}bg-amber-100 text-amber-800
+                                {% elif renewal.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                {% elif renewal.status == 'completed' %}bg-green-100 text-green-800
+                                {% elif renewal.status == 'rejected' or renewal.status == 'cancelled' %}bg-red-100 text-red-800
+                                {% else %}bg-slate-100 text-slate-800{% endif %}">
+                                {{ renewal.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-slate-600 text-sm">
+                            {{ renewal.get_decision_display }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <a href="{% url 'admin:app_policyrenewal_change' renewal.pk %}" 
+                               class="text-brand-600 hover:text-brand-800 font-medium text-sm">
+                                <i class="fas fa-eye mr-1"></i>Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                            <i class="fas fa-sync-alt text-4xl text-slate-300 mb-3"></i>
+                            <p>No se encontraron renovaciones</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if renewals.has_other_pages %}
+        <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            <p class="text-sm text-slate-500">
+                Mostrando {{ renewals.start_index }} - {{ renewals.end_index }} de {{ renewals.paginator.count }}
+            </p>
+            <div class="flex items-center gap-2">
+                {% if renewals.has_previous %}
+                <a href="?page={{ renewals.previous_page_number }}&q={{ query }}&status={{ selected_status }}" 
+                   class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm">
+                    Anterior
+                </a>
+                {% endif %}
+                {% if renewals.has_next %}
+                <a href="?page={{ renewals.next_page_number }}&q={{ query }}&status={{ selected_status }}" 
+                   class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm">
+                    Siguiente
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

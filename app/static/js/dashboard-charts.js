@@ -1,6 +1,9 @@
 /**
  * Dashboard Charts - Chart.js visualizations
  * Seguros UTPL
+ * 
+ * Este archivo maneja todos los gráficos del dashboard principal,
+ * incluyendo comparativas anuales, tendencias y distribuciones.
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -10,7 +13,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Obtener datos desde data attributes
     const getData = (key) => {
         const value = container.dataset[key];
-        return value ? JSON.parse(value) : [];
+        if (!value) return [];
+        try {
+            return JSON.parse(value);
+        } catch (e) {
+            console.warn(`Error parsing data for key: ${key}`, e);
+            return [];
+        }
     };
 
     // Configuración global de Chart.js
@@ -23,33 +32,127 @@ document.addEventListener('DOMContentLoaded', function() {
     // Colores del tema
     const colors = {
         brand: '#3B82F6',
+        brandLight: 'rgba(59, 130, 246, 0.2)',
         success: '#10B981',
+        successLight: 'rgba(16, 185, 129, 0.2)',
         danger: '#EF4444',
+        dangerLight: 'rgba(239, 68, 68, 0.2)',
         warning: '#F59E0B',
+        warningLight: 'rgba(245, 158, 11, 0.2)',
         purple: '#8B5CF6',
-        cyan: '#06B6D4'
+        cyan: '#06B6D4',
+        slate: '#94A3B8',
+        slateLight: 'rgba(148, 163, 184, 0.3)'
     };
 
-    // 1. Gráfico Comparativo (Line Chart)
+    // Inicializar todos los gráficos
+    initYearComparisonChart();
     initComparativoChart();
-    
-    // 2. Pólizas por Estado (Doughnut)
     initPolizasEstadoChart();
-    
-    // 3. Facturas por Estado (Doughnut)
     initFacturasEstadoChart();
-    
-    // 4. Siniestros por Tipo (Polar Area)
     initSiniestrosTipoChart();
-    
-    // 5. Facturación Mensual (Bar + Line)
     initFacturacionChart();
-    
-    // 6. Siniestros por Mes (Area Chart)
     initSiniestrosMesChart();
-    
-    // 7. Pólizas por Tipo (Horizontal Bar)
     initPolizasTipoChart();
+
+    /**
+     * Gráfico de comparación año a año
+     * Muestra la facturación del año actual vs el anterior
+     */
+    function initYearComparisonChart() {
+        const canvas = document.getElementById('yearComparisonChart');
+        if (!canvas) return;
+
+        const yearData = getData('yearComparison');
+        if (!yearData || !yearData.labels) return;
+
+        // Actualizar etiquetas de años en el DOM
+        const currentYearLabel = document.getElementById('current-year-label');
+        const previousYearLabel = document.getElementById('previous-year-label');
+        if (currentYearLabel) currentYearLabel.textContent = yearData.current_year;
+        if (previousYearLabel) previousYearLabel.textContent = yearData.previous_year;
+
+        const ctx = canvas.getContext('2d');
+        
+        // Crear gradientes para las áreas
+        const currentGradient = ctx.createLinearGradient(0, 0, 0, 250);
+        currentGradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
+        currentGradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: yearData.labels,
+                datasets: [
+                    {
+                        label: String(yearData.current_year),
+                        data: yearData.invoices.current,
+                        borderColor: colors.brand,
+                        backgroundColor: currentGradient,
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: colors.brand,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 8
+                    },
+                    {
+                        label: String(yearData.previous_year),
+                        data: yearData.invoices.previous,
+                        borderColor: colors.slate,
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: colors.slate,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: $${context.parsed.y.toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                        ticks: {
+                            padding: 10,
+                            callback: function(value) {
+                                if (value >= 1000000) {
+                                    return '$' + (value / 1000000).toFixed(1) + 'M';
+                                } else if (value >= 1000) {
+                                    return '$' + (value / 1000).toFixed(0) + 'K';
+                                }
+                                return '$' + value;
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { padding: 10 }
+                    }
+                }
+            }
+        });
+    }
 
     /**
      * Gráfico de actividad comparativa del sistema

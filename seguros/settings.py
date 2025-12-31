@@ -402,6 +402,38 @@ UNFOLD = {
                 ],
             },
             {
+                "title": _("Gestión Avanzada"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Renovaciones"),
+                        "icon": "autorenew",
+                        "link": reverse_lazy("admin:app_policyrenewal_changelist"),
+                    },
+                    {
+                        "title": _("Cotizaciones"),
+                        "icon": "request_quote",
+                        "link": reverse_lazy("admin:app_quote_changelist"),
+                    },
+                    {
+                        "title": _("Bienes Asegurados"),
+                        "icon": "inventory_2",
+                        "link": reverse_lazy("admin:app_insuredasset_changelist"),
+                    },
+                    {
+                        "title": _("Aprobaciones de Pago"),
+                        "icon": "approval",
+                        "link": reverse_lazy("admin:app_paymentapproval_changelist"),
+                    },
+                    {
+                        "title": _("Calendario"),
+                        "icon": "event",
+                        "link": reverse_lazy("admin:app_calendarevent_changelist"),
+                    },
+                ],
+            },
+            {
                 "title": _("Catálogos"),
                 "separator": True,
                 "collapsible": True,

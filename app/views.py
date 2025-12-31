@@ -7,41 +7,80 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_GET, require_POST
 from django.urls import reverse
+from django.utils import timezone
 
-from .models import Poliza, Factura, Siniestro, Alerta, CompaniaAseguradora, TipoPoliza, TipoSiniestro, CorredorSeguros
-from .services import EstadisticasService, ExportacionService, ReportesService
+from .models import (
+    Poliza, Factura, Siniestro, Alerta, CompaniaAseguradora, TipoPoliza, 
+    TipoSiniestro, CorredorSeguros, InsuredAsset, Quote, QuoteOption, 
+    PolicyRenewal, PaymentApproval, CalendarEvent
+)
+from .services import (
+    EstadisticasService, ExportacionService, ReportesService,
+    DashboardAnalyticsService, DashboardFiltersService, DateRangePresets,
+    AdvancedAnalyticsService
+)
 from .services.pdf_reportes import PDFReportesService
 
 
 @login_required
 def dashboard(request):
-    stats = EstadisticasService.get_dashboard_stats()
-    kpis = EstadisticasService.get_kpis()
-    polizas_por_vencer = EstadisticasService.get_polizas_proximas_vencer(dias=30, limit=5)
-    facturas_pendientes = EstadisticasService.get_facturas_pendientes(limit=5)
-    siniestros_recientes = EstadisticasService.get_siniestros_recientes(limit=5)
+    """
+    Vista principal del dashboard con filtros avanzados estilo Odoo.
+    Soporta date range picker, filtros por entidad, y actualización dinámica.
+    """
+    import json
     
-    graficos_polizas = ReportesService.get_datos_graficos_polizas()
-    graficos_polizas_tipo = ReportesService.get_datos_graficos_polizas_por_tipo()
-    graficos_facturas = ReportesService.get_datos_graficos_facturas()
-    graficos_facturacion = ReportesService.get_datos_graficos_facturacion_mensual()
-    graficos_siniestros = ReportesService.get_datos_graficos_siniestros_mensual()
-    graficos_siniestros_tipo = ReportesService.get_datos_graficos_siniestros_por_tipo()
-    graficos_comparativo = ReportesService.get_datos_graficos_comparativo()
+    # Parsear filtros desde la request
+    filters = DashboardFiltersService.parse_filters_from_request(request)
+    
+    # Obtener filtros disponibles para los selectores
+    available_filters = DashboardFiltersService.get_available_filters()
+    
+    # Obtener estadísticas filtradas
+    filtered_stats = DashboardFiltersService.get_filtered_stats(filters)
+    
+    # Obtener datos para gráficos filtrados
+    chart_data = DashboardFiltersService.get_chart_data(filters)
+    
+    # Obtener listas de registros
+    lists_data = DashboardFiltersService.get_lists_data(filters)
+    
+    # Estadísticas globales (sin filtros) para KPIs generales
+    kpis = EstadisticasService.get_kpis()
+    
+    # Datos comparativos y tendencias (usando el sistema anterior para compatibilidad)
+    period_type = request.GET.get('period', DashboardAnalyticsService.PERIOD_MONTH)
+    if period_type not in DashboardAnalyticsService.PERIOD_CHOICES:
+        period_type = DashboardAnalyticsService.PERIOD_MONTH
+    
+    comparative_data = DashboardAnalyticsService.get_comparative_stats(period_type)
+    year_comparison = DashboardAnalyticsService.get_year_over_year_comparison()
+    quick_actions = DashboardAnalyticsService.get_quick_actions_data()
     
     context = {
-        'stats': stats,
+        # Filtros
+        'filters': filters,
+        'available_filters': available_filters,
+        'date_presets': DateRangePresets.CHOICES,
+        
+        # Estadísticas filtradas
+        'stats': filtered_stats,
+        'chart_data': json.dumps(chart_data),
+        
+        # Listas de registros
+        'expiring_policies': lists_data['expiring_policies'],
+        'pending_invoices': lists_data['pending_invoices'],
+        'active_claims': lists_data['active_claims'],
+        
+        # KPIs globales
         'kpis': kpis,
-        'polizas_por_vencer': polizas_por_vencer,
-        'facturas_pendientes': facturas_pendientes,
-        'siniestros_recientes': siniestros_recientes,
-        'graficos_polizas': graficos_polizas,
-        'graficos_polizas_tipo': graficos_polizas_tipo,
-        'graficos_facturas': graficos_facturas,
-        'graficos_facturacion': graficos_facturacion,
-        'graficos_siniestros': graficos_siniestros,
-        'graficos_siniestros_tipo': graficos_siniestros_tipo,
-        'graficos_comparativo': graficos_comparativo,
+        
+        # Datos comparativos
+        'period_type': period_type,
+        'period_choices': DashboardAnalyticsService.PERIOD_CHOICES,
+        'comparative': comparative_data,
+        'year_comparison': json.dumps(year_comparison),
+        'quick_actions': quick_actions,
     }
     
     return render(request, 'app/dashboard/index.html', context)
@@ -687,6 +726,144 @@ def api_buscar(request):
     return JsonResponse({'results': results})
 
 
+# ============================================================================
+# DASHBOARD ANALYTICS API
+# ============================================================================
+
+@login_required
+@require_GET
+def api_dashboard_summary(request):
+    """
+    Endpoint para obtener un resumen completo del dashboard.
+    Parámetros:
+        - period: Tipo de período (year, month, week, day)
+    """
+    period_type = request.GET.get('period', DashboardAnalyticsService.PERIOD_MONTH)
+    if period_type not in DashboardAnalyticsService.PERIOD_CHOICES:
+        period_type = DashboardAnalyticsService.PERIOD_MONTH
+    
+    summary = DashboardAnalyticsService.get_dashboard_summary(period_type)
+    return JsonResponse(summary)
+
+
+@login_required
+@require_GET
+def api_dashboard_comparative(request):
+    """
+    Endpoint para estadísticas comparativas entre períodos.
+    Parámetros:
+        - period: Tipo de período (year, month, week, day)
+    """
+    period_type = request.GET.get('period', DashboardAnalyticsService.PERIOD_MONTH)
+    if period_type not in DashboardAnalyticsService.PERIOD_CHOICES:
+        period_type = DashboardAnalyticsService.PERIOD_MONTH
+    
+    data = DashboardAnalyticsService.get_comparative_stats(period_type)
+    return JsonResponse(data)
+
+
+@login_required
+@require_GET
+def api_dashboard_trend(request):
+    """
+    Endpoint para datos de tendencia histórica.
+    Parámetros:
+        - period: Tipo de período (year, month, week, day)
+        - count: Cantidad de períodos (default: 12)
+    """
+    period_type = request.GET.get('period', DashboardAnalyticsService.PERIOD_MONTH)
+    if period_type not in DashboardAnalyticsService.PERIOD_CHOICES:
+        period_type = DashboardAnalyticsService.PERIOD_MONTH
+    
+    try:
+        periods_count = int(request.GET.get('count', 12))
+        periods_count = min(max(periods_count, 1), 24)  # Entre 1 y 24 períodos
+    except ValueError:
+        periods_count = 12
+    
+    data = DashboardAnalyticsService.get_trend_data(period_type, periods_count)
+    return JsonResponse(data)
+
+
+@login_required
+@require_GET
+def api_dashboard_year_comparison(request):
+    """
+    Endpoint para comparación año a año.
+    """
+    data = DashboardAnalyticsService.get_year_over_year_comparison()
+    return JsonResponse(data)
+
+
+@login_required
+@require_GET
+def api_dashboard_filters(request):
+    """
+    Endpoint para obtener los filtros disponibles.
+    Útil para poblar los selectores del frontend.
+    """
+    filters = DashboardFiltersService.get_available_filters()
+    return JsonResponse(filters)
+
+
+@login_required
+@require_GET
+def api_dashboard_filtered_stats(request):
+    """
+    Endpoint para obtener estadísticas filtradas.
+    Soporta todos los filtros: fecha, compañía, corredor, tipo, estado.
+    """
+    filters = DashboardFiltersService.parse_filters_from_request(request)
+    stats = DashboardFiltersService.get_filtered_stats(filters)
+    return JsonResponse(stats)
+
+
+@login_required
+@require_GET
+def api_dashboard_filtered_charts(request):
+    """
+    Endpoint para obtener datos de gráficos filtrados.
+    """
+    filters = DashboardFiltersService.parse_filters_from_request(request)
+    charts = DashboardFiltersService.get_chart_data(filters)
+    return JsonResponse(charts)
+
+
+@login_required
+@require_GET
+def api_dashboard_filtered_lists(request):
+    """
+    Endpoint para obtener listas de registros filtrados.
+    Parámetros:
+        - limit: Cantidad máxima de registros (default: 5, max: 50)
+    """
+    filters = DashboardFiltersService.parse_filters_from_request(request)
+    
+    try:
+        limit = int(request.GET.get('limit', 5))
+        limit = min(max(limit, 1), 50)
+    except ValueError:
+        limit = 5
+    
+    lists = DashboardFiltersService.get_lists_data(filters, limit)
+    return JsonResponse(lists)
+
+
+@login_required
+@require_GET
+def api_dashboard_export(request):
+    """
+    Endpoint para exportar datos del dashboard en JSON.
+    Útil para integraciones y reportes personalizados.
+    """
+    filters = DashboardFiltersService.parse_filters_from_request(request)
+    export_data = DashboardFiltersService.export_filtered_data(filters)
+    
+    response = JsonResponse(export_data)
+    response['Content-Disposition'] = 'attachment; filename="dashboard_export.json"'
+    return response
+
+
 # Vista personalizada de Login para manejar redirecciones inteligentes
 class CustomLoginView(DjangoLoginView):
     template_name = 'registration/login.html'
@@ -727,3 +904,543 @@ def custom_logout(request):
     """
     logout(request)
     return redirect('login')
+
+
+# =============================================================================
+# VISTAS PARA NUEVOS MÓDULOS (Código en inglés, interfaz en español)
+# =============================================================================
+
+# --- RENOVACIONES DE PÓLIZAS ---
+
+@login_required
+def renewals_list(request):
+    """Lista de renovaciones de pólizas con filtros"""
+    renewals = PolicyRenewal.objects.select_related(
+        'original_policy', 'original_policy__compania_aseguradora',
+        'new_policy', 'quote', 'created_by'
+    ).order_by('-due_date')
+    
+    # Filtros
+    query = request.GET.get('q', '').strip()
+    if query:
+        renewals = renewals.filter(
+            Q(renewal_number__icontains=query) |
+            Q(original_policy__numero_poliza__icontains=query)
+        )
+    
+    status = request.GET.get('status')
+    if status:
+        renewals = renewals.filter(status=status)
+    
+    decision = request.GET.get('decision')
+    if decision:
+        renewals = renewals.filter(decision=decision)
+    
+    # Paginación
+    paginator = Paginator(renewals, 20)
+    page = request.GET.get('page', 1)
+    renewals_page = paginator.get_page(page)
+    
+    # Estadísticas
+    stats = {
+        'total': PolicyRenewal.objects.count(),
+        'pending': PolicyRenewal.objects.filter(status='pending').count(),
+        'in_progress': PolicyRenewal.objects.filter(status='in_progress').count(),
+        'overdue': PolicyRenewal.objects.filter(
+            status__in=['pending', 'in_progress'],
+            due_date__lt=timezone.now().date()
+        ).count(),
+    }
+    
+    context = {
+        'renewals': renewals_page,
+        'stats': stats,
+        'status_choices': PolicyRenewal.STATUS_CHOICES,
+        'decision_choices': PolicyRenewal.DECISION_CHOICES,
+        'query': query,
+        'selected_status': status,
+        'selected_decision': decision,
+    }
+    
+    return render(request, 'app/renewals/list.html', context)
+
+
+# --- COTIZACIONES ---
+
+@login_required
+def quotes_list(request):
+    """Lista de cotizaciones con filtros"""
+    quotes = Quote.objects.select_related(
+        'policy_type', 'resulting_policy', 'requested_by'
+    ).prefetch_related('options').order_by('-request_date')
+    
+    # Filtros
+    query = request.GET.get('q', '').strip()
+    if query:
+        quotes = quotes.filter(
+            Q(quote_number__icontains=query) |
+            Q(title__icontains=query)
+        )
+    
+    status = request.GET.get('status')
+    if status:
+        quotes = quotes.filter(status=status)
+    
+    priority = request.GET.get('priority')
+    if priority:
+        quotes = quotes.filter(priority=priority)
+    
+    # Paginación
+    paginator = Paginator(quotes, 20)
+    page = request.GET.get('page', 1)
+    quotes_page = paginator.get_page(page)
+    
+    # Estadísticas
+    stats = {
+        'total': Quote.objects.count(),
+        'draft': Quote.objects.filter(status='draft').count(),
+        'sent': Quote.objects.filter(status='sent').count(),
+        'accepted': Quote.objects.filter(status='accepted').count(),
+        'converted': Quote.objects.filter(status='converted').count(),
+    }
+    
+    context = {
+        'quotes': quotes_page,
+        'stats': stats,
+        'status_choices': Quote.STATUS_CHOICES,
+        'priority_choices': Quote.PRIORITY_CHOICES,
+        'query': query,
+        'selected_status': status,
+        'selected_priority': priority,
+    }
+    
+    return render(request, 'app/quotes/list.html', context)
+
+
+# --- BIENES ASEGURADOS ---
+
+@login_required
+def assets_list(request):
+    """Lista de bienes asegurados con filtros"""
+    assets = InsuredAsset.objects.select_related(
+        'policy', 'policy__compania_aseguradora', 'custodian', 'created_by'
+    ).order_by('name')
+    
+    # Filtros
+    query = request.GET.get('q', '').strip()
+    if query:
+        assets = assets.filter(
+            Q(asset_code__icontains=query) |
+            Q(name__icontains=query) |
+            Q(serial_number__icontains=query) |
+            Q(brand__icontains=query)
+        )
+    
+    status = request.GET.get('status')
+    if status:
+        assets = assets.filter(status=status)
+    
+    category = request.GET.get('category')
+    if category:
+        assets = assets.filter(category=category)
+    
+    covered = request.GET.get('covered')
+    if covered == 'yes':
+        assets = assets.filter(policy__isnull=False)
+    elif covered == 'no':
+        assets = assets.filter(policy__isnull=True)
+    
+    # Paginación
+    paginator = Paginator(assets, 20)
+    page = request.GET.get('page', 1)
+    assets_page = paginator.get_page(page)
+    
+    # Estadísticas
+    from django.db.models import Sum
+    stats = {
+        'total': InsuredAsset.objects.count(),
+        'active': InsuredAsset.objects.filter(status='active').count(),
+        'covered': InsuredAsset.objects.filter(policy__isnull=False).count(),
+        'not_covered': InsuredAsset.objects.filter(policy__isnull=True).count(),
+        'total_value': InsuredAsset.objects.aggregate(total=Sum('current_value'))['total'] or 0,
+    }
+    
+    # Categorías únicas para el filtro
+    categories = InsuredAsset.objects.values_list('category', flat=True).distinct().order_by('category')
+    
+    context = {
+        'assets': assets_page,
+        'stats': stats,
+        'status_choices': InsuredAsset.STATUS_CHOICES,
+        'categories': categories,
+        'query': query,
+        'selected_status': status,
+        'selected_category': category,
+        'selected_covered': covered,
+    }
+    
+    return render(request, 'app/assets/list.html', context)
+
+
+# --- CALENDARIO ---
+
+@login_required
+def calendar_view(request):
+    """Vista del calendario interactivo"""
+    from django.utils import timezone
+    from datetime import timedelta
+    import json
+    
+    today = timezone.now().date()
+    
+    # Obtener eventos del mes actual y próximo
+    start_range = today.replace(day=1) - timedelta(days=7)
+    end_range = (today.replace(day=28) + timedelta(days=35)).replace(day=1) + timedelta(days=6)
+    
+    events = CalendarEvent.objects.filter(
+        start_date__gte=start_range,
+        start_date__lte=end_range
+    ).select_related('policy', 'invoice', 'renewal', 'claim', 'quote')
+    
+    # Convertir eventos a formato para FullCalendar
+    events_json = []
+    for event in events:
+        event_data = {
+            'id': event.id,
+            'title': event.title,
+            'start': event.start_date.isoformat(),
+            'end': event.end_date.isoformat() if event.end_date else event.start_date.isoformat(),
+            'color': event.color,
+            'allDay': event.all_day,
+            'extendedProps': {
+                'type': event.event_type,
+                'priority': event.priority,
+                'description': event.description,
+                'isCompleted': event.is_completed,
+            }
+        }
+        if not event.all_day and event.start_time:
+            event_data['start'] = f"{event.start_date.isoformat()}T{event.start_time.isoformat()}"
+            if event.end_time:
+                end_date = event.end_date or event.start_date
+                event_data['end'] = f"{end_date.isoformat()}T{event.end_time.isoformat()}"
+        events_json.append(event_data)
+    
+    # Próximos eventos (lista)
+    upcoming_events = CalendarEvent.objects.filter(
+        start_date__gte=today,
+        is_completed=False
+    ).order_by('start_date', 'start_time')[:10]
+    
+    # Eventos vencidos sin completar
+    overdue_events = CalendarEvent.objects.filter(
+        start_date__lt=today,
+        is_completed=False
+    ).order_by('-start_date')[:5]
+    
+    context = {
+        'events_json': json.dumps(events_json),
+        'upcoming_events': upcoming_events,
+        'overdue_events': overdue_events,
+        'event_type_choices': CalendarEvent.EVENT_TYPE_CHOICES,
+        'priority_choices': CalendarEvent.PRIORITY_CHOICES,
+        'today': today,
+    }
+    
+    return render(request, 'app/calendar/view.html', context)
+
+
+@login_required
+@require_GET
+def api_calendar_events(request):
+    """API para obtener eventos del calendario (para FullCalendar)"""
+    import json
+    from datetime import datetime
+    
+    start = request.GET.get('start')
+    end = request.GET.get('end')
+    
+    events = CalendarEvent.objects.all()
+    
+    if start:
+        start_date = datetime.fromisoformat(start.replace('Z', '+00:00')).date()
+        events = events.filter(start_date__gte=start_date)
+    
+    if end:
+        end_date = datetime.fromisoformat(end.replace('Z', '+00:00')).date()
+        events = events.filter(start_date__lte=end_date)
+    
+    events_data = []
+    for event in events:
+        event_data = {
+            'id': event.id,
+            'title': event.title,
+            'start': event.start_date.isoformat(),
+            'end': (event.end_date or event.start_date).isoformat(),
+            'color': event.color,
+            'allDay': event.all_day,
+            'url': f'/admin/app/calendarevent/{event.id}/change/',
+            'extendedProps': {
+                'type': event.get_event_type_display(),
+                'priority': event.get_priority_display(),
+                'isCompleted': event.is_completed,
+            }
+        }
+        events_data.append(event_data)
+    
+    return JsonResponse(events_data, safe=False)
+
+
+@login_required
+def generate_calendar_events(request):
+    """Genera eventos automáticos del calendario basados en datos existentes"""
+    from django.contrib import messages
+    from django.utils import timezone
+    
+    today = timezone.now().date()
+    created_count = 0
+    
+    # Generar eventos para pólizas por vencer
+    expiring_policies = Poliza.objects.filter(
+        estado__in=['vigente', 'por_vencer'],
+        fecha_fin__gte=today,
+        fecha_fin__lte=today + timezone.timedelta(days=60)
+    )
+    
+    for policy in expiring_policies:
+        event, created = CalendarEvent.objects.get_or_create(
+            policy=policy,
+            event_type='policy_expiry',
+            defaults={
+                'title': f'Vencimiento: {policy.numero_poliza}',
+                'description': f'Vence la póliza {policy.numero_poliza} de {policy.compania_aseguradora}',
+                'start_date': policy.fecha_fin,
+                'priority': 'high' if (policy.fecha_fin - today).days <= 15 else 'medium',
+                'is_auto_generated': True,
+            }
+        )
+        if created:
+            created_count += 1
+    
+    # Generar eventos para facturas por vencer
+    pending_invoices = Factura.objects.filter(
+        estado__in=['pendiente', 'parcial'],
+        fecha_vencimiento__gte=today,
+        fecha_vencimiento__lte=today + timezone.timedelta(days=30)
+    )
+    
+    for invoice in pending_invoices:
+        event, created = CalendarEvent.objects.get_or_create(
+            invoice=invoice,
+            event_type='invoice_due',
+            defaults={
+                'title': f'Vence factura: {invoice.numero_factura}',
+                'description': f'Vence la factura {invoice.numero_factura} - ${invoice.saldo_pendiente:,.2f}',
+                'start_date': invoice.fecha_vencimiento,
+                'priority': 'high' if (invoice.fecha_vencimiento - today).days <= 7 else 'medium',
+                'is_auto_generated': True,
+            }
+        )
+        if created:
+            created_count += 1
+    
+    # Generar eventos para renovaciones pendientes
+    pending_renewals = PolicyRenewal.objects.filter(
+        status__in=['pending', 'in_progress'],
+        due_date__gte=today,
+        due_date__lte=today + timezone.timedelta(days=45)
+    )
+    
+    for renewal in pending_renewals:
+        event, created = CalendarEvent.objects.get_or_create(
+            renewal=renewal,
+            event_type='renewal_due',
+            defaults={
+                'title': f'Renovación: {renewal.original_policy.numero_poliza}',
+                'description': f'Fecha límite para renovar la póliza {renewal.original_policy.numero_poliza}',
+                'start_date': renewal.due_date,
+                'priority': 'critical' if (renewal.due_date - today).days <= 7 else 'high',
+                'is_auto_generated': True,
+            }
+        )
+        if created:
+            created_count += 1
+    
+    messages.success(request, f'Se generaron {created_count} eventos automáticos.')
+    return redirect('calendar_view')
+
+
+# --- APROBACIONES DE PAGO ---
+
+@login_required
+def payment_approvals_list(request):
+    """Lista de aprobaciones de pago pendientes"""
+    approvals = PaymentApproval.objects.select_related(
+        'payment', 'payment__factura', 'payment__factura__poliza', 'approver'
+    ).order_by('-requested_at')
+    
+    # Filtros
+    status = request.GET.get('status')
+    if status:
+        approvals = approvals.filter(status=status)
+    else:
+        # Por defecto mostrar solo pendientes
+        approvals = approvals.filter(status='pending')
+    
+    level = request.GET.get('level')
+    if level:
+        approvals = approvals.filter(required_level=level)
+    
+    # Paginación
+    paginator = Paginator(approvals, 20)
+    page = request.GET.get('page', 1)
+    approvals_page = paginator.get_page(page)
+    
+    # Estadísticas
+    stats = {
+        'pending': PaymentApproval.objects.filter(status='pending').count(),
+        'approved_today': PaymentApproval.objects.filter(
+            status='approved',
+            decided_at__date=timezone.now().date()
+        ).count(),
+        'rejected_today': PaymentApproval.objects.filter(
+            status='rejected',
+            decided_at__date=timezone.now().date()
+        ).count(),
+    }
+    
+    context = {
+        'approvals': approvals_page,
+        'stats': stats,
+        'status_choices': PaymentApproval.STATUS_CHOICES,
+        'level_choices': PaymentApproval.APPROVAL_LEVEL_CHOICES,
+        'selected_status': status or 'pending',
+        'selected_level': level,
+    }
+    
+    return render(request, 'app/approvals/list.html', context)
+
+
+@login_required
+@require_POST
+def approve_payment(request, pk):
+    """Aprobar un pago"""
+    from django.contrib import messages
+    
+    approval = get_object_or_404(PaymentApproval, pk=pk)
+    
+    if approval.status != 'pending':
+        messages.error(request, 'Esta aprobación ya fue procesada.')
+        return redirect('payment_approvals_list')
+    
+    notes = request.POST.get('notes', '')
+    approval.approve(request.user, notes)
+    
+    messages.success(request, f'Pago aprobado correctamente.')
+    return redirect('payment_approvals_list')
+
+
+@login_required
+@require_POST
+def reject_payment(request, pk):
+    """Rechazar un pago"""
+    from django.contrib import messages
+    
+    approval = get_object_or_404(PaymentApproval, pk=pk)
+    
+    if approval.status != 'pending':
+        messages.error(request, 'Esta aprobación ya fue procesada.')
+        return redirect('payment_approvals_list')
+    
+    notes = request.POST.get('notes', '')
+    if not notes:
+        messages.error(request, 'Debe proporcionar un motivo de rechazo.')
+        return redirect('payment_approvals_list')
+    
+    approval.reject(request.user, notes)
+    
+    messages.warning(request, f'Pago rechazado.')
+    return redirect('payment_approvals_list')
+
+
+# =============================================================================
+# DASHBOARD ESPECIALIZADO DE ANALYTICS
+# =============================================================================
+
+@login_required
+def analytics_dashboard(request):
+    """
+    Dashboard especializado con analytics avanzados:
+    - Ratio de siniestralidad por tipo de póliza
+    - Tendencia indemnizaciones vs primas
+    - Heatmap de ubicaciones
+    - Predicción de renovación de primas
+    """
+    import json
+    
+    # Obtener datos del servicio
+    summary = AdvancedAnalyticsService.get_dashboard_summary()
+    loss_ratio_data = AdvancedAnalyticsService.get_loss_ratio_by_policy_type()
+    trend_data = AdvancedAnalyticsService.get_claims_vs_premiums_trend(months=12)
+    location_data = AdvancedAnalyticsService.get_claims_by_location()
+    predictions = AdvancedAnalyticsService.predict_renewal_premium()
+    claims_distribution = AdvancedAnalyticsService.get_claims_by_type_distribution()
+    insurer_performance = AdvancedAnalyticsService.get_insurer_performance()
+    
+    context = {
+        'summary': summary,
+        'loss_ratio_data': loss_ratio_data,
+        'trend_data_json': json.dumps(trend_data),
+        'location_data': location_data,
+        'location_data_json': json.dumps(location_data),
+        'predictions': predictions,
+        'claims_distribution_json': json.dumps(claims_distribution),
+        'insurer_performance': insurer_performance,
+    }
+    
+    return render(request, 'app/analytics/dashboard.html', context)
+
+
+@login_required
+@require_GET
+def api_analytics_loss_ratio(request):
+    """API para obtener ratio de siniestralidad"""
+    data = AdvancedAnalyticsService.get_loss_ratio_by_policy_type()
+    return JsonResponse({'data': data})
+
+
+@login_required
+@require_GET
+def api_analytics_trend(request):
+    """API para obtener tendencia de primas vs indemnizaciones"""
+    months = int(request.GET.get('months', 12))
+    data = AdvancedAnalyticsService.get_claims_vs_premiums_trend(months=months)
+    return JsonResponse(data)
+
+
+@login_required
+@require_GET
+def api_analytics_locations(request):
+    """API para obtener datos de ubicaciones"""
+    data = AdvancedAnalyticsService.get_claims_by_location()
+    return JsonResponse({'data': data})
+
+
+@login_required
+@require_GET
+def api_analytics_predictions(request):
+    """API para obtener predicciones de renovación"""
+    policy_id = request.GET.get('policy_id')
+    if policy_id:
+        data = AdvancedAnalyticsService.predict_renewal_premium(int(policy_id))
+    else:
+        data = AdvancedAnalyticsService.predict_renewal_premium()
+    return JsonResponse(data)
+
+
+@login_required
+@require_GET
+def api_analytics_insurers(request):
+    """API para obtener rendimiento de aseguradoras"""
+    data = AdvancedAnalyticsService.get_insurer_performance()
+    return JsonResponse({'data': data})

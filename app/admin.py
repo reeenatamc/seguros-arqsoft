@@ -10,7 +10,8 @@ from import_export.admin import ImportExportMixin
 from import_export.widgets import ForeignKeyWidget, DateWidget, DateTimeWidget
 from .models import (
     ConfiguracionSistema, CompaniaAseguradora, CorredorSeguros, TipoPoliza, 
-    ResponsableCustodio, Poliza, Factura, Pago, TipoSiniestro, Siniestro, Documento, Alerta
+    ResponsableCustodio, Poliza, Factura, Pago, TipoSiniestro, Siniestro, Documento, Alerta,
+    InsuredAsset, Quote, QuoteOption, PolicyRenewal, PaymentApproval, CalendarEvent
 )
 
 
@@ -916,3 +917,846 @@ class AlertaAdmin(ModelAdmin):
         for alerta in queryset:
             alerta.marcar_como_leida()
         self.message_user(request, f"{queryset.count()} alertas marcadas como leídas.")
+
+
+# =============================================================================
+# NUEVOS MODELOS (Código en inglés, interfaz en español)
+# =============================================================================
+
+class QuoteOptionInline(TabularInline):
+    """Inline para las opciones de cotización"""
+    model = QuoteOption
+    extra = 1
+    fields = ['insurer', 'broker', 'premium_amount', 'deductible', 'is_recommended', 'valid_until']
+    readonly_fields = []
+
+
+@admin.register(InsuredAsset)
+class InsuredAssetAdmin(HistoryModelAdmin):
+    """Administración de bienes asegurados"""
+    icon_name = "inventory_2"
+    list_display = [
+        'asset_code',
+        'name',
+        'category',
+        'custodian',
+        'policy_display',
+        'current_value_formatted',
+        'status_badge',
+        'condition_badge',
+        'is_covered_display'
+    ]
+    list_filter = [
+        'status',
+        'condition',
+        'category',
+        'policy',
+        'custodian__departamento'
+    ]
+    search_fields = [
+        'asset_code',
+        'name',
+        'serial_number',
+        'brand',
+        'model',
+        'custodian__nombre',
+        'location'
+    ]
+    readonly_fields = [
+        'created_at',
+        'updated_at',
+        'created_by',
+        'depreciation_percentage_display',
+        'is_covered_display',
+        'claims_count_display'
+    ]
+    date_hierarchy = 'purchase_date'
+    autocomplete_fields = ['policy', 'custodian']
+    
+    fieldsets = (
+        ('Identificación', {
+            'fields': ('asset_code', 'name', 'description', 'category')
+        }),
+        ('Detalles Técnicos', {
+            'fields': ('brand', 'model', 'serial_number', 'image', 'qr_code')
+        }),
+        ('Ubicación', {
+            'fields': ('location', 'building', 'floor', 'department')
+        }),
+        ('Responsable', {
+            'fields': ('custodian',)
+        }),
+        ('Cobertura de Seguro', {
+            'fields': ('policy', 'insured_value', 'is_covered_display')
+        }),
+        ('Valores Financieros', {
+            'fields': ('purchase_value', 'current_value', 'purchase_date', 'warranty_expiry', 'depreciation_percentage_display')
+        }),
+        ('Estado', {
+            'fields': ('status', 'condition', 'claims_count_display')
+        }),
+        ('Notas', {
+            'fields': ('notes',),
+            'classes': ('collapse',)
+        }),
+        ('Auditoría', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    @display(description='Póliza')
+    def policy_display(self, obj):
+        if obj.policy:
+            return obj.policy.numero_poliza
+        return format_html('<span style="color: #ef4444;">Sin póliza</span>')
+
+    @display(description='Valor Actual', ordering='current_value')
+    def current_value_formatted(self, obj):
+        return f"${obj.current_value:,.2f}"
+
+    @display(description='Estado', ordering='status')
+    def status_badge(self, obj):
+        colors = {
+            'active': '#10b981',
+            'inactive': '#6b7280',
+            'disposed': '#ef4444',
+            'transferred': '#3b82f6'
+        }
+        color = colors.get(obj.status, '#6b7280')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px;">{}</span>',
+            color, obj.get_status_display()
+        )
+
+    @display(description='Condición', ordering='condition')
+    def condition_badge(self, obj):
+        colors = {
+            'excellent': '#10b981',
+            'good': '#3b82f6',
+            'fair': '#f59e0b',
+            'poor': '#ef4444'
+        }
+        color = colors.get(obj.condition, '#6b7280')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, obj.get_condition_display()
+        )
+
+    @display(description='% Depreciación')
+    def depreciation_percentage_display(self, obj):
+        pct = obj.depreciation_percentage
+        color = '#10b981' if pct < 30 else '#f59e0b' if pct < 60 else '#ef4444'
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{:.1f}%</span>',
+            color, pct
+        )
+
+    @display(description='¿Cubierto?', boolean=True)
+    def is_covered_display(self, obj):
+        return obj.is_covered
+
+    @display(description='Siniestros')
+    def claims_count_display(self, obj):
+        count = obj.claims_count
+        if count > 0:
+            return format_html(
+                '<span style="background-color: #ef4444; color: white; padding: 2px 8px; border-radius: 10px;">{}</span>',
+                count
+            )
+        return '0'
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(Quote)
+class QuoteAdmin(HistoryModelAdmin):
+    """Administración de cotizaciones"""
+    icon_name = "request_quote"
+    list_display = [
+        'quote_number',
+        'title',
+        'policy_type',
+        'sum_insured_formatted',
+        'request_date',
+        'valid_until',
+        'status_badge',
+        'priority_badge',
+        'options_count',
+        'best_option_display'
+    ]
+    list_filter = [
+        'status',
+        'priority',
+        'policy_type',
+        'request_date'
+    ]
+    search_fields = [
+        'quote_number',
+        'title',
+        'coverage_details'
+    ]
+    readonly_fields = [
+        'created_at',
+        'updated_at',
+        'requested_by',
+        'is_expired_display',
+        'days_until_expiry_display',
+        'resulting_policy'
+    ]
+    date_hierarchy = 'request_date'
+    inlines = [QuoteOptionInline]
+    
+    fieldsets = (
+        ('Identificación', {
+            'fields': ('quote_number', 'title', 'policy_type', 'priority')
+        }),
+        ('Valores y Coberturas', {
+            'fields': ('sum_insured', 'coverage_details')
+        }),
+        ('Fechas', {
+            'fields': (
+                'request_date', 'valid_until', 'desired_start_date', 'desired_end_date',
+                'is_expired_display', 'days_until_expiry_display'
+            )
+        }),
+        ('Estado', {
+            'fields': ('status', 'resulting_policy', 'rejection_reason')
+        }),
+        ('Notas', {
+            'fields': ('notes',),
+            'classes': ('collapse',)
+        }),
+        ('Auditoría', {
+            'fields': ('requested_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    @display(description='Suma Asegurada', ordering='sum_insured')
+    def sum_insured_formatted(self, obj):
+        return f"${obj.sum_insured:,.2f}"
+
+    @display(description='Estado', ordering='status')
+    def status_badge(self, obj):
+        colors = {
+            'draft': '#6b7280',
+            'sent': '#3b82f6',
+            'under_review': '#8b5cf6',
+            'accepted': '#10b981',
+            'rejected': '#ef4444',
+            'expired': '#f59e0b',
+            'converted': '#059669'
+        }
+        color = colors.get(obj.status, '#6b7280')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px;">{}</span>',
+            color, obj.get_status_display()
+        )
+
+    @display(description='Prioridad', ordering='priority')
+    def priority_badge(self, obj):
+        colors = {
+            'low': '#6b7280',
+            'medium': '#3b82f6',
+            'high': '#f59e0b',
+            'urgent': '#ef4444'
+        }
+        color = colors.get(obj.priority, '#6b7280')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, obj.get_priority_display()
+        )
+
+    @display(description='Opciones')
+    def options_count(self, obj):
+        count = obj.options.count()
+        return format_html(
+            '<span style="background-color: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px;">{}</span>',
+            count
+        )
+
+    @display(description='Mejor Opción')
+    def best_option_display(self, obj):
+        best = obj.best_option
+        if best:
+            return format_html(
+                '<span style="color: #10b981; font-weight: bold;">${:,.2f} - {}</span>',
+                best.premium_amount, best.insurer.nombre[:15]
+            )
+        return '-'
+
+    @display(description='¿Expirada?', boolean=True)
+    def is_expired_display(self, obj):
+        return obj.is_expired
+
+    @display(description='Días para Expirar')
+    def days_until_expiry_display(self, obj):
+        days = obj.days_until_expiry
+        color = '#10b981' if days > 7 else '#f59e0b' if days > 0 else '#ef4444'
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{} días</span>',
+            color, days
+        )
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.requested_by = request.user
+        super().save_model(request, obj, form, change)
+
+    actions = ['convert_to_draft', 'mark_as_sent']
+
+    @admin.action(description='Marcar como borrador')
+    def convert_to_draft(self, request, queryset):
+        queryset.update(status='draft')
+        self.message_user(request, f"{queryset.count()} cotizaciones marcadas como borrador.")
+
+    @admin.action(description='Marcar como enviadas')
+    def mark_as_sent(self, request, queryset):
+        queryset.update(status='sent')
+        self.message_user(request, f"{queryset.count()} cotizaciones marcadas como enviadas.")
+
+
+@admin.register(QuoteOption)
+class QuoteOptionAdmin(ModelAdmin):
+    """Administración de opciones de cotización"""
+    icon_name = "compare_arrows"
+    list_display = [
+        'quote',
+        'insurer',
+        'broker',
+        'premium_amount_formatted',
+        'deductible_formatted',
+        'is_recommended_badge',
+        'rating_display',
+        'valid_until'
+    ]
+    list_filter = [
+        'is_recommended',
+        'insurer',
+        'broker',
+        'received_date'
+    ]
+    search_fields = [
+        'quote__quote_number',
+        'insurer__nombre',
+        'broker__nombre'
+    ]
+    readonly_fields = ['created_at', 'updated_at', 'premium_per_thousand_display']
+    
+    fieldsets = (
+        ('Cotización', {
+            'fields': ('quote',)
+        }),
+        ('Proveedor', {
+            'fields': ('insurer', 'broker')
+        }),
+        ('Valores', {
+            'fields': ('premium_amount', 'deductible', 'premium_per_thousand_display')
+        }),
+        ('Cobertura', {
+            'fields': ('coverage_offered', 'exclusions', 'conditions')
+        }),
+        ('Documento', {
+            'fields': ('proposal_document',)
+        }),
+        ('Evaluación', {
+            'fields': ('is_recommended', 'rating', 'evaluation_notes')
+        }),
+        ('Fechas', {
+            'fields': ('received_date', 'valid_until')
+        }),
+        ('Auditoría', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    @display(description='Prima Anual', ordering='premium_amount')
+    def premium_amount_formatted(self, obj):
+        return f"${obj.premium_amount:,.2f}"
+
+    @display(description='Deducible', ordering='deductible')
+    def deductible_formatted(self, obj):
+        return f"${obj.deductible:,.2f}"
+
+    @display(description='Recomendada', boolean=True)
+    def is_recommended_badge(self, obj):
+        return obj.is_recommended
+
+    @display(description='Calificación')
+    def rating_display(self, obj):
+        if obj.rating:
+            stars = '⭐' * obj.rating
+            return format_html('<span>{}</span>', stars)
+        return '-'
+
+    @display(description='Prima por Mil')
+    def premium_per_thousand_display(self, obj):
+        return f"${obj.premium_per_thousand:,.2f}"
+
+
+@admin.register(PolicyRenewal)
+class PolicyRenewalAdmin(HistoryModelAdmin):
+    """Administración de renovaciones de pólizas"""
+    icon_name = "autorenew"
+    list_display = [
+        'renewal_number',
+        'original_policy',
+        'due_date',
+        'days_until_due_display',
+        'status_badge',
+        'decision_badge',
+        'premium_comparison',
+        'new_policy_display'
+    ]
+    list_filter = [
+        'status',
+        'decision',
+        'due_date',
+        'original_policy__compania_aseguradora'
+    ]
+    search_fields = [
+        'renewal_number',
+        'original_policy__numero_poliza',
+        'new_policy__numero_poliza'
+    ]
+    readonly_fields = [
+        'created_at',
+        'updated_at',
+        'created_by',
+        'approved_by',
+        'days_until_due_display',
+        'is_overdue_display',
+        'premium_change_percentage_display'
+    ]
+    date_hierarchy = 'due_date'
+    autocomplete_fields = ['original_policy', 'new_policy', 'quote']
+    
+    fieldsets = (
+        ('Póliza a Renovar', {
+            'fields': ('original_policy', 'renewal_number')
+        }),
+        ('Fechas del Proceso', {
+            'fields': (
+                'notification_date', 'due_date', 'decision_date', 'completion_date',
+                'days_until_due_display', 'is_overdue_display'
+            )
+        }),
+        ('Comparación de Primas', {
+            'fields': (
+                'original_premium', 'proposed_premium', 'final_premium',
+                'premium_change_percentage_display'
+            )
+        }),
+        ('Cambios en Cobertura', {
+            'fields': ('coverage_changes',)
+        }),
+        ('Estado y Decisión', {
+            'fields': ('status', 'decision', 'decision_reason')
+        }),
+        ('Cotización Asociada', {
+            'fields': ('quote',),
+            'classes': ('collapse',)
+        }),
+        ('Resultado', {
+            'fields': ('new_policy',)
+        }),
+        ('Notificaciones', {
+            'fields': ('reminder_sent', 'reminder_date'),
+            'classes': ('collapse',)
+        }),
+        ('Notas', {
+            'fields': ('notes',),
+            'classes': ('collapse',)
+        }),
+        ('Auditoría', {
+            'fields': ('created_by', 'approved_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    @display(description='Días para Vencer')
+    def days_until_due_display(self, obj):
+        days = obj.days_until_due
+        if days < 0:
+            color = '#ef4444'
+            text = f'{abs(days)} días vencido'
+        elif days <= 7:
+            color = '#ef4444'
+            text = f'{days} días'
+        elif days <= 15:
+            color = '#f59e0b'
+            text = f'{days} días'
+        else:
+            color = '#10b981'
+            text = f'{days} días'
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, text
+        )
+
+    @display(description='¿Vencida?', boolean=True)
+    def is_overdue_display(self, obj):
+        return obj.is_overdue
+
+    @display(description='Estado', ordering='status')
+    def status_badge(self, obj):
+        colors = {
+            'pending': '#f59e0b',
+            'in_progress': '#3b82f6',
+            'quoted': '#8b5cf6',
+            'approved': '#10b981',
+            'rejected': '#ef4444',
+            'completed': '#059669',
+            'cancelled': '#6b7280'
+        }
+        color = colors.get(obj.status, '#6b7280')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px;">{}</span>',
+            color, obj.get_status_display()
+        )
+
+    @display(description='Decisión', ordering='decision')
+    def decision_badge(self, obj):
+        colors = {
+            'renew_same': '#10b981',
+            'renew_different': '#3b82f6',
+            'not_renew': '#ef4444',
+            'pending': '#f59e0b'
+        }
+        color = colors.get(obj.decision, '#6b7280')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, obj.get_decision_display()
+        )
+
+    @display(description='Cambio Prima')
+    def premium_comparison(self, obj):
+        pct = obj.premium_change_percentage
+        if pct > 0:
+            color = '#ef4444'
+            arrow = '↑'
+        elif pct < 0:
+            color = '#10b981'
+            arrow = '↓'
+        else:
+            color = '#6b7280'
+            arrow = '='
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{} {:.1f}%</span>',
+            color, arrow, abs(pct)
+        )
+
+    @display(description='% Cambio Prima')
+    def premium_change_percentage_display(self, obj):
+        pct = obj.premium_change_percentage
+        if pct > 0:
+            color = '#ef4444'
+            text = f'+{pct:.1f}% (incremento)'
+        elif pct < 0:
+            color = '#10b981'
+            text = f'{pct:.1f}% (reducción)'
+        else:
+            color = '#6b7280'
+            text = 'Sin cambio'
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, text
+        )
+
+    @display(description='Nueva Póliza')
+    def new_policy_display(self, obj):
+        if obj.new_policy:
+            return format_html(
+                '<a href="{}" style="color: #10b981;">{}</a>',
+                reverse('admin:app_poliza_change', args=[obj.new_policy.pk]),
+                obj.new_policy.numero_poliza
+            )
+        return '-'
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+    actions = ['mark_as_in_progress', 'send_reminders']
+
+    @admin.action(description='Marcar como en proceso')
+    def mark_as_in_progress(self, request, queryset):
+        queryset.update(status='in_progress')
+        self.message_user(request, f"{queryset.count()} renovaciones marcadas como en proceso.")
+
+    @admin.action(description='Enviar recordatorios')
+    def send_reminders(self, request, queryset):
+        count = 0
+        for renewal in queryset.filter(reminder_sent=False):
+            renewal.reminder_sent = True
+            renewal.reminder_date = timezone.now().date()
+            renewal.save()
+            count += 1
+        self.message_user(request, f"Recordatorios enviados para {count} renovaciones.")
+
+
+@admin.register(PaymentApproval)
+class PaymentApprovalAdmin(ModelAdmin):
+    """Administración de aprobaciones de pago"""
+    icon_name = "approval"
+    list_display = [
+        'payment',
+        'approval_level_badge',
+        'required_level_badge',
+        'status_badge',
+        'approver',
+        'requested_at',
+        'decided_at',
+        'digital_signature_display'
+    ]
+    list_filter = [
+        'status',
+        'approval_level',
+        'required_level',
+        'requested_at'
+    ]
+    search_fields = [
+        'payment__factura__numero_factura',
+        'payment__referencia',
+        'approver__username'
+    ]
+    readonly_fields = [
+        'requested_at',
+        'decided_at'
+    ]
+    
+    fieldsets = (
+        ('Pago', {
+            'fields': ('payment',)
+        }),
+        ('Niveles de Aprobación', {
+            'fields': ('approval_level', 'required_level')
+        }),
+        ('Estado', {
+            'fields': ('status', 'digital_signature')
+        }),
+        ('Aprobador', {
+            'fields': ('approver', 'decided_at')
+        }),
+        ('Notas', {
+            'fields': ('request_notes', 'decision_notes')
+        }),
+        ('Auditoría', {
+            'fields': ('requested_at',),
+            'classes': ('collapse',)
+        }),
+    )
+
+    @display(description='Nivel Aprobación', ordering='approval_level')
+    def approval_level_badge(self, obj):
+        colors = {
+            'level_1': '#6b7280',
+            'level_2': '#3b82f6',
+            'level_3': '#f59e0b',
+            'level_4': '#ef4444'
+        }
+        color = colors.get(obj.approval_level, '#6b7280')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px;">{}</span>',
+            color, obj.get_approval_level_display()
+        )
+
+    @display(description='Nivel Requerido', ordering='required_level')
+    def required_level_badge(self, obj):
+        colors = {
+            'level_1': '#6b7280',
+            'level_2': '#3b82f6',
+            'level_3': '#f59e0b',
+            'level_4': '#ef4444'
+        }
+        color = colors.get(obj.required_level, '#6b7280')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, obj.get_required_level_display()
+        )
+
+    @display(description='Estado', ordering='status')
+    def status_badge(self, obj):
+        colors = {
+            'pending': '#f59e0b',
+            'approved': '#10b981',
+            'rejected': '#ef4444',
+            'cancelled': '#6b7280'
+        }
+        color = colors.get(obj.status, '#6b7280')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px;">{}</span>',
+            color, obj.get_status_display()
+        )
+
+    @display(description='Firma', boolean=True)
+    def digital_signature_display(self, obj):
+        return obj.digital_signature
+
+    actions = ['approve_payments', 'reject_payments']
+
+    @admin.action(description='Aprobar pagos seleccionados')
+    def approve_payments(self, request, queryset):
+        for approval in queryset.filter(status='pending'):
+            approval.approve(request.user, 'Aprobado masivamente desde admin')
+        self.message_user(request, f"Pagos aprobados correctamente.")
+
+    @admin.action(description='Rechazar pagos seleccionados')
+    def reject_payments(self, request, queryset):
+        for approval in queryset.filter(status='pending'):
+            approval.reject(request.user, 'Rechazado masivamente desde admin')
+        self.message_user(request, f"Pagos rechazados correctamente.")
+
+
+@admin.register(CalendarEvent)
+class CalendarEventAdmin(ModelAdmin):
+    """Administración de eventos del calendario"""
+    icon_name = "event"
+    list_display = [
+        'title',
+        'event_type_badge',
+        'start_date',
+        'priority_badge',
+        'related_entity',
+        'days_until_display',
+        'is_completed_display',
+        'reminder_sent_display'
+    ]
+    list_filter = [
+        'event_type',
+        'priority',
+        'is_completed',
+        'is_auto_generated',
+        'start_date'
+    ]
+    search_fields = [
+        'title',
+        'description',
+        'policy__numero_poliza',
+        'invoice__numero_factura'
+    ]
+    readonly_fields = [
+        'created_at',
+        'updated_at',
+        'created_by',
+        'is_auto_generated',
+        'color_preview'
+    ]
+    date_hierarchy = 'start_date'
+    
+    fieldsets = (
+        ('Información del Evento', {
+            'fields': ('title', 'description', 'event_type', 'priority', 'color_preview')
+        }),
+        ('Fechas y Horarios', {
+            'fields': ('start_date', 'end_date', 'all_day', 'start_time', 'end_time')
+        }),
+        ('Relaciones', {
+            'fields': ('policy', 'invoice', 'renewal', 'claim', 'quote'),
+            'classes': ('collapse',)
+        }),
+        ('Notificaciones', {
+            'fields': ('reminder_days', 'reminder_sent')
+        }),
+        ('Estado', {
+            'fields': ('is_completed', 'is_auto_generated')
+        }),
+        ('Auditoría', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    @display(description='Tipo', ordering='event_type')
+    def event_type_badge(self, obj):
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px;">{}</span>',
+            obj.color, obj.get_event_type_display()
+        )
+
+    @display(description='Prioridad', ordering='priority')
+    def priority_badge(self, obj):
+        colors = {
+            'low': '#6b7280',
+            'medium': '#3b82f6',
+            'high': '#f59e0b',
+            'critical': '#ef4444'
+        }
+        color = colors.get(obj.priority, '#6b7280')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, obj.get_priority_display()
+        )
+
+    @display(description='Entidad Relacionada')
+    def related_entity(self, obj):
+        if obj.policy:
+            return f"Póliza: {obj.policy.numero_poliza}"
+        elif obj.invoice:
+            return f"Factura: {obj.invoice.numero_factura}"
+        elif obj.renewal:
+            return f"Renovación: {obj.renewal.renewal_number}"
+        elif obj.claim:
+            return f"Siniestro: {obj.claim.numero_siniestro}"
+        elif obj.quote:
+            return f"Cotización: {obj.quote.quote_number}"
+        return '-'
+
+    @display(description='Días')
+    def days_until_display(self, obj):
+        days = obj.days_until
+        if days < 0:
+            color = '#ef4444'
+            text = f'{abs(days)} días pasado'
+        elif days == 0:
+            color = '#ef4444'
+            text = 'Hoy'
+        elif days <= 7:
+            color = '#f59e0b'
+            text = f'{days} días'
+        else:
+            color = '#10b981'
+            text = f'{days} días'
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, text
+        )
+
+    @display(description='Completado', boolean=True)
+    def is_completed_display(self, obj):
+        return obj.is_completed
+
+    @display(description='Recordatorio', boolean=True)
+    def reminder_sent_display(self, obj):
+        return obj.reminder_sent
+
+    @display(description='Color')
+    def color_preview(self, obj):
+        return format_html(
+            '<span style="display: inline-block; width: 24px; height: 24px; '
+            'background-color: {}; border-radius: 4px; border: 1px solid #e5e7eb;"></span>',
+            obj.color
+        )
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+    actions = ['mark_as_completed', 'send_reminders']
+
+    @admin.action(description='Marcar como completados')
+    def mark_as_completed(self, request, queryset):
+        queryset.update(is_completed=True)
+        self.message_user(request, f"{queryset.count()} eventos marcados como completados.")
+
+    @admin.action(description='Enviar recordatorios')
+    def send_reminders(self, request, queryset):
+        count = queryset.filter(reminder_sent=False).update(reminder_sent=True)
+        self.message_user(request, f"Recordatorios enviados para {count} eventos.")

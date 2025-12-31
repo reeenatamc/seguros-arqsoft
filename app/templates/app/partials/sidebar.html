@@ -95,6 +95,62 @@
             </div>
         </div>
         
+        <!-- Sección: Gestión Avanzada -->
+        <div class="pt-3">
+            <button onclick="toggleSubmenu('avanzada')" 
+                    class="section-header w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold text-gold-400 uppercase tracking-[0.15em] hover:text-gold-300 transition-colors rounded-lg hover:bg-white/5">
+                <i class="fas fa-rocket text-[9px] sidebar-collapsed-icon hidden"></i>
+                <span class="sidebar-text flex-1 text-left">Avanzado</span>
+                <i id="avanzada-arrow" class="fas fa-chevron-down text-[8px] transition-transform duration-300 sidebar-text"></i>
+            </button>
+            <div id="avanzada-menu" class="submenu space-y-1 mt-1 overflow-hidden transition-all duration-300" style="max-height: 400px;">
+                <a href="{% url 'renewals_list' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'renovaciones' in request.path %}active{% endif %}"
+                   title="Renovaciones">
+                    <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Renovaciones</span>
+                </a>
+                
+                <a href="{% url 'quotes_list' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'cotizaciones' in request.path %}active{% endif %}"
+                   title="Cotizaciones">
+                    <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Cotizaciones</span>
+                </a>
+                
+                <a href="{% url 'assets_list' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'bienes' in request.path %}active{% endif %}"
+                   title="Bienes Asegurados">
+                    <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Bienes</span>
+                </a>
+                
+                <a href="{% url 'calendar_view' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'calendario' in request.path %}active{% endif %}"
+                   title="Calendario">
+                    <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Calendario</span>
+                </a>
+                
+                <a href="{% url 'payment_approvals_list' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'aprobaciones' in request.path %}active{% endif %}"
+                   title="Aprobaciones">
+                    <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Aprobaciones</span>
+                </a>
+            </div>
+        </div>
+        
         <!-- Sección: Análisis -->
         <div class="pt-3">
             <button onclick="toggleSubmenu('analisis')" 
@@ -111,6 +167,15 @@
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Reportes</span>
+                </a>
+                
+                <a href="{% url 'analytics_dashboard' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'analytics' in request.path %}active{% endif %}"
+                   title="Analytics">
+                    <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Analytics</span>
                 </a>
                 
                 <a href="{% url 'alertas_lista' %}" 

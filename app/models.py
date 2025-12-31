@@ -1041,3 +1041,664 @@ class Alerta(models.Model):
         self.estado = 'leida'
         self.fecha_lectura = timezone.now()
         self.save()
+
+
+# ==================== NUEVOS MODELOS (Código en inglés, interfaz en español) ====================
+
+class InsuredAsset(models.Model):
+    """
+    Modelo para el inventario de bienes asegurados.
+    Permite un control preciso de qué bienes están cubiertos por cada póliza.
+    """
+    STATUS_CHOICES = [
+        ('active', 'Activo'),
+        ('inactive', 'Inactivo'),
+        ('disposed', 'Dado de Baja'),
+        ('transferred', 'Transferido'),
+    ]
+    
+    CONDITION_CHOICES = [
+        ('excellent', 'Excelente'),
+        ('good', 'Bueno'),
+        ('fair', 'Regular'),
+        ('poor', 'Malo'),
+    ]
+
+    # Relaciones
+    policy = models.ForeignKey(Poliza, on_delete=models.PROTECT, 
+                               related_name='insured_assets', verbose_name="Póliza",
+                               null=True, blank=True)
+    custodian = models.ForeignKey(ResponsableCustodio, on_delete=models.PROTECT,
+                                  related_name='assigned_assets', verbose_name="Custodio/Responsable")
+    
+    # Identificación del bien
+    asset_code = models.CharField(max_length=100, unique=True, verbose_name="Código de Activo")
+    name = models.CharField(max_length=200, verbose_name="Nombre del Bien")
+    description = models.TextField(blank=True, verbose_name="Descripción")
+    category = models.CharField(max_length=100, verbose_name="Categoría")
+    
+    # Detalles técnicos
+    brand = models.CharField(max_length=100, blank=True, verbose_name="Marca")
+    model = models.CharField(max_length=100, blank=True, verbose_name="Modelo")
+    serial_number = models.CharField(max_length=100, blank=True, verbose_name="Número de Serie")
+    
+    # Ubicación
+    location = models.CharField(max_length=300, verbose_name="Ubicación")
+    building = models.CharField(max_length=100, blank=True, verbose_name="Edificio")
+    floor = models.CharField(max_length=50, blank=True, verbose_name="Piso")
+    department = models.CharField(max_length=100, blank=True, verbose_name="Departamento")
+    
+    # Valores financieros
+    purchase_value = models.DecimalField(max_digits=15, decimal_places=2,
+                                         validators=[MinValueValidator(Decimal('0.01'))],
+                                         verbose_name="Valor de Compra")
+    current_value = models.DecimalField(max_digits=15, decimal_places=2,
+                                        validators=[MinValueValidator(Decimal('0.00'))],
+                                        verbose_name="Valor Actual")
+    insured_value = models.DecimalField(max_digits=15, decimal_places=2,
+                                        validators=[MinValueValidator(Decimal('0.00'))],
+                                        null=True, blank=True, verbose_name="Valor Asegurado")
+    
+    # Fechas
+    purchase_date = models.DateField(verbose_name="Fecha de Compra")
+    warranty_expiry = models.DateField(null=True, blank=True, verbose_name="Vencimiento de Garantía")
+    
+    # Estado
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active',
+                              verbose_name="Estado")
+    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, default='good',
+                                 verbose_name="Condición")
+    
+    # Imagen/QR
+    image = models.ImageField(upload_to='assets/images/%Y/%m/', null=True, blank=True,
+                              verbose_name="Imagen")
+    qr_code = models.CharField(max_length=200, blank=True, verbose_name="Código QR")
+    
+    # Auditoría
+    notes = models.TextField(blank=True, verbose_name="Notas")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
+                                   related_name='assets_created', verbose_name="Creado por")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
+    
+    # Historial
+    history = HistoricalRecords(
+        verbose_name="Historial",
+        verbose_name_plural="Historial de cambios"
+    )
+
+    class Meta:
+        verbose_name = "Bien Asegurado"
+        verbose_name_plural = "Bienes Asegurados"
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['asset_code']),
+            models.Index(fields=['status']),
+            models.Index(fields=['category']),
+        ]
+
+    def __str__(self):
+        return f"{self.asset_code} - {self.name}"
+    
+    @property
+    def depreciation_percentage(self):
+        """Calcula el porcentaje de depreciación"""
+        if self.purchase_value and self.purchase_value > 0:
+            return ((self.purchase_value - self.current_value) / self.purchase_value) * 100
+        return 0
+    
+    @property
+    def is_covered(self):
+        """Verifica si el bien está cubierto por una póliza vigente"""
+        if self.policy:
+            return self.policy.esta_vigente
+        return False
+    
+    @property
+    def claims_count(self):
+        """Retorna la cantidad de siniestros asociados a este bien"""
+        return Siniestro.objects.filter(
+            bien_codigo_activo=self.asset_code
+        ).count()
+
+
+class Quote(models.Model):
+    """
+    Modelo para cotizaciones/proformas de seguros.
+    Permite comparar opciones de diferentes aseguradoras antes de contratar.
+    """
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('sent', 'Enviada'),
+        ('under_review', 'En Revisión'),
+        ('accepted', 'Aceptada'),
+        ('rejected', 'Rechazada'),
+        ('expired', 'Expirada'),
+        ('converted', 'Convertida a Póliza'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Baja'),
+        ('medium', 'Media'),
+        ('high', 'Alta'),
+        ('urgent', 'Urgente'),
+    ]
+
+    # Identificación
+    quote_number = models.CharField(max_length=100, unique=True, verbose_name="Número de Cotización")
+    title = models.CharField(max_length=200, verbose_name="Título/Descripción")
+    
+    # Tipo de seguro solicitado
+    policy_type = models.ForeignKey(TipoPoliza, on_delete=models.PROTECT,
+                                    related_name='quotes', verbose_name="Tipo de Póliza")
+    
+    # Valores
+    sum_insured = models.DecimalField(max_digits=15, decimal_places=2,
+                                      validators=[MinValueValidator(Decimal('0.01'))],
+                                      verbose_name="Suma a Asegurar")
+    coverage_details = models.TextField(verbose_name="Detalle de Coberturas Solicitadas")
+    
+    # Fechas
+    request_date = models.DateField(verbose_name="Fecha de Solicitud")
+    valid_until = models.DateField(verbose_name="Válida Hasta")
+    desired_start_date = models.DateField(verbose_name="Fecha de Inicio Deseada")
+    desired_end_date = models.DateField(verbose_name="Fecha de Fin Deseada")
+    
+    # Estado y prioridad
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft',
+                              verbose_name="Estado")
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium',
+                                verbose_name="Prioridad")
+    
+    # Relación con póliza resultante (si se convierte)
+    resulting_policy = models.ForeignKey(Poliza, on_delete=models.SET_NULL, null=True, blank=True,
+                                         related_name='source_quote', verbose_name="Póliza Resultante")
+    
+    # Notas y observaciones
+    notes = models.TextField(blank=True, verbose_name="Notas Internas")
+    rejection_reason = models.TextField(blank=True, verbose_name="Motivo de Rechazo")
+    
+    # Auditoría
+    requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
+                                     related_name='quotes_requested', verbose_name="Solicitado por")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
+    
+    # Historial
+    history = HistoricalRecords(
+        verbose_name="Historial",
+        verbose_name_plural="Historial de cambios"
+    )
+
+    class Meta:
+        verbose_name = "Cotización"
+        verbose_name_plural = "Cotizaciones"
+        ordering = ['-request_date']
+        indexes = [
+            models.Index(fields=['quote_number']),
+            models.Index(fields=['status']),
+        ]
+
+    def __str__(self):
+        return f"{self.quote_number} - {self.title}"
+    
+    @property
+    def is_expired(self):
+        """Verifica si la cotización ha expirado"""
+        return timezone.now().date() > self.valid_until
+    
+    @property
+    def days_until_expiry(self):
+        """Días restantes hasta que expire"""
+        if self.valid_until:
+            delta = (self.valid_until - timezone.now().date()).days
+            return max(0, delta)
+        return 0
+    
+    @property
+    def best_option(self):
+        """Retorna la opción con mejor precio"""
+        return self.options.filter(is_recommended=True).first() or \
+               self.options.order_by('premium_amount').first()
+    
+    def convert_to_policy(self, option, user):
+        """Convierte la cotización en una póliza usando la opción seleccionada"""
+        if self.status == 'converted':
+            raise ValidationError('Esta cotización ya fue convertida a póliza.')
+        
+        policy = Poliza.objects.create(
+            numero_poliza=f"POL-{self.quote_number}",
+            compania_aseguradora=option.insurer,
+            corredor_seguros=option.broker,
+            tipo_poliza=self.policy_type,
+            suma_asegurada=self.sum_insured,
+            coberturas=option.coverage_offered or self.coverage_details,
+            fecha_inicio=self.desired_start_date,
+            fecha_fin=self.desired_end_date,
+            creado_por=user,
+            observaciones=f"Generada desde cotización {self.quote_number}"
+        )
+        
+        self.resulting_policy = policy
+        self.status = 'converted'
+        self.save()
+        
+        return policy
+
+
+class QuoteOption(models.Model):
+    """
+    Opciones de cotización de diferentes aseguradoras.
+    Permite comparar múltiples ofertas para una misma solicitud.
+    """
+    # Relación con la cotización
+    quote = models.ForeignKey(Quote, on_delete=models.CASCADE,
+                              related_name='options', verbose_name="Cotización")
+    
+    # Aseguradora y corredor
+    insurer = models.ForeignKey(CompaniaAseguradora, on_delete=models.PROTECT,
+                                related_name='quote_options', verbose_name="Aseguradora")
+    broker = models.ForeignKey(CorredorSeguros, on_delete=models.PROTECT,
+                               related_name='quote_options', verbose_name="Corredor")
+    
+    # Valores ofertados
+    premium_amount = models.DecimalField(max_digits=15, decimal_places=2,
+                                         validators=[MinValueValidator(Decimal('0.01'))],
+                                         verbose_name="Prima Anual")
+    deductible = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'),
+                                     verbose_name="Deducible")
+    
+    # Cobertura ofrecida
+    coverage_offered = models.TextField(verbose_name="Coberturas Ofrecidas")
+    exclusions = models.TextField(blank=True, verbose_name="Exclusiones")
+    conditions = models.TextField(blank=True, verbose_name="Condiciones Especiales")
+    
+    # Documento de propuesta
+    proposal_document = models.FileField(upload_to='quotes/proposals/%Y/%m/', null=True, blank=True,
+                                         verbose_name="Documento de Propuesta")
+    
+    # Evaluación
+    is_recommended = models.BooleanField(default=False, verbose_name="Recomendada")
+    rating = models.PositiveSmallIntegerField(null=True, blank=True,
+                                              validators=[MinValueValidator(1), MaxValueValidator(5)],
+                                              verbose_name="Calificación (1-5)")
+    evaluation_notes = models.TextField(blank=True, verbose_name="Notas de Evaluación")
+    
+    # Fechas
+    received_date = models.DateField(verbose_name="Fecha de Recepción")
+    valid_until = models.DateField(verbose_name="Válida Hasta")
+    
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
+
+    class Meta:
+        verbose_name = "Opción de Cotización"
+        verbose_name_plural = "Opciones de Cotización"
+        ordering = ['premium_amount']
+
+    def __str__(self):
+        return f"{self.insurer.nombre} - ${self.premium_amount}"
+    
+    @property
+    def premium_per_thousand(self):
+        """Calcula la prima por cada mil de suma asegurada"""
+        if self.quote.sum_insured and self.quote.sum_insured > 0:
+            return (self.premium_amount / self.quote.sum_insured) * 1000
+        return 0
+
+
+class PolicyRenewal(models.Model):
+    """
+    Modelo para gestionar renovaciones de pólizas.
+    Permite hacer seguimiento del proceso de renovación y comparar condiciones.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('in_progress', 'En Proceso'),
+        ('quoted', 'Cotizada'),
+        ('approved', 'Aprobada'),
+        ('rejected', 'Rechazada'),
+        ('completed', 'Completada'),
+        ('cancelled', 'Cancelada'),
+    ]
+    
+    DECISION_CHOICES = [
+        ('renew_same', 'Renovar con Misma Aseguradora'),
+        ('renew_different', 'Renovar con Otra Aseguradora'),
+        ('not_renew', 'No Renovar'),
+        ('pending', 'Pendiente de Decisión'),
+    ]
+
+    # Póliza a renovar
+    original_policy = models.ForeignKey(Poliza, on_delete=models.PROTECT,
+                                        related_name='renewals', verbose_name="Póliza Original")
+    
+    # Nueva póliza (si se completa la renovación)
+    new_policy = models.ForeignKey(Poliza, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='renewal_source', verbose_name="Nueva Póliza")
+    
+    # Cotización asociada (opcional)
+    quote = models.ForeignKey(Quote, on_delete=models.SET_NULL, null=True, blank=True,
+                              related_name='renewals', verbose_name="Cotización Asociada")
+    
+    # Identificación
+    renewal_number = models.CharField(max_length=100, unique=True, verbose_name="Número de Renovación")
+    
+    # Fechas del proceso
+    notification_date = models.DateField(verbose_name="Fecha de Notificación")
+    due_date = models.DateField(verbose_name="Fecha Límite de Renovación")
+    decision_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Decisión")
+    completion_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Completado")
+    
+    # Valores comparativos
+    original_premium = models.DecimalField(max_digits=15, decimal_places=2,
+                                           verbose_name="Prima Original")
+    proposed_premium = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True,
+                                           verbose_name="Prima Propuesta")
+    final_premium = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True,
+                                        verbose_name="Prima Final")
+    
+    # Cambios en cobertura
+    coverage_changes = models.TextField(blank=True, verbose_name="Cambios en Coberturas")
+    
+    # Estado y decisión
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending',
+                              verbose_name="Estado")
+    decision = models.CharField(max_length=20, choices=DECISION_CHOICES, default='pending',
+                                verbose_name="Decisión")
+    decision_reason = models.TextField(blank=True, verbose_name="Justificación de Decisión")
+    
+    # Notificaciones
+    reminder_sent = models.BooleanField(default=False, verbose_name="Recordatorio Enviado")
+    reminder_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Recordatorio")
+    
+    # Notas
+    notes = models.TextField(blank=True, verbose_name="Notas")
+    
+    # Auditoría
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
+                                   related_name='renewals_created', verbose_name="Creado por")
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='renewals_approved', verbose_name="Aprobado por")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
+    
+    # Historial
+    history = HistoricalRecords(
+        verbose_name="Historial",
+        verbose_name_plural="Historial de cambios"
+    )
+
+    class Meta:
+        verbose_name = "Renovación de Póliza"
+        verbose_name_plural = "Renovaciones de Pólizas"
+        ordering = ['-due_date']
+        indexes = [
+            models.Index(fields=['renewal_number']),
+            models.Index(fields=['status']),
+            models.Index(fields=['due_date']),
+        ]
+
+    def __str__(self):
+        return f"{self.renewal_number} - {self.original_policy.numero_poliza}"
+    
+    @property
+    def days_until_due(self):
+        """Días restantes hasta la fecha límite"""
+        if self.due_date:
+            delta = (self.due_date - timezone.now().date()).days
+            return delta
+        return 0
+    
+    @property
+    def is_overdue(self):
+        """Verifica si la renovación está vencida"""
+        return self.days_until_due < 0 and self.status not in ['completed', 'cancelled']
+    
+    @property
+    def premium_change_percentage(self):
+        """Calcula el porcentaje de cambio en la prima"""
+        if self.original_premium and self.proposed_premium and self.original_premium > 0:
+            return ((self.proposed_premium - self.original_premium) / self.original_premium) * 100
+        return 0
+    
+    def complete_renewal(self, new_policy, user):
+        """Completa el proceso de renovación"""
+        self.new_policy = new_policy
+        self.status = 'completed'
+        self.completion_date = timezone.now().date()
+        self.final_premium = new_policy.facturas.aggregate(
+            total=models.Sum('subtotal')
+        )['total'] or self.proposed_premium
+        self.save()
+
+
+class PaymentApproval(models.Model):
+    """
+    Modelo para el workflow de aprobación de pagos.
+    Implementa niveles de aprobación según el monto.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('approved', 'Aprobado'),
+        ('rejected', 'Rechazado'),
+        ('cancelled', 'Cancelado'),
+    ]
+    
+    APPROVAL_LEVEL_CHOICES = [
+        ('level_1', 'Nivel 1 - Operativo'),
+        ('level_2', 'Nivel 2 - Supervisión'),
+        ('level_3', 'Nivel 3 - Gerencial'),
+        ('level_4', 'Nivel 4 - Directivo'),
+    ]
+
+    # Relación con el pago
+    payment = models.ForeignKey(Pago, on_delete=models.CASCADE,
+                                related_name='approvals', verbose_name="Pago")
+    
+    # Nivel de aprobación
+    approval_level = models.CharField(max_length=20, choices=APPROVAL_LEVEL_CHOICES,
+                                      verbose_name="Nivel de Aprobación")
+    required_level = models.CharField(max_length=20, choices=APPROVAL_LEVEL_CHOICES,
+                                      verbose_name="Nivel Requerido")
+    
+    # Estado
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending',
+                              verbose_name="Estado")
+    
+    # Aprobador
+    approver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='payment_approvals', verbose_name="Aprobador")
+    
+    # Fechas
+    requested_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Solicitud")
+    decided_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Decisión")
+    
+    # Comentarios
+    request_notes = models.TextField(blank=True, verbose_name="Notas de Solicitud")
+    decision_notes = models.TextField(blank=True, verbose_name="Notas de Decisión")
+    
+    # Firma digital (checkbox de confirmación)
+    digital_signature = models.BooleanField(default=False, 
+                                            verbose_name="Firma Digital/Confirmación")
+
+    class Meta:
+        verbose_name = "Aprobación de Pago"
+        verbose_name_plural = "Aprobaciones de Pagos"
+        ordering = ['-requested_at']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['approval_level']),
+        ]
+
+    def __str__(self):
+        return f"Aprobación {self.payment} - {self.get_status_display()}"
+    
+    @classmethod
+    def get_required_level(cls, amount):
+        """Determina el nivel de aprobación requerido según el monto"""
+        # Umbrales configurables (podrían venir de ConfiguracionSistema)
+        if amount >= Decimal('50000'):
+            return 'level_4'
+        elif amount >= Decimal('20000'):
+            return 'level_3'
+        elif amount >= Decimal('5000'):
+            return 'level_2'
+        return 'level_1'
+    
+    def approve(self, user, notes=''):
+        """Aprueba el pago"""
+        self.status = 'approved'
+        self.approver = user
+        self.decided_at = timezone.now()
+        self.decision_notes = notes
+        self.digital_signature = True
+        self.save()
+        
+        # Aprobar el pago si tiene todas las aprobaciones necesarias
+        if self._all_approvals_complete():
+            self.payment.estado = 'aprobado'
+            self.payment.save()
+    
+    def reject(self, user, notes=''):
+        """Rechaza el pago"""
+        self.status = 'rejected'
+        self.approver = user
+        self.decided_at = timezone.now()
+        self.decision_notes = notes
+        self.save()
+        
+        # Rechazar el pago
+        self.payment.estado = 'rechazado'
+        self.payment.save()
+    
+    def _all_approvals_complete(self):
+        """Verifica si todas las aprobaciones requeridas están completas"""
+        pending = PaymentApproval.objects.filter(
+            payment=self.payment,
+            status='pending'
+        ).exists()
+        return not pending
+
+
+class CalendarEvent(models.Model):
+    """
+    Modelo para eventos del calendario.
+    Centraliza vencimientos y fechas importantes.
+    """
+    EVENT_TYPE_CHOICES = [
+        ('policy_expiry', 'Vencimiento de Póliza'),
+        ('invoice_due', 'Vencimiento de Factura'),
+        ('renewal_due', 'Fecha Límite de Renovación'),
+        ('claim_deadline', 'Plazo de Siniestro'),
+        ('quote_expiry', 'Expiración de Cotización'),
+        ('meeting', 'Reunión'),
+        ('reminder', 'Recordatorio'),
+        ('other', 'Otro'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Baja'),
+        ('medium', 'Media'),
+        ('high', 'Alta'),
+        ('critical', 'Crítica'),
+    ]
+
+    # Información del evento
+    title = models.CharField(max_length=200, verbose_name="Título")
+    description = models.TextField(blank=True, verbose_name="Descripción")
+    event_type = models.CharField(max_length=30, choices=EVENT_TYPE_CHOICES,
+                                  verbose_name="Tipo de Evento")
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium',
+                                verbose_name="Prioridad")
+    
+    # Fechas
+    start_date = models.DateField(verbose_name="Fecha de Inicio")
+    end_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Fin")
+    all_day = models.BooleanField(default=True, verbose_name="Todo el Día")
+    start_time = models.TimeField(null=True, blank=True, verbose_name="Hora de Inicio")
+    end_time = models.TimeField(null=True, blank=True, verbose_name="Hora de Fin")
+    
+    # Relaciones opcionales (para eventos automáticos)
+    policy = models.ForeignKey(Poliza, on_delete=models.CASCADE, null=True, blank=True,
+                               related_name='calendar_events', verbose_name="Póliza")
+    invoice = models.ForeignKey(Factura, on_delete=models.CASCADE, null=True, blank=True,
+                                related_name='calendar_events', verbose_name="Factura")
+    renewal = models.ForeignKey(PolicyRenewal, on_delete=models.CASCADE, null=True, blank=True,
+                                related_name='calendar_events', verbose_name="Renovación")
+    claim = models.ForeignKey(Siniestro, on_delete=models.CASCADE, null=True, blank=True,
+                              related_name='calendar_events', verbose_name="Siniestro")
+    quote = models.ForeignKey(Quote, on_delete=models.CASCADE, null=True, blank=True,
+                              related_name='calendar_events', verbose_name="Cotización")
+    
+    # Notificaciones
+    reminder_days = models.PositiveIntegerField(default=7,
+                                                verbose_name="Días de Anticipación para Recordatorio")
+    reminder_sent = models.BooleanField(default=False, verbose_name="Recordatorio Enviado")
+    
+    # Estado
+    is_completed = models.BooleanField(default=False, verbose_name="Completado")
+    is_auto_generated = models.BooleanField(default=False, verbose_name="Generado Automáticamente")
+    
+    # Auditoría
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
+                                   related_name='calendar_events_created', verbose_name="Creado por")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
+
+    class Meta:
+        verbose_name = "Evento de Calendario"
+        verbose_name_plural = "Eventos de Calendario"
+        ordering = ['start_date', 'start_time']
+        indexes = [
+            models.Index(fields=['start_date']),
+            models.Index(fields=['event_type']),
+            models.Index(fields=['priority']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} - {self.start_date}"
+    
+    @property
+    def days_until(self):
+        """Días hasta el evento"""
+        delta = (self.start_date - timezone.now().date()).days
+        return delta
+    
+    @property
+    def is_overdue(self):
+        """Verifica si el evento ya pasó"""
+        return self.start_date < timezone.now().date() and not self.is_completed
+    
+    @property
+    def color(self):
+        """Retorna el color del evento según tipo y prioridad"""
+        colors = {
+            'policy_expiry': '#ef4444',      # Rojo
+            'invoice_due': '#f59e0b',        # Naranja
+            'renewal_due': '#8b5cf6',        # Púrpura
+            'claim_deadline': '#ec4899',     # Rosa
+            'quote_expiry': '#06b6d4',       # Cyan
+            'meeting': '#3b82f6',            # Azul
+            'reminder': '#10b981',           # Verde
+            'other': '#6b7280',              # Gris
+        }
+        return colors.get(self.event_type, '#6b7280')
+    
+    @classmethod
+    def generate_policy_events(cls, policy):
+        """Genera eventos de calendario para una póliza"""
+        # Evento de vencimiento
+        event, created = cls.objects.get_or_create(
+            policy=policy,
+            event_type='policy_expiry',
+            defaults={
+                'title': f'Vencimiento: {policy.numero_poliza}',
+                'description': f'Vence la póliza {policy.numero_poliza} de {policy.compania_aseguradora}',
+                'start_date': policy.fecha_fin,
+                'priority': 'high',
+                'is_auto_generated': True,
+            }
+        )
+        return event
