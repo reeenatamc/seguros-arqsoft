@@ -436,17 +436,17 @@ class Command(BaseCommand):
                     estado_base = random.choice(['pendiente', 'pagada', 'parcialmente_pagada'])
                 
                 subtotal = Decimal(random.randint(500, 8000))
-                
-                factura = Factura.objects.create(
-                    poliza=poliza,
+            
+            factura = Factura.objects.create(
+                poliza=poliza,
                     numero_factura=f'FAC-{anio_factura}-{contador}',
                     fecha_emision=fecha_emision,
                     fecha_vencimiento=fecha_vencimiento,
                     subtotal=subtotal,
-                    iva=Decimal('0.00'),  # Se calcula automáticamente
-                    creado_por=usuario
-                )
-                facturas.append(factura)
+                iva=Decimal('0.00'),  # Se calcula automáticamente
+                creado_por=usuario
+            )
+            facturas.append(factura)
                 contador += 1
         
         # Facturas adicionales distribuidas mensualmente (modo extendido)
@@ -514,17 +514,17 @@ class Command(BaseCommand):
                 if fecha_pago > hoy:
                     fecha_pago = hoy - timedelta(days=random.randint(1, 5))
                 
-                pago = Pago.objects.create(
-                    factura=factura,
+            pago = Pago.objects.create(
+                factura=factura,
                     fecha_pago=fecha_pago,
-                    monto=factura.monto_total,
-                    forma_pago=random.choice(formas_pago),
-                    referencia=f'REF-{random.randint(10000, 99999)}',
+                monto=factura.monto_total,
+                forma_pago=random.choice(formas_pago),
+                referencia=f'REF-{random.randint(10000, 99999)}',
                     estado=random.choice(estados_pago),
-                    registrado_por=usuario
-                )
-                pagos.append(pago)
-                
+                registrado_por=usuario
+            )
+            pagos.append(pago)
+        
             elif tipo_pago == 'parcial':
                 # Pago parcial (30-70% del monto)
                 porcentaje = Decimal(str(random.uniform(0.3, 0.7)))
@@ -534,12 +534,12 @@ class Command(BaseCommand):
                 if fecha_pago > hoy:
                     fecha_pago = hoy - timedelta(days=random.randint(1, 5))
                 
-                pago = Pago.objects.create(
-                    factura=factura,
+            pago = Pago.objects.create(
+                factura=factura,
                     fecha_pago=fecha_pago,
-                    monto=monto_parcial,
-                    forma_pago=random.choice(formas_pago),
-                    referencia=f'REF-{random.randint(10000, 99999)}',
+                monto=monto_parcial,
+                forma_pago=random.choice(formas_pago),
+                referencia=f'REF-{random.randint(10000, 99999)}',
                     estado='aprobado',
                     registrado_por=usuario
                 )
@@ -563,10 +563,10 @@ class Command(BaseCommand):
                         monto=monto_por_pago,
                         forma_pago=random.choice(formas_pago),
                         referencia=f'REF-{random.randint(10000, 99999)}-{k+1}',
-                        estado='aprobado',
-                        registrado_por=usuario
-                    )
-                    pagos.append(pago)
+                estado='aprobado',
+                registrado_por=usuario
+            )
+            pagos.append(pago)
         
         return pagos
 
@@ -749,15 +749,15 @@ class Command(BaseCommand):
         else:
             # Modo básico: siniestros simples
             for i, poliza in enumerate(polizas[:12]):
-                bien = random.choice(bienes)
-                dias_atras = random.randint(5, 90)
-                fecha_siniestro = hoy - timedelta(days=dias_atras)
-                
-                if fecha_siniestro.date() < poliza.fecha_inicio:
-                    fecha_siniestro = timezone.make_aware(
-                        timezone.datetime.combine(poliza.fecha_inicio + timedelta(days=5), timezone.datetime.min.time())
-                    )
-                
+            bien = random.choice(bienes)
+            dias_atras = random.randint(5, 90)
+            fecha_siniestro = hoy - timedelta(days=dias_atras)
+            
+            if fecha_siniestro.date() < poliza.fecha_inicio:
+                fecha_siniestro = timezone.make_aware(
+                    timezone.datetime.combine(poliza.fecha_inicio + timedelta(days=5), timezone.datetime.min.time())
+                )
+            
                 estado = random.choices(estados, weights=pesos_estados)[0]
                 tipo_siniestro = random.choice(tipos_siniestro)
                 
@@ -776,39 +776,39 @@ class Command(BaseCommand):
         anio = fecha_siniestro.year if hasattr(fecha_siniestro, 'year') else fecha_siniestro.date().year
         
         responsable = random.choice(responsables) if responsables else None
-        
-        siniestro = Siniestro.objects.create(
-            poliza=poliza,
+            
+            siniestro = Siniestro.objects.create(
+                poliza=poliza,
             numero_siniestro=f'SIN-{anio}-{contador}',
             tipo_siniestro=tipo_siniestro,
-            fecha_siniestro=fecha_siniestro,
-            bien_nombre=bien[0],
-            bien_marca=bien[1],
-            bien_modelo=bien[2],
+                fecha_siniestro=fecha_siniestro,
+                bien_nombre=bien[0],
+                bien_marca=bien[1],
+                bien_modelo=bien[2],
             bien_serie=f'{bien[3]}{random.randint(100000, 999999)}',
-            responsable_custodio=responsable,
+                responsable_custodio=responsable,
             ubicacion=random.choice(ubicaciones),
             causa=random.choice(causas),
             descripcion_detallada=f'Reporte detallado del siniestro. {random.choice(causas)} Se procedió según protocolo establecido.',
             monto_estimado=Decimal(random.randint(500, 80000)),
-            estado=estado,
-            creado_por=usuario
-        )
-        
-        # Agregar datos adicionales según el estado
+                estado=estado,
+                creado_por=usuario
+            )
+            
+            # Agregar datos adicionales según el estado
         fecha_base = fecha_siniestro.date() if hasattr(fecha_siniestro, 'date') else fecha_siniestro
         
         if estado in ['enviado_aseguradora', 'en_evaluacion', 'aprobado', 'rechazado', 'cerrado']:
             siniestro.fecha_envio_aseguradora = fecha_base + timedelta(days=random.randint(3, 10))
-            siniestro.save()
-        
-        if estado in ['aprobado', 'cerrado']:
+                siniestro.save()
+            
+            if estado in ['aprobado', 'cerrado']:
             siniestro.fecha_respuesta_aseguradora = siniestro.fecha_envio_aseguradora + timedelta(days=random.randint(5, 20))
             siniestro.monto_indemnizado = siniestro.monto_estimado * Decimal(str(random.uniform(0.6, 1.0)))
             siniestro.save()
         
         if estado == 'rechazado':
-            siniestro.fecha_respuesta_aseguradora = siniestro.fecha_envio_aseguradora + timedelta(days=random.randint(5, 15))
+                siniestro.fecha_respuesta_aseguradora = siniestro.fecha_envio_aseguradora + timedelta(days=random.randint(5, 15))
             siniestro.monto_indemnizado = Decimal('0')
             siniestro.observaciones = 'Siniestro rechazado por la aseguradora. ' + random.choice([
                 'No cumple con las condiciones de la póliza.',
@@ -816,12 +816,12 @@ class Command(BaseCommand):
                 'Evento no cubierto según exclusiones.',
                 'Plazo de reporte excedido.',
             ])
-            siniestro.save()
-        
-        if estado == 'cerrado':
+                siniestro.save()
+            
+            if estado == 'cerrado':
             siniestro.fecha_liquidacion = siniestro.fecha_respuesta_aseguradora + timedelta(days=random.randint(3, 15))
-            siniestro.save()
-        
+                siniestro.save()
+            
         return siniestro
 
     def crear_alertas(self, polizas, facturas, siniestros):

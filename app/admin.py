@@ -1183,9 +1183,10 @@ class QuoteAdmin(HistoryModelAdmin):
     def best_option_display(self, obj):
         best = obj.best_option
         if best:
+            premium_formatted = f"${best.premium_amount:,.2f}"
             return format_html(
-                '<span style="color: #10b981; font-weight: bold;">${:,.2f} - {}</span>',
-                best.premium_amount, best.insurer.nombre[:15]
+                '<span style="color: #10b981; font-weight: bold;">{} - {}</span>',
+                premium_formatted, best.insurer.nombre[:15]
             )
         return '-'
 
@@ -1446,9 +1447,10 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
         else:
             color = '#6b7280'
             arrow = '='
+        pct_formatted = f'{abs(pct):.1f}%'
         return format_html(
-            '<span style="color: {}; font-weight: bold;">{} {:.1f}%</span>',
-            color, arrow, abs(pct)
+            '<span style="color: {}; font-weight: bold;">{} {}</span>',
+            color, arrow, pct_formatted
         )
 
     @display(description='% Cambio Prima')
