@@ -1,7 +1,9 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from django.db.models import Sum, Count, Avg, Q
+from django.db.models import Sum, Count, Avg, Q, F
+from django.db.models.functions import Coalesce
 from datetime import datetime, timedelta
+from decimal import Decimal
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
@@ -40,7 +42,7 @@ class Command(BaseCommand):
         
         self.stdout.write(self.style.SUCCESS(f'Generando reporte de siniestros (período: {periodo})...'))
         
-        # Obtener siniestros según período
+        # Obtener siniestros según período (optimizado con select_related)
         siniestros = self.obtener_siniestros_periodo(periodo)
         
         # Crear directorio de reportes si no existe
@@ -62,8 +64,15 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f'✓ Reporte completado: {siniestros.count()} siniestros procesados'))
 
     def obtener_siniestros_periodo(self, periodo):
-        """Obtiene los siniestros según el período especificado"""
+        """Obtiene los siniestros según el período especificado - OPTIMIZADO con select_related"""
         hoy = timezone.now()
+        
+        # Optimización: usar select_related para evitar consultas N+1
+        base_queryset = Siniestro.objects.select_related(
+            'poliza', 
+            'poliza__compania_aseguradora', 
+            'tipo_siniestro'
+        )
         
         if periodo == 'semanal':
             fecha_inicio = hoy - timedelta(days=7)
@@ -74,9 +83,9 @@ class Command(BaseCommand):
         elif periodo == 'anual':
             fecha_inicio = hoy - timedelta(days=365)
         else:  # todo
-            return Siniestro.objects.all()
+            return base_queryset.all()
         
-        return Siniestro.objects.filter(fecha_siniestro__gte=fecha_inicio)
+        return base_queryset.filter(fecha_siniestro__gte=fecha_inicio)
 
     def generar_excel(self, siniestros, filename, periodo):
         """Genera el reporte en formato Excel"""
@@ -106,7 +115,7 @@ class Command(BaseCommand):
         wb.save(filename)
 
     def crear_hoja_resumen(self, ws, siniestros, periodo):
-        """Crea la hoja de resumen ejecutivo"""
+        """Crea la hoja de resumen ejecutivo - OPTIMIZADO con agregaciones SQL"""
         # Título
         ws['A1'] = f'REPORTE DE SINIESTROS - RESUMEN EJECUTIVO ({periodo.upper()})'
         ws['A1'].font = Font(size=16, bold=True)
@@ -116,15 +125,19 @@ class Command(BaseCommand):
         ws['A2'] = f'Fecha de Generación: {timezone.now().strftime("%d/%m/%Y %H:%M")}'
         ws['A2'].font = Font(size=10, italic=True)
         
-        # Estadísticas generales
+        # Estadísticas generales - OPTIMIZADO: una sola consulta con múltiples agregaciones
         ws['A4'] = 'ESTADÍSTICAS GENERALES'
         ws['A4'].font = Font(size=12, bold=True)
         
-        total_siniestros = siniestros.count()
-        monto_total = siniestros.aggregate(Sum('monto_estimado'))['monto_estimado__sum'] or 0
-        monto_indemnizado = siniestros.filter(monto_indemnizado__isnull=False).aggregate(
-            Sum('monto_indemnizado')
-        )['monto_indemnizado__sum'] or 0
+        # Agregación eficiente en una sola consulta
+        stats = siniestros.aggregate(
+            total=Count('id'),
+            monto_total=Coalesce(Sum('monto_estimado'), Decimal('0')),
+            monto_indemnizado=Coalesce(Sum('monto_indemnizado'), Decimal('0'))
+        )
+        total_siniestros = stats['total']
+        monto_total = stats['monto_total']
+        monto_indemnizado = stats['monto_indemnizado']
         tiempo_promedio = self.calcular_tiempo_promedio_resolucion(siniestros)
         
         estadisticas = [
@@ -141,7 +154,7 @@ class Command(BaseCommand):
             ws.cell(row=row, column=2, value=valor)
             row += 1
         
-        # Resumen por estado
+        # Resumen por estado - OPTIMIZADO: una sola consulta con annotate
         ws['A10'] = 'RESUMEN POR ESTADO'
         ws['A10'].font = Font(size=12, bold=True)
         
@@ -152,16 +165,25 @@ class Command(BaseCommand):
             cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
             cell.alignment = Alignment(horizontal='center')
         
-        estados = [
+        # OPTIMIZACIÓN: una sola consulta para todos los estados
+        resumen_estados = siniestros.values('estado').annotate(
+            cantidad=Count('id'),
+            monto=Coalesce(Sum('monto_estimado'), Decimal('0'))
+        ).order_by('estado')
+        
+        # Convertir a diccionario para acceso rápido
+        estados_dict = {r['estado']: r for r in resumen_estados}
+        
+        estados_orden = [
             'registrado', 'documentacion_pendiente', 'enviado_aseguradora',
             'en_evaluacion', 'aprobado', 'rechazado', 'liquidado', 'cerrado'
         ]
         
         row = 12
-        for estado in estados:
-            siniestros_estado = siniestros.filter(estado=estado)
-            cantidad = siniestros_estado.count()
-            monto = siniestros_estado.aggregate(Sum('monto_estimado'))['monto_estimado__sum'] or 0
+        for estado in estados_orden:
+            data = estados_dict.get(estado, {'cantidad': 0, 'monto': Decimal('0')})
+            cantidad = data['cantidad']
+            monto = data['monto']
             porcentaje = (cantidad / total_siniestros * 100) if total_siniestros > 0 else 0
             
             ws.cell(row=row, column=1, value=estado.replace('_', ' ').title())
@@ -209,7 +231,7 @@ class Command(BaseCommand):
             ws.column_dimensions[get_column_letter(col)].width = 18
 
     def crear_hoja_analisis_tipo(self, ws, siniestros):
-        """Crea la hoja con análisis por tipo de siniestro"""
+        """Crea la hoja con análisis por tipo de siniestro - OPTIMIZADO con agregaciones SQL"""
         ws['A1'] = 'ANÁLISIS POR TIPO DE SINIESTRO'
         ws['A1'].font = Font(size=14, bold=True)
         
@@ -222,30 +244,33 @@ class Command(BaseCommand):
             cell.alignment = Alignment(horizontal='center')
         
         total_siniestros = siniestros.count()
-        tipos = TipoSiniestro.objects.all()
+        
+        # OPTIMIZACIÓN: una sola consulta con aggregaciones en lugar de iterar TipoSiniestro
+        stats_por_tipo = siniestros.values(
+            'tipo_siniestro__nombre'
+        ).annotate(
+            cantidad=Count('id'),
+            monto_total=Coalesce(Sum('monto_estimado'), Decimal('0')),
+            monto_promedio=Coalesce(Avg('monto_estimado'), Decimal('0'))
+        ).filter(cantidad__gt=0).order_by('-cantidad')
         
         row = 4
-        for tipo in tipos:
-            siniestros_tipo = siniestros.filter(tipo_siniestro=tipo)
-            cantidad = siniestros_tipo.count()
+        for stat in stats_por_tipo:
+            cantidad = stat['cantidad']
+            porcentaje = (cantidad / total_siniestros * 100) if total_siniestros > 0 else 0
             
-            if cantidad > 0:
-                porcentaje = (cantidad / total_siniestros * 100) if total_siniestros > 0 else 0
-                monto_total = siniestros_tipo.aggregate(Sum('monto_estimado'))['monto_estimado__sum'] or 0
-                monto_promedio = monto_total / cantidad if cantidad > 0 else 0
-                
-                ws.cell(row=row, column=1, value=str(tipo))
-                ws.cell(row=row, column=2, value=cantidad)
-                ws.cell(row=row, column=3, value=f'{porcentaje:.1f}%')
-                ws.cell(row=row, column=4, value=f'${monto_total:,.2f}')
-                ws.cell(row=row, column=5, value=f'${monto_promedio:,.2f}')
-                row += 1
+            ws.cell(row=row, column=1, value=stat['tipo_siniestro__nombre'] or 'Sin Tipo')
+            ws.cell(row=row, column=2, value=cantidad)
+            ws.cell(row=row, column=3, value=f'{porcentaje:.1f}%')
+            ws.cell(row=row, column=4, value=f"${stat['monto_total']:,.2f}")
+            ws.cell(row=row, column=5, value=f"${stat['monto_promedio']:,.2f}")
+            row += 1
         
         for col in range(1, len(headers) + 1):
             ws.column_dimensions[get_column_letter(col)].width = 20
 
     def crear_hoja_analisis_poliza(self, ws, siniestros):
-        """Crea la hoja con análisis por póliza"""
+        """Crea la hoja con análisis por póliza - OPTIMIZADO con agregaciones SQL"""
         ws['A1'] = 'ANÁLISIS POR PÓLIZA (TOP 20)'
         ws['A1'].font = Font(size=14, bold=True)
         
@@ -257,30 +282,19 @@ class Command(BaseCommand):
             cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
             cell.alignment = Alignment(horizontal='center')
         
-        # Agrupar siniestros por póliza
-        polizas_stats = {}
-        for siniestro in siniestros:
-            poliza_id = siniestro.poliza.id
-            if poliza_id not in polizas_stats:
-                polizas_stats[poliza_id] = {
-                    'poliza': siniestro.poliza,
-                    'cantidad': 0,
-                    'monto_total': 0
-                }
-            polizas_stats[poliza_id]['cantidad'] += 1
-            polizas_stats[poliza_id]['monto_total'] += siniestro.monto_estimado
-        
-        # Ordenar por cantidad de siniestros
-        polizas_ordenadas = sorted(
-            polizas_stats.values(),
-            key=lambda x: x['cantidad'],
-            reverse=True
-        )[:20]
+        # OPTIMIZACIÓN: agregación SQL directa en lugar de iterar en Python
+        poliza_stats = siniestros.values(
+            'poliza__numero_poliza',
+            'poliza__compania_aseguradora__nombre'
+        ).annotate(
+            cantidad=Count('id'),
+            monto_total=Coalesce(Sum('monto_estimado'), Decimal('0'))
+        ).order_by('-cantidad')[:20]
         
         row = 4
-        for stat in polizas_ordenadas:
-            ws.cell(row=row, column=1, value=stat['poliza'].numero_poliza)
-            ws.cell(row=row, column=2, value=str(stat['poliza'].compania_aseguradora))
+        for stat in poliza_stats:
+            ws.cell(row=row, column=1, value=stat['poliza__numero_poliza'])
+            ws.cell(row=row, column=2, value=stat['poliza__compania_aseguradora__nombre'] or 'Sin Compañía')
             ws.cell(row=row, column=3, value=stat['cantidad'])
             ws.cell(row=row, column=4, value=f"${stat['monto_total']:,.2f}")
             row += 1

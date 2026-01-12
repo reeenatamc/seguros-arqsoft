@@ -1,7 +1,9 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, Prefetch
+from django.db.models.functions import Coalesce
 from datetime import datetime, timedelta
+from decimal import Decimal
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -10,7 +12,7 @@ from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from app.models import Poliza, Factura
+from app.models import Poliza, Factura, Pago
 import os
 
 
@@ -39,11 +41,24 @@ class Command(BaseCommand):
         
         self.stdout.write(self.style.SUCCESS(f'Generando reporte de pólizas...'))
         
+        # OPTIMIZACIÓN: usar select_related y prefetch_related para evitar N+1
+        base_queryset = Poliza.objects.select_related(
+            'compania_aseguradora',
+            'corredor_seguros',
+            'tipo_poliza'
+        ).prefetch_related(
+            'facturas',
+            Prefetch(
+                'facturas__pagos',
+                queryset=Pago.objects.filter(estado='aprobado')
+            )
+        )
+        
         # Obtener pólizas según filtro
         if estado == 'todas':
-            polizas = Poliza.objects.all()
+            polizas = base_queryset.all()
         else:
-            polizas = Poliza.objects.filter(estado=estado)
+            polizas = base_queryset.filter(estado=estado)
         
         # Crear directorio de reportes si no existe
         reportes_dir = 'media/reportes/polizas'
@@ -83,7 +98,7 @@ class Command(BaseCommand):
         wb.save(filename)
 
     def crear_hoja_resumen(self, ws, polizas):
-        """Crea la hoja de resumen del reporte"""
+        """Crea la hoja de resumen del reporte - OPTIMIZADO con agregaciones SQL"""
         # Título
         ws['A1'] = 'REPORTE DE PÓLIZAS - RESUMEN EJECUTIVO'
         ws['A1'].font = Font(size=16, bold=True)
@@ -105,14 +120,23 @@ class Command(BaseCommand):
             cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
             cell.alignment = Alignment(horizontal='center')
         
-        estados = ['vigente', 'vencida', 'por_vencer', 'cancelada']
-        total_polizas = polizas.count()
+        # OPTIMIZACIÓN: una sola consulta para todos los estados
+        resumen_estados = polizas.values('estado').annotate(
+            cantidad=Count('id'),
+            suma_total=Coalesce(Sum('suma_asegurada'), Decimal('0'))
+        )
+        
+        # Convertir a diccionario para acceso rápido
+        estados_dict = {r['estado']: r for r in resumen_estados}
+        total_polizas = sum(r['cantidad'] for r in resumen_estados)
+        
+        estados_orden = ['vigente', 'vencida', 'por_vencer', 'cancelada']
         row = 6
         
-        for estado in estados:
-            polizas_estado = polizas.filter(estado=estado)
-            cantidad = polizas_estado.count()
-            suma_total = polizas_estado.aggregate(Sum('suma_asegurada'))['suma_asegurada__sum'] or 0
+        for estado in estados_orden:
+            data = estados_dict.get(estado, {'cantidad': 0, 'suma_total': Decimal('0')})
+            cantidad = data['cantidad']
+            suma_total = data['suma_total']
             porcentaje = (cantidad / total_polizas * 100) if total_polizas > 0 else 0
             
             ws.cell(row=row, column=1, value=estado.replace('_', ' ').title())
@@ -187,7 +211,7 @@ class Command(BaseCommand):
             ws.column_dimensions[get_column_letter(col)].width = 18
 
     def crear_hoja_gastos(self, ws, polizas):
-        """Crea la hoja con los gastos por póliza"""
+        """Crea la hoja con los gastos por póliza - OPTIMIZADO usando datos prefetched"""
         # Título
         ws['A1'] = 'GASTOS POR PÓLIZA'
         ws['A1'].font = Font(size=14, bold=True)
@@ -208,20 +232,25 @@ class Command(BaseCommand):
             cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
             cell.alignment = Alignment(horizontal='center', wrap_text=True)
         
-        # Datos
+        # Datos - OPTIMIZADO: aprovecha prefetch_related ya cargado
         row = 4
-        total_facturado_global = 0
-        total_pagado_global = 0
+        total_facturado_global = Decimal('0')
+        total_pagado_global = Decimal('0')
         
         for poliza in polizas:
-            facturas = poliza.facturas.all()
-            total_facturado = sum(f.monto_total for f in facturas)
-            total_pagado = sum(
-                sum(p.monto for p in f.pagos.filter(estado='aprobado'))
-                for f in facturas
-            )
+            # Usar los datos ya prefetched (no genera consultas adicionales)
+            facturas_list = list(poliza.facturas.all())
+            total_facturado = sum((f.monto_total for f in facturas_list), Decimal('0'))
+            
+            # Los pagos ya están prefetched y filtrados por estado='aprobado'
+            total_pagado = Decimal('0')
+            for factura in facturas_list:
+                # pagos ya está prefetched, no genera consultas
+                pagos_list = list(factura.pagos.all())
+                total_pagado += sum((p.monto for p in pagos_list), Decimal('0'))
+            
             saldo_pendiente = total_facturado - total_pagado
-            num_facturas = facturas.count()
+            num_facturas = len(facturas_list)
             
             ws.cell(row=row, column=1, value=poliza.numero_poliza)
             ws.cell(row=row, column=2, value=str(poliza.compania_aseguradora))
@@ -274,20 +303,25 @@ class Command(BaseCommand):
         elements.append(Paragraph(fecha_text, styles['Normal']))
         elements.append(Spacer(1, 20))
         
-        # Resumen por estado
+        # Resumen por estado - OPTIMIZADO con una sola consulta
         elements.append(Paragraph('RESUMEN POR ESTADO', styles['Heading2']))
         
         resumen_data = [['Estado', 'Cantidad', 'Suma Asegurada']]
-        estados = ['vigente', 'vencida', 'por_vencer', 'cancelada']
         
-        for est in estados:
-            polizas_estado = polizas.filter(estado=est)
-            cantidad = polizas_estado.count()
-            suma_total = polizas_estado.aggregate(Sum('suma_asegurada'))['suma_asegurada__sum'] or 0
+        # OPTIMIZACIÓN: una sola consulta para todos los estados
+        resumen_estados = polizas.values('estado').annotate(
+            cantidad=Count('id'),
+            suma_total=Coalesce(Sum('suma_asegurada'), Decimal('0'))
+        )
+        estados_dict = {r['estado']: r for r in resumen_estados}
+        estados_orden = ['vigente', 'vencida', 'por_vencer', 'cancelada']
+        
+        for est in estados_orden:
+            data = estados_dict.get(est, {'cantidad': 0, 'suma_total': Decimal('0')})
             resumen_data.append([
                 est.replace('_', ' ').title(),
-                str(cantidad),
-                f'${suma_total:,.2f}'
+                str(data['cantidad']),
+                f"${data['suma_total']:,.2f}"
             ])
         
         resumen_table = Table(resumen_data, colWidths=[2*inch, 1.5*inch, 2*inch])
