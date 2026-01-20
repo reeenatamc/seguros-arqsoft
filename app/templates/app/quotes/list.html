@@ -1,0 +1,204 @@
+{% extends 'app/layouts/base.html' %}
+{% load static %}
+
+{% block title %}Cotizaciones{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Cotizaciones</h1>
+            <p class="text-slate-500 mt-1">Gestión de cotizaciones y proformas de seguros</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{% url 'admin:app_quote_add' %}" 
+               class="btn-primary px-4 py-2.5 rounded-xl text-white font-medium flex items-center gap-2 shadow-lg">
+                <i class="fas fa-plus"></i>
+                <span>Nueva Cotización</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="stat-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-file-invoice-dollar text-blue-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-900">{{ stats.total }}</p>
+                    <p class="text-xs text-slate-500">Total</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
+                    <i class="fas fa-edit text-slate-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-900">{{ stats.draft }}</p>
+                    <p class="text-xs text-slate-500">Borradores</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <i class="fas fa-paper-plane text-purple-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-900">{{ stats.sent }}</p>
+                    <p class="text-xs text-slate-500">Enviadas</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                    <i class="fas fa-check-circle text-green-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-900">{{ stats.accepted }}</p>
+                    <p class="text-xs text-slate-500">Aceptadas</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <i class="fas fa-exchange-alt text-emerald-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-900">{{ stats.converted }}</p>
+                    <p class="text-xs text-slate-500">Convertidas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 p-4">
+        <form method="GET" class="flex flex-wrap items-center gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <input type="text" name="q" value="{{ query }}" 
+                       placeholder="Buscar por número o título..."
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 transition-all">
+            </div>
+            
+            <select name="status" class="px-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500">
+                <option value="">Todos los estados</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            
+            <select name="priority" class="px-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500">
+                <option value="">Todas las prioridades</option>
+                {% for value, label in priority_choices %}
+                <option value="{{ value }}" {% if selected_priority == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            
+            <button type="submit" class="btn-primary px-4 py-2.5 rounded-xl text-white font-medium">
+                <i class="fas fa-search mr-2"></i>Filtrar
+            </button>
+        </form>
+    </div>
+
+    <!-- Grid de Cotizaciones -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for quote in quotes %}
+        <div class="stat-card bg-white rounded-2xl shadow-card border border-slate-200/60 overflow-hidden">
+            <div class="p-5">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <span class="text-xs font-medium text-slate-500">{{ quote.quote_number }}</span>
+                        <h3 class="font-semibold text-slate-900 mt-1">{{ quote.title|truncatechars:40 }}</h3>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-medium
+                        {% if quote.status == 'draft' %}bg-slate-100 text-slate-800
+                        {% elif quote.status == 'sent' %}bg-blue-100 text-blue-800
+                        {% elif quote.status == 'accepted' %}bg-green-100 text-green-800
+                        {% elif quote.status == 'rejected' %}bg-red-100 text-red-800
+                        {% elif quote.status == 'converted' %}bg-emerald-100 text-emerald-800
+                        {% else %}bg-amber-100 text-amber-800{% endif %}">
+                        {{ quote.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="space-y-2 text-sm text-slate-600">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-tag text-slate-400 w-4"></i>
+                        <span>{{ quote.policy_type }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-dollar-sign text-slate-400 w-4"></i>
+                        <span>${{ quote.sum_insured|floatformat:0 }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-calendar text-slate-400 w-4"></i>
+                        <span>Válida hasta: {{ quote.valid_until|date:"d M Y" }}</span>
+                    </div>
+                </div>
+                
+                {% if quote.best_option %}
+                <div class="mt-4 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                    <p class="text-xs text-emerald-600 font-medium">Mejor opción:</p>
+                    <p class="font-semibold text-emerald-800">${{ quote.best_option.premium_amount|floatformat:2 }} - {{ quote.best_option.insurer.nombre }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+                    <span class="text-xs text-slate-500">
+                        {{ quote.options.count }} opción{{ quote.options.count|pluralize:"es" }}
+                    </span>
+                    <a href="{% url 'admin:app_quote_change' quote.pk %}" 
+                       class="text-brand-600 hover:text-brand-800 font-medium text-sm">
+                        Ver detalles <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full">
+            <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 p-12 text-center">
+                <i class="fas fa-file-invoice-dollar text-4xl text-slate-300 mb-3"></i>
+                <p class="text-slate-500">No se encontraron cotizaciones</p>
+                <a href="{% url 'admin:app_quote_add' %}" class="text-brand-600 hover:text-brand-800 font-medium mt-2 inline-block">
+                    Crear primera cotización
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if quotes.has_other_pages %}
+    <div class="flex items-center justify-center gap-2">
+        {% if quotes.has_previous %}
+        <a href="?page={{ quotes.previous_page_number }}&q={{ query }}&status={{ selected_status }}" 
+           class="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm">
+            <i class="fas fa-chevron-left mr-2"></i>Anterior
+        </a>
+        {% endif %}
+        <span class="px-4 py-2 text-sm text-slate-600">
+            Página {{ quotes.number }} de {{ quotes.paginator.num_pages }}
+        </span>
+        {% if quotes.has_next %}
+        <a href="?page={{ quotes.next_page_number }}&q={{ query }}&status={{ selected_status }}" 
+           class="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm">
+            Siguiente<i class="fas fa-chevron-right ml-2"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

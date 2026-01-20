@@ -1,0 +1,326 @@
+{% extends 'app/layouts/base.html' %}
+{% load static %}
+
+{% block title %}Reporte de Siniestros por Dependencia{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-fade-in">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Reporte de Siniestros por Dependencia</h1>
+            <p class="text-slate-500 mt-1">Análisis de siniestros agrupados por departamento/área</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="?{% if fecha_desde %}fecha_desde={{ fecha_desde|date:'Y-m-d' }}&{% endif %}{% if fecha_hasta %}fecha_hasta={{ fecha_hasta|date:'Y-m-d' }}&{% endif %}formato=pdf"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-medium text-sm">
+                <i class="fas fa-file-pdf"></i>
+                Exportar PDF
+            </a>
+            <a href="?{% if fecha_desde %}fecha_desde={{ fecha_desde|date:'Y-m-d' }}&{% endif %}{% if fecha_hasta %}fecha_hasta={{ fecha_hasta|date:'Y-m-d' }}&{% endif %}formato=excel"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-medium text-sm">
+                <i class="fas fa-file-excel"></i>
+                Exportar Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-4">
+        <form method="GET" class="flex flex-wrap gap-4">
+            <div class="date-input-wrapper relative">
+                <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none z-10"></i>
+                <input type="date" name="fecha_desde" value="{{ fecha_desde|date:'Y-m-d' }}"
+                       class="pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all w-48"
+                       placeholder="Desde" title="Fecha desde">
+            </div>
+            <div class="date-input-wrapper relative">
+                <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none z-10"></i>
+                <input type="date" name="fecha_hasta" value="{{ fecha_hasta|date:'Y-m-d' }}"
+                       class="pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all w-48"
+                       placeholder="Hasta" title="Fecha hasta">
+            </div>
+            <button type="submit" class="px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition text-sm font-medium">
+                <i class="fas fa-filter mr-2"></i>Aplicar
+            </button>
+            {% if fecha_desde or fecha_hasta %}
+                <a href="{% url 'reporte_siniestros_dependencia' %}" class="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition text-sm font-medium">
+                    Limpiar
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- KPIs principales -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl p-5 text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-list-check text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-white/70">Total Siniestros</p>
+                    <p class="text-2xl font-bold">{{ datos.totales.cantidad_siniestros }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-dollar-sign text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-white/70">Monto Estimado</p>
+                    <p class="text-2xl font-bold">${{ datos.totales.monto_estimado|floatformat:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl p-5 text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-hand-holding-dollar text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-white/70">Monto Pagado</p>
+                    <p class="text-2xl font-bold">${{ datos.totales.monto_pagado|floatformat:0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de distribución -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="p-5 border-b border-slate-100">
+            <h3 class="font-semibold text-slate-800">Distribución de Siniestros por Dependencia</h3>
+            <p class="text-sm text-slate-500 mt-1">Cantidad y montos por área o departamento</p>
+        </div>
+        <div class="p-5">
+            <canvas id="dependencias-chart" height="100"></canvas>
+        </div>
+    </div>
+
+    <!-- Ranking de dependencias -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Por cantidad de siniestros -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Top por Cantidad de Siniestros</h3>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for dep in datos.dependencias|slice:":10" %}
+                    <div class="p-4 hover:bg-slate-50 transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center">
+                                    <i class="fas fa-building text-brand-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-slate-800">{{ dep.dependencia }}</p>
+                                    <p class="text-xs text-slate-500">{{ dep.porcentaje_cantidad|floatformat:1 }}% del total</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-2xl font-bold text-brand-600">{{ dep.cantidad_siniestros }}</p>
+                                <p class="text-xs text-slate-500">casos</p>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div class="bg-brand-600 h-2 rounded-full" style="width: {{ dep.porcentaje_cantidad }}%"></div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="p-8 text-center text-slate-500">Sin datos disponibles</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Por monto estimado -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Top por Monto Estimado</h3>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for dep in datos.dependencias|dictsortreversed:"monto_estimado"|slice:":10" %}
+                    <div class="p-4 hover:bg-slate-50 transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                                    <i class="fas fa-building text-amber-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-slate-800">{{ dep.dependencia }}</p>
+                                    <p class="text-xs text-slate-500">{{ dep.porcentaje_monto|floatformat:1 }}% del total</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xl font-bold text-amber-600">${{ dep.monto_estimado|floatformat:0 }}</p>
+                                <p class="text-xs text-slate-500">estimado</p>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div class="bg-amber-600 h-2 rounded-full" style="width: {{ dep.porcentaje_monto }}%"></div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="p-8 text-center text-slate-500">Sin datos disponibles</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de detalle completo -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="p-5 border-b border-slate-100">
+            <h3 class="font-semibold text-slate-800">Detalle por Dependencia</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Dependencia</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Cantidad</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">% Cantidad</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Monto Estimado</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Monto Pagado</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Promedio</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">% Monto</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for dep in datos.dependencias %}
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="px-4 py-3 font-medium text-slate-800">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-building text-slate-400"></i>
+                                {{ dep.dependencia }}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-center font-semibold text-brand-600">{{ dep.cantidad_siniestros }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-100 text-brand-700">
+                                {{ dep.porcentaje_cantidad|floatformat:1 }}%
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-right text-slate-700">${{ dep.monto_estimado|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-medium text-emerald-600">${{ dep.monto_pagado|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right text-slate-700">${{ dep.promedio_estimado|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                                {{ dep.porcentaje_monto|floatformat:1 }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-12 text-center text-slate-500">No hay datos para mostrar</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="bg-slate-50 border-t-2 border-slate-200">
+                    <tr>
+                        <td class="px-4 py-3 font-bold text-slate-800">TOTAL</td>
+                        <td class="px-4 py-3 text-center font-bold text-brand-600">{{ datos.totales.cantidad_siniestros }}</td>
+                        <td class="px-4 py-3 text-center font-bold text-slate-800">100%</td>
+                        <td class="px-4 py-3 text-right font-bold text-slate-800">${{ datos.totales.monto_estimado|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-bold text-emerald-600">${{ datos.totales.monto_pagado|floatformat:2 }}</td>
+                        <td class="px-4 py-3"></td>
+                        <td class="px-4 py-3 text-center font-bold text-slate-800">100%</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('dependencias-chart');
+    if (ctx) {
+        const dependencias = {{ datos.dependencias|safe }};
+        const labels = dependencias.map(d => d.dependencia);
+        const cantidades = dependencias.map(d => d.cantidad_siniestros);
+        const montos = dependencias.map(d => d.monto_estimado);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Cantidad de Siniestros',
+                        data: cantidades,
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                        borderColor: 'rgb(99, 102, 241)',
+                        borderWidth: 2,
+                        yAxisID: 'y',
+                    },
+                    {
+                        label: 'Monto Estimado ($)',
+                        data: montos,
+                        backgroundColor: 'rgba(251, 146, 60, 0.7)',
+                        borderColor: 'rgb(251, 146, 60)',
+                        borderWidth: 2,
+                        yAxisID: 'y1',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.datasetIndex === 1) {
+                                    label += '$' + context.parsed.y.toLocaleString();
+                                } else {
+                                    label += context.parsed.y;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Cantidad'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Monto ($)'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    },
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

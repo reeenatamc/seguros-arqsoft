@@ -1,0 +1,436 @@
+{% extends 'app/layouts/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        transition: all 0.3s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-4px);
+    }
+    .heatmap-bar {
+        transition: width 0.5s ease;
+    }
+    .</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Dashboard Analytics</h1>
+            <p class="text-slate-500 mt-1">Análisis avanzado de siniestralidad, tendencias y predicciones</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="refreshData()" 
+                    class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-medium flex items-center gap-2 transition-all">
+                <i class="fas fa-sync-alt text-slate-600"></i>
+                <span>Actualizar</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- KPIs Principales -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="metric-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <i class="fas fa-dollar-sign text-emerald-600"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-slate-900">${{ summary.total_premiums_ytd|floatformat:0 }}</p>
+            <p class="text-xs text-slate-500">Primas Cobradas (YTD)</p>
+        </div>
+        
+        <div class="metric-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-hand-holding-dollar text-red-600"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-slate-900">${{ summary.total_claims_ytd|floatformat:0 }}</p>
+            <p class="text-xs text-slate-500">Indemnizaciones (YTD)</p>
+        </div>
+        
+        <div class="metric-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-xl {% if summary.status == 'success' %}bg-green-100{% elif summary.status == 'warning' %}bg-amber-100{% else %}bg-red-100{% endif %} flex items-center justify-center">
+                    <i class="fas fa-chart-pie {% if summary.status == 'success' %}text-green-600{% elif summary.status == 'warning' %}text-amber-600{% else %}text-red-600{% endif %}"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold {% if summary.status == 'success' %}text-green-600{% elif summary.status == 'warning' %}text-amber-600{% else %}text-red-600{% endif %}">{{ summary.loss_ratio_global }}%</p>
+            <p class="text-xs text-slate-500">Ratio Siniestralidad</p>
+        </div>
+        
+        <div class="metric-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-file-shield text-blue-600"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-slate-900">{{ summary.active_policies }}</p>
+            <p class="text-xs text-slate-500">Pólizas Activas</p>
+        </div>
+        
+        <div class="metric-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <i class="fas fa-clock text-amber-600"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-slate-900">{{ summary.expiring_policies }}</p>
+            <p class="text-xs text-slate-500">Por Vencer</p>
+        </div>
+        
+        <div class="metric-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <i class="fas fa-folder-open text-purple-600"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-slate-900">{{ summary.open_claims }}</p>
+            <p class="text-xs text-slate-500">Siniestros Abiertos</p>
+        </div>
+    </div>
+
+    <!-- Gráficos Principales -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Tendencia Primas vs Indemnizaciones -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-semibold text-slate-900">Tendencia: Primas vs Indemnizaciones</h2>
+                <select id="trendPeriod" onchange="updateTrendChart()" class="text-sm border border-slate-200 rounded-lg px-3 py-1.5">
+                    <option value="6">6 meses</option>
+                    <option value="12" selected>12 meses</option>
+                    <option value="24">24 meses</option>
+                </select>
+            </div>
+            <div class="h-80">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Ratio de Siniestralidad por Tipo -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 p-6">
+            <h2 class="text-lg font-semibold text-slate-900 mb-6">Ratio de Siniestralidad por Tipo de Póliza</h2>
+            <div class="space-y-4 max-h-80 overflow-y-auto">
+                {% for item in loss_ratio_data %}
+                <div class="flex items-center gap-4">
+                    <div class="w-32 text-sm font-medium text-slate-700 truncate" title="{{ item.tipo }}">
+                        {{ item.tipo }}
+                    </div>
+                    <div class="flex-1">
+                        <div class="h-6 bg-slate-100 rounded-full overflow-hidden relative">
+                            <div class="h-full rounded-full transition-all duration-500
+                                {% if item.status == 'success' %}bg-gradient-to-r from-green-400 to-green-500
+                                {% elif item.status == 'warning' %}bg-gradient-to-r from-amber-400 to-amber-500
+                                {% else %}bg-gradient-to-r from-red-400 to-red-500{% endif %}"
+                                 style="width: {{ item.ratio|default:0 }}%"></div>
+                            <span class="absolute inset-0 flex items-center justify-center text-xs font-bold 
+                                {% if item.ratio > 50 %}text-white{% else %}text-slate-700{% endif %}">
+                                {{ item.ratio }}%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="w-20 text-right">
+                        <span class="text-xs text-slate-500">{{ item.num_siniestros }} siniestros</span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-slate-500 text-center py-8">No hay datos disponibles</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Heatmap de Ubicaciones y Distribución -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Heatmap de Ubicaciones -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 p-6">
+            <h2 class="text-lg font-semibold text-slate-900 mb-6">
+                <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>
+                Ubicaciones con Más Siniestros
+            </h2>
+            <div class="space-y-3 max-h-96 overflow-y-auto">
+                {% for loc in location_data %}
+                <div class="p-3 rounded-xl border border-slate-100 hover:border-slate-200 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium text-slate-800 text-sm">{{ loc.location }}</span>
+                        <span class="px-2 py-0.5 rounded-full text-xs font-bold
+                            {% if loc.intensity > 70 %}bg-red-100 text-red-700
+                            {% elif loc.intensity > 40 %}bg-amber-100 text-amber-700
+                            {% else %}bg-green-100 text-green-700{% endif %}">
+                            {{ loc.count }} siniestros
+                        </span>
+                    </div>
+                    <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="heatmap-bar h-full rounded-full
+                            {% if loc.intensity > 70 %}bg-gradient-to-r from-red-400 to-red-600
+                            {% elif loc.intensity > 40 %}bg-gradient-to-r from-amber-400 to-amber-600
+                            {% else %}bg-gradient-to-r from-green-400 to-green-600{% endif %}"
+                             style="width: {{ loc.intensity }}%"></div>
+                    </div>
+                    <div class="flex justify-between mt-2 text-xs text-slate-500">
+                        <span>Estimado: ${{ loc.total_estimado|floatformat:0 }}</span>
+                        <span>Prom: ${{ loc.avg_amount|floatformat:0 }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-slate-500 text-center py-8">No hay datos de ubicaciones</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Distribución por Tipo de Siniestro -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 p-6">
+            <h2 class="text-lg font-semibold text-slate-900 mb-6">Distribución por Tipo de Siniestro</h2>
+            <div class="h-80">
+                <canvas id="claimsDistributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rendimiento de Aseguradoras -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 p-6">
+        <h2 class="text-lg font-semibold text-slate-900 mb-6">
+            <i class="fas fa-building text-blue-500 mr-2"></i>
+            Rendimiento de Aseguradoras
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Aseguradora</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Pólizas</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Siniestros</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Aprobados</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Rechazados</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Tasa Aprobación</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Total Indemnizado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for insurer in insurer_performance %}
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="px-4 py-3 font-medium text-slate-900">{{ insurer.insurer }}</td>
+                        <td class="px-4 py-3 text-center text-slate-600">{{ insurer.total_policies }}</td>
+                        <td class="px-4 py-3 text-center text-slate-600">{{ insurer.total_claims }}</td>
+                        <td class="px-4 py-3 text-center text-green-600 font-medium">{{ insurer.approved_claims }}</td>
+                        <td class="px-4 py-3 text-center text-red-600 font-medium">{{ insurer.rejected_claims }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <div class="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-green-400 to-green-500 rounded-full"
+                                         style="width: {{ insurer.approval_rate }}%"></div>
+                                </div>
+                                <span class="text-sm font-medium text-slate-700">{{ insurer.approval_rate }}%</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-right font-medium text-slate-900">${{ insurer.total_indemnified|floatformat:0 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-slate-500">
+                            No hay datos de aseguradoras
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Datos del servidor
+const trendData = {{ trend_data_json|safe }};
+const claimsDistribution = {{ claims_distribution_json|safe }};
+
+let trendChart = null;
+let distributionChart = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initTrendChart();
+    initDistributionChart();
+});
+
+function initTrendChart() {
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    
+    trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: trendData.labels,
+            datasets: [
+                {
+                    label: 'Primas Cobradas',
+                    data: trendData.premiums,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                },
+                {
+                    label: 'Indemnizaciones',
+                    data: trendData.claims,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1f2937',
+                    titleFont: { size: 13 },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('es-EC', {
+                                    style: 'currency',
+                                    currency: 'USD'
+                                }).format(context.parsed.y);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                    }
+                }
+            }
+        }
+    });
+}
+
+function initDistributionChart() {
+    const ctx = document.getElementById('claimsDistributionChart').getContext('2d');
+    
+    // Colores vibrantes
+    const colors = [
+        'rgba(239, 68, 68, 0.8)',
+        'rgba(249, 115, 22, 0.8)',
+        'rgba(245, 158, 11, 0.8)',
+        'rgba(132, 204, 22, 0.8)',
+        'rgba(34, 197, 94, 0.8)',
+        'rgba(20, 184, 166, 0.8)',
+        'rgba(6, 182, 212, 0.8)',
+        'rgba(59, 130, 246, 0.8)',
+        'rgba(99, 102, 241, 0.8)',
+        'rgba(139, 92, 246, 0.8)',
+        'rgba(168, 85, 247, 0.8)',
+        'rgba(236, 72, 153, 0.8)',
+    ];
+    
+    distributionChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: claimsDistribution.labels,
+            datasets: [{
+                data: claimsDistribution.counts,
+                backgroundColor: colors.slice(0, claimsDistribution.labels.length),
+                borderWidth: 0,
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 12,
+                        font: { size: 11 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1f2937',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.raw / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.raw} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+async function updateTrendChart() {
+    const months = document.getElementById('trendPeriod').value;
+    
+    try {
+        const response = await fetch(`/api/analytics/trend/?months=${months}`);
+        const data = await response.json();
+        
+        trendChart.data.labels = data.labels;
+        trendChart.data.datasets[0].data = data.premiums;
+        trendChart.data.datasets[1].data = data.claims;
+        trendChart.update();
+    } catch (error) {
+        console.error('Error actualizando gráfico:', error);
+    }
+}
+
+function refreshData() {
+    window.location.reload();
+}
+</script>
+{% endblock %}
+

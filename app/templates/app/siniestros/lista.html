@@ -1,0 +1,180 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Siniestros{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-fade-in">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Siniestros</h1>
+            <p class="text-slate-500 mt-1">{{ total_resultados }} siniestros encontrados</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="relative">
+                <button onclick="toggleExportMenu()" data-dropdown="export" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition font-medium text-sm">
+                    <i class="fas fa-download"></i>
+                    Exportar
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div id="export-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-10">
+                    <a href="{% url 'siniestros_exportar' %}?formato=excel{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" 
+                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition text-sm">
+                        <i class="fas fa-file-excel text-emerald-600"></i>
+                        <span>Excel (.xlsx)</span>
+                    </a>
+                    <a href="{% url 'siniestros_exportar' %}?formato=csv{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" 
+                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition text-sm border-t border-slate-100">
+                        <i class="fas fa-file-csv text-blue-600"></i>
+                        <span>CSV (.csv)</span>
+                    </a>
+                </div>
+            </div>
+            <a href="{% url 'siniestro_crear' %}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 gradient-brand text-white rounded-xl hover:shadow-lg hover:shadow-brand-500/25 transition font-medium text-sm">
+                <i class="fas fa-plus"></i>
+                Nuevo Siniestro
+            </a>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-4">
+        <form method="GET" class="flex flex-col lg:flex-row gap-4">
+            <div class="flex-1">
+                <div class="relative">
+                    <input type="text" name="q" value="{{ query }}" placeholder="Buscar por número, bien o póliza..." 
+                           class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition">
+                    <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <select name="estado" onchange="this.form.submit()" 
+                        class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                    <option value="">Todos los estados</option>
+                    <option value="registrado" {% if estado_filtro == 'registrado' %}selected{% endif %}>Registrado</option>
+                    <option value="documentacion_pendiente" {% if estado_filtro == 'documentacion_pendiente' %}selected{% endif %}>Doc. Pendiente</option>
+                    <option value="enviado_aseguradora" {% if estado_filtro == 'enviado_aseguradora' %}selected{% endif %}>Enviado</option>
+                    <option value="en_evaluacion" {% if estado_filtro == 'en_evaluacion' %}selected{% endif %}>En Evaluación</option>
+                    <option value="aprobado" {% if estado_filtro == 'aprobado' %}selected{% endif %}>Aprobado</option>
+                    <option value="rechazado" {% if estado_filtro == 'rechazado' %}selected{% endif %}>Rechazado</option>
+                    <option value="liquidado" {% if estado_filtro == 'liquidado' %}selected{% endif %}>Liquidado</option>
+                    <option value="cerrado" {% if estado_filtro == 'cerrado' %}selected{% endif %}>Cerrado</option>
+                </select>
+                <select name="tipo" onchange="this.form.submit()" 
+                        class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                    <option value="">Todos los tipos</option>
+                    {% for tipo in tipos %}
+                        <option value="{{ tipo.id }}" {% if tipo_filtro == tipo.id|stringformat:"s" %}selected{% endif %}>
+                            {{ tipo.get_nombre_display }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition text-sm font-medium">
+                    <i class="fas fa-filter mr-2"></i>Filtrar
+                </button>
+                {% if query or estado_filtro or tipo_filtro %}
+                    <a href="{% url 'siniestros_lista' %}" class="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition text-sm font-medium">
+                        <i class="fas fa-times mr-2"></i>Limpiar
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Siniestro</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Bien</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tipo</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Monto Est.</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Días</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Estado</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for siniestro in siniestros %}
+                    <tr class="hover:bg-slate-50/50 transition">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                                    <i class="fas fa-car-burst text-red-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-slate-800">{{ siniestro.numero_siniestro }}</p>
+                                    <p class="text-xs text-slate-500">{{ siniestro.poliza.numero_poliza }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-sm font-medium text-slate-700">{{ siniestro.bien_nombre }}</p>
+                            <p class="text-xs text-slate-500">{{ siniestro.ubicacion|truncatechars:30 }}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
+                                {{ siniestro.tipo_siniestro }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <p class="font-semibold text-slate-800">${{ siniestro.monto_estimado|floatformat:2 }}</p>
+                            {% if siniestro.monto_indemnizado %}
+                                <p class="text-xs text-emerald-600">Indemn: ${{ siniestro.monto_indemnizado|floatformat:2 }}</p>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold
+                                {% if siniestro.dias_desde_registro < 15 %}bg-emerald-100 text-emerald-700
+                                {% elif siniestro.dias_desde_registro < 30 %}bg-amber-100 text-amber-700
+                                {% else %}bg-red-100 text-red-700{% endif %}">
+                                {{ siniestro.dias_desde_registro }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold
+                                {% if siniestro.estado == 'registrado' %}bg-blue-100 text-blue-700
+                                {% elif siniestro.estado == 'documentacion_pendiente' %}bg-amber-100 text-amber-700
+                                {% elif siniestro.estado == 'enviado_aseguradora' %}bg-purple-100 text-purple-700
+                                {% elif siniestro.estado == 'en_evaluacion' %}bg-cyan-100 text-cyan-700
+                                {% elif siniestro.estado == 'aprobado' %}bg-emerald-100 text-emerald-700
+                                {% elif siniestro.estado == 'rechazado' %}bg-red-100 text-red-700
+                                {% elif siniestro.estado == 'liquidado' %}bg-green-100 text-green-800
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ siniestro.get_estado_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <a href="{% url 'siniestro_editar' siniestro.pk %}"
+                                   class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-600 transition">
+                                    <i class="fas fa-pen-to-square"></i>
+                                </a>
+                                <a href="{% url 'siniestro_detalle' siniestro.pk %}"
+                                   class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                                    <i class="fas fa-car-burst text-3xl text-slate-400"></i>
+                                </div>
+                                <p class="text-slate-600 font-medium">No se encontraron siniestros</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% include 'app/components/pagination.html' with page_obj=siniestros %}
+    </div>
+</div>
+
+{% endblock %}

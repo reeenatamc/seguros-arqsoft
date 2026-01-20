@@ -1,0 +1,205 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Registrar Siniestro{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="{% url 'siniestros_lista' %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+            <i class="fas fa-arrow-left text-slate-600"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Registrar Nuevo Siniestro</h1>
+            <p class="text-slate-500 mt-1">Complete la información del siniestro</p>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Información de la Póliza y Tipo -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-file-contract text-brand-500 mr-2"></i>
+                Información de la Póliza
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Póliza <span class="text-red-500">*</span></label>
+                    {{ form.poliza }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Número de Siniestro <span class="text-red-500">*</span></label>
+                    {{ form.numero_siniestro }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Tipo de Siniestro <span class="text-red-500">*</span></label>
+                    {{ form.tipo_siniestro }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Siniestro -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>
+                Detalles del Siniestro
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Fecha y Hora del Siniestro <span class="text-red-500">*</span></label>
+                    {{ form.fecha_siniestro }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Ubicación <span class="text-red-500">*</span></label>
+                    {{ form.ubicacion }}
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <label class="block text-sm font-medium text-slate-700 mb-2">Causa del Siniestro <span class="text-red-500">*</span></label>
+                {{ form.causa }}
+            </div>
+
+            <div class="mt-6">
+                <label class="block text-sm font-medium text-slate-700 mb-2">Descripción Detallada <span class="text-red-500">*</span></label>
+                {{ form.descripcion_detallada }}
+            </div>
+        </div>
+
+        <!-- Información del Bien Afectado -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-box text-purple-500 mr-2"></i>
+                Bien Afectado
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Nombre del Bien <span class="text-red-500">*</span></label>
+                    {{ form.bien_nombre }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Marca</label>
+                    {{ form.bien_marca }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Modelo</label>
+                    {{ form.bien_modelo }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Número de Serie</label>
+                    {{ form.bien_serie }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Código de Activo</label>
+                    {{ form.bien_codigo_activo }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Responsable/Custodio</label>
+                    {{ form.responsable_custodio }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Valoración -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-calculator text-emerald-500 mr-2"></i>
+                Valoración del Siniestro
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Monto Estimado del Daño <span class="text-red-500">*</span></label>
+                    {{ form.monto_estimado }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Valor del Reclamo (Proforma)</label>
+                    {{ form.valor_reclamo }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Suma Asegurada del Bien</label>
+                    {{ form.suma_asegurada_bien }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Deducible</label>
+                    {{ form.deducible }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Depreciación</label>
+                    {{ form.depreciacion }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Email del Broker</label>
+                    {{ form.email_broker }}
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <label class="block text-sm font-medium text-slate-700 mb-2">Observaciones</label>
+                {{ form.observaciones }}
+            </div>
+        </div>
+
+        <!-- Adjuntos -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-paperclip text-blue-500 mr-2"></i>
+                Documentos Adjuntos
+            </h2>
+
+            {{ adjuntos_formset.management_form }}
+
+            <div id="adjuntos-container" class="space-y-4">
+                {% for form_adjunto in adjuntos_formset %}
+                <div class="adjunto-form border border-slate-200 rounded-lg p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Tipo</label>
+                            {{ form_adjunto.tipo_adjunto }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Nombre</label>
+                            {{ form_adjunto.nombre }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Archivo</label>
+                            {{ form_adjunto.archivo }}
+                        </div>
+                        <div class="flex items-end">
+                            <label class="flex items-center text-sm">
+                                {{ form_adjunto.requiere_firma }}
+                                <span class="ml-2">Requiere firma</span>
+                            </label>
+                        </div>
+                    </div>
+                    {{ form_adjunto.id }}
+                </div>
+                {% endfor %}
+            </div>
+
+            <p class="mt-4 text-sm text-slate-500">
+                <i class="fas fa-info-circle mr-1"></i>
+                El checklist se creará automáticamente según el tipo de siniestro seleccionado.
+            </p>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex justify-end gap-3">
+            <a href="{% url 'siniestros_lista' %}"
+               class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                <i class="fas fa-save mr-2"></i>
+                Registrar Siniestro
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

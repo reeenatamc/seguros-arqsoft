@@ -1,0 +1,90 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Crear Grupo de Bienes{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="{% url 'grupos_bienes_lista' %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+            <i class="fas fa-arrow-left text-slate-600"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Crear Grupo de Bienes</h1>
+            <p class="text-slate-500 mt-1">Define un nuevo grupo para organizar bienes</p>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="bg-white rounded-xl shadow-card p-6">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Nombre del Grupo <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.nombre }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Ramo <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.ramo }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Subtipo de Ramo
+                    </label>
+                    {{ form.subtipo_ramo }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Responsable
+                    </label>
+                    {{ form.responsable }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Póliza Asociada
+                    </label>
+                    {{ form.poliza }}
+                </div>
+
+                <div class="flex items-center pt-6">
+                    <div class="flex items-center h-5">
+                        {{ form.activo }}
+                    </div>
+                    <label class="ml-3 text-sm text-slate-700">
+                        Grupo activo
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Descripción
+                </label>
+                {{ form.descripcion }}
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                <a href="{% url 'grupos_bienes_lista' %}"
+                   class="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                    <i class="fas fa-save mr-2"></i>
+                    Crear Grupo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,266 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}{{ grupo.nombre }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'grupos_bienes_lista' %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+                <i class="fas fa-arrow-left text-slate-600"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">{{ grupo.nombre }}</h1>
+                <p class="text-slate-500 mt-1">{{ grupo.ramo.nombre }}{% if grupo.subtipo_ramo %} - {{ grupo.subtipo_ramo.nombre }}{% endif %}</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'grupo_bienes_editar' grupo.pk %}"
+               class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                <i class="fas fa-edit mr-2"></i>
+                Editar Grupo
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Información Principal -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Datos del Grupo -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-info-circle text-brand-500 mr-2"></i>
+                    Información del Grupo
+                </h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Ramo</span>
+                        <p class="font-medium text-slate-800">{{ grupo.ramo.nombre }}</p>
+                    </div>
+                    {% if grupo.subtipo_ramo %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Subtipo</span>
+                        <p class="font-medium text-slate-800">{{ grupo.subtipo_ramo.nombre }}</p>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Estado</span>
+                        <p class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                            {% if grupo.activo %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-600{% endif %}">
+                            {% if grupo.activo %}Activo{% else %}Inactivo{% endif %}
+                        </p>
+                    </div>
+                    {% if grupo.responsable %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Responsable</span>
+                        <p class="font-medium text-slate-800">{{ grupo.responsable.nombre }}</p>
+                    </div>
+                    {% endif %}
+                    {% if grupo.poliza %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Póliza</span>
+                        <a href="{% url 'poliza_detalle' grupo.poliza.pk %}" class="font-medium text-brand-600 hover:underline">
+                            {{ grupo.poliza.numero_poliza }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Creado</span>
+                        <p class="font-medium text-slate-800">{{ grupo.fecha_creacion|date:"d/m/Y" }}</p>
+                    </div>
+                </div>
+
+                {% if grupo.descripcion %}
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <span class="text-xs text-slate-500 uppercase">Descripción</span>
+                    <p class="mt-1 text-slate-700 whitespace-pre-line">{{ grupo.descripcion }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Lista de Bienes -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                        <i class="fas fa-box text-purple-500 mr-2"></i>
+                        Bienes del Grupo
+                    </h2>
+                    <a href="{% url 'asset_create' %}?grupo={{ grupo.pk }}"
+                       class="inline-flex items-center px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm rounded-lg transition">
+                        <i class="fas fa-plus mr-1"></i>
+                        Agregar Bien
+                    </a>
+                </div>
+
+                {% if bienes %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead>
+                            <tr class="bg-slate-50">
+                                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Código</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Nombre</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Marca/Modelo</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ubicación</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Valor Asegurado</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Estado</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            {% for bien in bienes %}
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ bien.asset_code }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ bien.name }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-600">
+                                    {% if bien.brand %}{{ bien.brand }}{% endif %}
+                                    {% if bien.model %} {{ bien.model }}{% endif %}
+                                    {% if not bien.brand and not bien.model %}-{% endif %}
+                                </td>
+                                <td class="px-4 py-3 text-sm text-slate-600">{{ bien.location|default:"-" }}</td>
+                                <td class="px-4 py-3 text-sm font-medium text-slate-800">
+                                    {% if bien.insured_value %}${{ bien.insured_value|floatformat:2 }}{% else %}-{% endif %}
+                                </td>
+                                <td class="px-4 py-3 text-sm">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                        {% if bien.status == 'activo' %}bg-emerald-100 text-emerald-800
+                                        {% elif bien.status == 'inactivo' %}bg-slate-100 text-slate-600
+                                        {% elif bien.status == 'mantenimiento' %}bg-amber-100 text-amber-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ bien.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-sm">
+                                    <a href="{% url 'asset_detail' bien.pk %}" class="text-brand-600 hover:text-brand-700">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-box-open text-4xl text-slate-300 mb-3"></i>
+                    <p class="text-slate-500 mb-4">No hay bienes asignados a este grupo</p>
+                    <a href="{% url 'asset_create' %}?grupo={{ grupo.pk }}"
+                       class="inline-flex items-center text-brand-600 hover:underline">
+                        <i class="fas fa-plus mr-1"></i>
+                        Agregar primer bien
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Estadísticas -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-bar text-emerald-500 mr-2"></i>
+                    Estadísticas
+                </h2>
+
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div>
+                            <span class="text-xs text-slate-500 block">Total Bienes</span>
+                            <span class="text-2xl font-bold text-brand-600">{{ grupo.total_bienes }}</span>
+                        </div>
+                        <i class="fas fa-box text-brand-500 text-2xl"></i>
+                    </div>
+
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div>
+                            <span class="text-xs text-slate-500 block">Valor Total</span>
+                            <span class="text-lg font-bold text-emerald-600">${{ grupo.valor_total|floatformat:0 }}</span>
+                        </div>
+                        <i class="fas fa-dollar-sign text-emerald-500 text-2xl"></i>
+                    </div>
+
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div>
+                            <span class="text-xs text-slate-500 block">Bienes Activos</span>
+                            <span class="text-lg font-bold text-slate-700">{{ bienes_activos_count }}</span>
+                        </div>
+                        <i class="fas fa-check-circle text-slate-500 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                    Información
+                </h2>
+
+                <div class="space-y-3 text-sm">
+                    <div>
+                        <span class="text-slate-500">Creado por:</span>
+                        <p class="font-medium text-slate-800">{{ grupo.creado_por.get_full_name|default:grupo.creado_por.username }}</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">Fecha de creación:</span>
+                        <p class="font-medium text-slate-800">{{ grupo.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">Última modificación:</span>
+                        <p class="font-medium text-slate-800">{{ grupo.fecha_modificacion|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-cog text-slate-500 mr-2"></i>
+                    Acciones
+                </h2>
+
+                <div class="space-y-2">
+                    <a href="{% url 'grupo_bienes_editar' grupo.pk %}"
+                       class="block w-full px-4 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg transition text-center">
+                        <i class="fas fa-edit mr-2"></i>
+                        Editar Grupo
+                    </a>
+                    {% if grupo.activo %}
+                    <button onclick="if(confirm('¿Desactivar este grupo?')) document.getElementById('form-desactivar').submit();"
+                            class="block w-full px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg transition text-center">
+                        <i class="fas fa-ban mr-2"></i>
+                        Desactivar
+                    </button>
+                    {% else %}
+                    <button onclick="if(confirm('¿Activar este grupo?')) document.getElementById('form-activar').submit();"
+                            class="block w-full px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition text-center">
+                        <i class="fas fa-check mr-2"></i>
+                        Activar
+                    </button>
+                    {% endif %}
+                    <button onclick="if(confirm('¿Está seguro de eliminar este grupo? Esta acción no se puede deshacer.')) document.getElementById('form-eliminar').submit();"
+                            class="block w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition text-center">
+                        <i class="fas fa-trash mr-2"></i>
+                        Eliminar Grupo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forms ocultos para acciones -->
+<form id="form-desactivar" method="post" action="{% url 'grupo_bienes_toggle_estado' grupo.pk %}" style="display:none;">
+    {% csrf_token %}
+</form>
+
+<form id="form-activar" method="post" action="{% url 'grupo_bienes_toggle_estado' grupo.pk %}" style="display:none;">
+    {% csrf_token %}
+</form>
+
+<form id="form-eliminar" method="post" action="{% url 'grupo_bienes_eliminar' grupo.pk %}" style="display:none;">
+    {% csrf_token %}
+</form>
+{% endblock %}
