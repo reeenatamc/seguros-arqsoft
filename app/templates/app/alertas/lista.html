@@ -78,21 +78,21 @@
                                     {{ alerta.fecha_creacion|timesince }} atrás
                                 </span>
                                 {% if alerta.poliza %}
-                                    <a href="/admin/app/poliza/{{ alerta.poliza.id }}/change/" 
+                                    <a href="{% url 'poliza_detalle' alerta.poliza.pk %}"
                                        class="inline-flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 font-medium">
                                         <i class="fas fa-file-shield"></i>
                                         {{ alerta.poliza.numero_poliza }}
                                     </a>
                                 {% endif %}
                                 {% if alerta.factura %}
-                                    <a href="/admin/app/factura/{{ alerta.factura.id }}/change/" 
+                                    <a href="{% url 'factura_detalle' alerta.factura.pk %}"
                                        class="inline-flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 font-medium">
                                         <i class="fas fa-file-invoice-dollar"></i>
                                         {{ alerta.factura.numero_factura }}
                                     </a>
                                 {% endif %}
                                 {% if alerta.siniestro %}
-                                    <a href="/admin/app/siniestro/{{ alerta.siniestro.id }}/change/" 
+                                    <a href="{% url 'siniestro_detalle' alerta.siniestro.pk %}"
                                        class="inline-flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 font-medium">
                                         <i class="fas fa-car-burst"></i>
                                         {{ alerta.siniestro.numero_siniestro }}

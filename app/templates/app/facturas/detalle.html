@@ -1,0 +1,206 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Factura {{ factura.numero_factura }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'facturas_lista' %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+                <i class="fas fa-arrow-left text-slate-600"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">{{ factura.numero_factura }}</h1>
+                <p class="text-slate-500 mt-1">Factura de {{ factura.poliza.compania_aseguradora }}</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'pago_crear' %}?factura={{ factura.pk }}"
+               class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shadow-sm">
+                <i class="fas fa-credit-card mr-2"></i>
+                Registrar Pago
+            </a>
+            <a href="{% url 'factura_editar' factura.pk %}"
+               class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                <i class="fas fa-edit mr-2"></i>
+                Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Información Principal -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Datos de la Factura -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-file-invoice-dollar text-amber-500 mr-2"></i>
+                    Información de la Factura
+                </h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Número</span>
+                        <p class="font-medium text-slate-800">{{ factura.numero_factura }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Estado</span>
+                        <p class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                            {% if factura.estado == 'pagada' %}bg-emerald-100 text-emerald-800
+                            {% elif factura.estado == 'pendiente' %}bg-amber-100 text-amber-800
+                            {% elif factura.estado == 'parcial' %}bg-blue-100 text-blue-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ factura.get_estado_display }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Póliza</span>
+                        <a href="{% url 'poliza_detalle' factura.poliza.pk %}" class="font-medium text-brand-600 hover:underline">
+                            {{ factura.poliza.numero_poliza }}
+                        </a>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Fecha Emisión</span>
+                        <p class="font-medium text-slate-800">{{ factura.fecha_emision|date:"d/m/Y" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Fecha Vencimiento</span>
+                        <p class="font-medium text-slate-800">{{ factura.fecha_vencimiento|date:"d/m/Y" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Compañía</span>
+                        <p class="font-medium text-slate-800">{{ factura.poliza.compania_aseguradora }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagos -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-credit-card text-emerald-500 mr-2"></i>
+                    Pagos Registrados
+                </h2>
+
+                {% if pagos %}
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-slate-200">
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Fecha</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Forma</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Referencia</th>
+                                <th class="px-4 py-2 text-right text-xs font-semibold text-slate-600">Monto</th>
+                                <th class="px-4 py-2 text-center text-xs font-semibold text-slate-600">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for pago in pagos %}
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ pago.fecha_pago|date:"d/m/Y" }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ pago.get_forma_pago_display }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ pago.referencia|default:"-" }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-800 font-semibold text-right">${{ pago.monto|floatformat:2 }}</td>
+                                <td class="px-4 py-3 text-center">
+                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
+                                        {% if pago.estado == 'aprobado' %}bg-emerald-100 text-emerald-700
+                                        {% elif pago.estado == 'pendiente' %}bg-amber-100 text-amber-700
+                                        {% else %}bg-red-100 text-red-700{% endif %}">
+                                        {{ pago.get_estado_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-slate-400 text-center py-4">No hay pagos registrados</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Resumen Financiero -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-calculator text-brand-500 mr-2"></i>
+                    Resumen Financiero
+                </h2>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Subtotal</span>
+                        <span class="font-semibold text-slate-800">${{ factura.subtotal|floatformat:2 }}</span>
+                    </div>
+                    {% if factura.contribucion_superintendencia %}
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Contrib. Superintendencia</span>
+                        <span class="text-slate-700">${{ factura.contribucion_superintendencia|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    {% if factura.contribucion_seguro_campesino %}
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Seguro Campesino</span>
+                        <span class="text-slate-700">${{ factura.contribucion_seguro_campesino|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">IVA</span>
+                        <span class="text-slate-700">${{ factura.iva|floatformat:2 }}</span>
+                    </div>
+                    {% if factura.retenciones %}
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Retenciones</span>
+                        <span class="text-red-600">-${{ factura.retenciones|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    {% if factura.descuento_pronto_pago %}
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Dto. Pronto Pago</span>
+                        <span class="text-emerald-600">-${{ factura.descuento_pronto_pago|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between items-center py-2 bg-brand-50 -mx-2 px-2 rounded">
+                        <span class="font-semibold text-brand-700">Total</span>
+                        <span class="font-bold text-brand-700">${{ factura.monto_total|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 bg-slate-50 -mx-2 px-2 rounded">
+                        <span class="font-semibold text-slate-700">Saldo Pendiente</span>
+                        <span class="font-bold {% if factura.saldo_pendiente > 0 %}text-red-600{% else %}text-emerald-600{% endif %}">
+                            ${{ factura.saldo_pendiente|floatformat:2 }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentos -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-paperclip text-blue-500 mr-2"></i>
+                    Documentos
+                </h2>
+
+                {% if documentos %}
+                <div class="space-y-2">
+                    {% for doc in documentos %}
+                    <div class="flex items-center justify-between p-2 rounded hover:bg-slate-50">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-file text-slate-400"></i>
+                            <span class="text-sm font-medium text-slate-800">{{ doc.nombre }}</span>
+                        </div>
+                        <a href="{% url 'documento_descargar' doc.pk %}" class="text-brand-600 hover:text-brand-700">
+                            <i class="fas fa-download"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-slate-400 text-center py-4">No hay documentos adjuntos</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

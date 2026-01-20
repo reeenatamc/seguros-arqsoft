@@ -130,7 +130,7 @@ class SiniestroResource(resources.ModelResource):
         model = Siniestro
         import_id_fields = ['numero_siniestro']
         fields = ('numero_siniestro', 'poliza', 'tipo_siniestro', 'fecha_siniestro',
-                  'descripcion', 'lugar_siniestro', 'monto_estimado', 'monto_indemnizado', 'estado')
+                  'descripcion_detallada', 'ubicacion', 'monto_estimado', 'monto_indemnizado', 'estado')
         export_order = fields
 
 

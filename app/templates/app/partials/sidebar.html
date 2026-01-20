@@ -48,12 +48,21 @@
             </button>
             <div id="gestion-menu" class="submenu space-y-1 mt-1 overflow-hidden transition-all duration-300" style="max-height: 400px;">
                 <a href="{% url 'polizas_lista' %}" 
-                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'polizas' in request.path %}active{% endif %}"
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'polizas' in request.path and 'desglose' not in request.path %}active{% endif %}"
                    title="Pólizas">
                     <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
                         <i class="fas fa-file-shield"></i>
                     </div>
                     <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Pólizas</span>
+                </a>
+                
+                <a href="{% url 'desglose_ramos_lista' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'desglose-ramos' in request.path %}active{% endif %}"
+                   title="Desglose por Ramos">
+                    <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Desglose Ramos</span>
                 </a>
                 
                 <a href="{% url 'facturas_lista' %}" 

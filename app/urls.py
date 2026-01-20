@@ -8,8 +8,15 @@ urlpatterns = [
     path('polizas/', views.polizas_lista, name='polizas_lista'),
     path('polizas/exportar/', views.polizas_exportar, name='polizas_exportar'),
     
+    # Desglose por Ramos
+    path('desglose-ramos/', views.desglose_ramos_lista, name='desglose_ramos_lista'),
+    path('desglose-ramos/exportar/', views.desglose_ramos_exportar, name='desglose_ramos_exportar'),
+    
     # Facturas
     path('facturas/', views.facturas_lista, name='facturas_lista'),
+    path('facturas/crear/', views.FacturaCreateView.as_view(), name='factura_crear'),
+    path('facturas/<int:pk>/', views.FacturaDetailView.as_view(), name='factura_detalle'),
+    path('facturas/<int:pk>/editar/', views.FacturaUpdateView.as_view(), name='factura_editar'),
     path('facturas/exportar/', views.facturas_exportar, name='facturas_exportar'),
     
     # Siniestros
@@ -31,8 +38,15 @@ urlpatterns = [
     
     # Documentos
     path('documentos/', views.documentos_lista, name='documentos_lista'),
+    path('documentos/crear/', views.DocumentoCreateView.as_view(), name='documento_crear'),
     path('documentos/<int:pk>/ver/', views.documento_ver, name='documento_ver'),
+    path('documentos/<int:pk>/editar/', views.DocumentoUpdateView.as_view(), name='documento_editar'),
     path('documentos/<int:pk>/descargar/', views.documento_descargar, name='documento_descargar'),
+
+    # Pagos
+    path('pagos/crear/', views.PagoCreateView.as_view(), name='pago_crear'),
+    path('pagos/<int:pk>/', views.PagoDetailView.as_view(), name='pago_detalle'),
+    path('pagos/<int:pk>/editar/', views.PagoUpdateView.as_view(), name='pago_editar'),
     
     # Búsqueda Global
     path('buscar/', views.busqueda_global, name='busqueda_global'),
@@ -79,6 +93,57 @@ urlpatterns = [
     path('api/analytics/loss-ratio/', views.api_analytics_loss_ratio, name='api_analytics_loss_ratio'),
     path('api/analytics/trend/', views.api_analytics_trend, name='api_analytics_trend'),
     path('api/analytics/locations/', views.api_analytics_locations, name='api_analytics_locations'),
-    path('api/analytics/predictions/', views.api_analytics_predictions, name='api_analytics_predictions'),
     path('api/analytics/insurers/', views.api_analytics_insurers, name='api_analytics_insurers'),
+
+    # =========================================================================
+    # NUEVAS RUTAS - SISTEMA DE RAMOS
+    # =========================================================================
+
+    # Ramos
+    path('ramos/', views.RamoListView.as_view(), name='ramos_lista'),
+    path('ramos/crear/', views.RamoCreateView.as_view(), name='ramo_crear'),
+    path('ramos/<int:pk>/editar/', views.RamoUpdateView.as_view(), name='ramo_editar'),
+    path('ramos/inicializar/', views.inicializar_ramos_predefinidos, name='ramos_inicializar'),
+
+    # Pólizas - CRUD Completo
+    path('polizas/crear/', views.PolizaCreateView.as_view(), name='poliza_crear'),
+    path('polizas/<int:pk>/', views.PolizaDetailView.as_view(), name='poliza_detalle'),
+    path('polizas/<int:pk>/editar/', views.PolizaUpdateView.as_view(), name='poliza_editar'),
+
+    # Siniestros - CRUD Completo
+    path('siniestros/crear/', views.SiniestroCreateView.as_view(), name='siniestro_crear'),
+    path('siniestros/<int:pk>/', views.SiniestroDetailView.as_view(), name='siniestro_detalle'),
+    path('siniestros/<int:pk>/editar/', views.SiniestroUpdateView.as_view(), name='siniestro_editar'),
+
+    # Acciones de Siniestros
+    path('siniestros/<int:pk>/notificar-broker/', views.siniestro_notificar_broker, name='siniestro_notificar_broker'),
+    path('siniestros/<int:siniestro_pk>/checklist/<int:item_pk>/completar/', views.siniestro_marcar_checklist, name='siniestro_marcar_checklist'),
+    path('siniestros/<int:pk>/descargar-carta/', views.siniestro_descargar_carta, name='siniestro_descargar_carta'),
+    path('siniestros/<int:pk>/descargar-recibo/', views.siniestro_descargar_recibo, name='siniestro_descargar_recibo'),
+    path('siniestros/<int:pk>/subir-adjunto/', views.siniestro_subir_adjunto, name='siniestro_subir_adjunto'),
+    path('siniestros/<int:pk>/enviar-aseguradora/', views.siniestro_enviar_aseguradora, name='siniestro_enviar_aseguradora'),
+
+    # Adjuntos
+    path('adjuntos/<int:pk>/firmar/', views.adjunto_firmar, name='adjunto_firmar'),
+
+    # Grupos de Bienes
+    path('grupos-bienes/', views.GrupoBienesListView.as_view(), name='grupos_bienes_lista'),
+    path('grupos-bienes/crear/', views.GrupoBienesCreateView.as_view(), name='grupo_bienes_crear'),
+    path('grupos-bienes/<int:pk>/', views.GrupoBienesDetailView.as_view(), name='grupo_bienes_detalle'),
+
+    # Bienes Asegurados - CRUD
+    path('bienes/crear/', views.BienAseguradoCreateView.as_view(), name='bien_asegurado_crear'),
+    path('bienes/<int:pk>/', views.BienAseguradoDetailView.as_view(), name='bien_asegurado_detalle'),
+    path('bienes/<int:pk>/editar/', views.BienAseguradoUpdateView.as_view(), name='bien_asegurado_editar'),
+
+    # Reportes Avanzados
+    path('reportes/siniestralidad/', views.reporte_siniestralidad, name='reporte_siniestralidad'),
+    path('reportes/gasto-ramos/', views.reporte_gasto_ramos, name='reporte_gasto_ramos'),
+    path('reportes/dias-gestion/', views.reporte_dias_gestion, name='reporte_dias_gestion'),
+    path('reportes/siniestros-dependencia/', views.reporte_siniestros_dependencia, name='reporte_siniestros_dependencia'),
+
+    # APIs Adicionales
+    path('api/subtipos-ramo/', views.api_subtipos_ramo, name='api_subtipos_ramo'),
+    path('api/calcular-desglose-ramo/', views.api_calcular_desglose_ramo, name='api_calcular_desglose_ramo'),
+    path('api/reporte-siniestralidad/', views.api_reporte_siniestralidad, name='api_reporte_siniestralidad'),
 ]

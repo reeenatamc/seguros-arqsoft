@@ -61,3 +61,9 @@ def subtract(value, arg):
     except (TypeError, ValueError):
         return value
 
+
+@register.filter(name='add_class')
+def add_class(field, css):
+    """Agrega clases CSS a un widget de formulario en el template."""
+    return field.as_widget(attrs={**field.field.widget.attrs, 'class': f"{field.field.widget.attrs.get('class', '')} {css}"})
+

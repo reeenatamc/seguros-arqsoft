@@ -1,0 +1,211 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Editar Póliza {{ object.numero_poliza }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="{% url 'poliza_detalle' object.pk %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+            <i class="fas fa-arrow-left text-slate-600"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Editar Póliza</h1>
+            <p class="text-slate-500 mt-1">{{ object.numero_poliza }} - {{ object.compania_aseguradora.nombre }}</p>
+        </div>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Datos Generales -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-file-contract text-brand-500 mr-2"></i>
+                Datos Generales de la Póliza
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Número de Póliza</label>
+                    {{ form.numero_poliza }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Compañía Aseguradora</label>
+                    {{ form.compania_aseguradora }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Corredor de Seguros</label>
+                    {{ form.corredor_seguros }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Tipo de Póliza</label>
+                    {{ form.tipo_poliza }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Suma Asegurada Total</label>
+                    {{ form.suma_asegurada }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Estado</label>
+                    {{ form.estado }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Fecha de Inicio</label>
+                    {{ form.fecha_inicio }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Fecha de Fin</label>
+                    {{ form.fecha_fin }}
+                </div>
+                <div class="flex items-center pt-6">
+                    <div class="flex items-center h-5">
+                        {{ form.es_gran_contribuyente }}
+                    </div>
+                    <label class="ml-3 text-sm text-slate-700">
+                        Es Gran Contribuyente
+                    </label>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <label class="block text-sm font-medium text-slate-700 mb-2">Coberturas</label>
+                {{ form.coberturas }}
+            </div>
+
+            <div class="mt-6">
+                <label class="block text-sm font-medium text-slate-700 mb-2">Observaciones</label>
+                {{ form.observaciones }}
+            </div>
+        </div>
+
+        <!-- Desglose por Ramos -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="fas fa-layer-group text-brand-500 mr-2"></i>
+                    Desglose por Ramos
+                </h2>
+                <button type="button" id="add-ramo-btn"
+                        class="inline-flex items-center px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg text-sm transition">
+                    <i class="fas fa-plus mr-1.5"></i>
+                    Agregar Ramo
+                </button>
+            </div>
+
+            {{ detalles_formset.management_form }}
+
+            <div id="ramos-container" class="space-y-4">
+                {% for form_detalle in detalles_formset %}
+                <div class="ramo-form border border-slate-200 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="font-medium text-slate-700">Ramo #<span class="ramo-number">{{ forloop.counter }}</span></span>
+                        <button type="button" class="remove-ramo-btn text-red-500 hover:text-red-700">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Ramo</label>
+                            {{ form_detalle.ramo }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">N° Factura</label>
+                            {{ form_detalle.numero_factura }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Suma Asegurada</label>
+                            {{ form_detalle.suma_asegurada }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Prima</label>
+                            {{ form_detalle.total_prima }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Emisión</label>
+                            {{ form_detalle.emision }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Doc. Contable</label>
+                            {{ form_detalle.documento_contable }}
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Observaciones</label>
+                            {{ form_detalle.observaciones }}
+                        </div>
+                    </div>
+
+                    {{ form_detalle.DELETE }}
+                    {{ form_detalle.id }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex justify-end gap-3">
+            <a href="{% url 'poliza_detalle' object.pk %}"
+               class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                <i class="fas fa-save mr-2"></i>
+                Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById('ramos-container');
+        const addBtn = document.getElementById('add-ramo-btn');
+        const totalForms = document.getElementById('id_detalles_ramo-TOTAL_FORMS');
+
+        function attachRemoveHandler(btn) {
+            if (!btn) return;
+            btn.addEventListener('click', function() {
+                const form = this.closest('.ramo-form');
+                const deleteInput = form.querySelector('input[name$="-DELETE"]');
+                if (deleteInput) {
+                    deleteInput.checked = true;
+                    form.style.display = 'none';
+                }
+            });
+        }
+
+        document.querySelectorAll('.remove-ramo-btn').forEach(attachRemoveHandler);
+
+        addBtn.addEventListener('click', function() {
+            const formCount = parseInt(totalForms.value);
+            const emptyForm = container.querySelector('.ramo-form');
+            if (!emptyForm) return;
+
+            const newForm = emptyForm.cloneNode(true);
+            newForm.style.display = '';
+            newForm.innerHTML = newForm.innerHTML.replace(/-\d+-/g, `-${formCount}-`);
+            newForm.innerHTML = newForm.innerHTML.replace(/_\d+_/g, `_${formCount}_`);
+
+            newForm.querySelectorAll('input, select, textarea').forEach(el => {
+                if (el.type !== 'hidden' && !el.name.includes('DELETE')) {
+                    el.value = '';
+                }
+            });
+
+            const deleteCheck = newForm.querySelector('input[name$="-DELETE"]');
+            if (deleteCheck) deleteCheck.checked = false;
+
+            newForm.querySelector('.ramo-number').textContent = formCount + 1;
+
+            container.appendChild(newForm);
+            totalForms.value = formCount + 1;
+
+            attachRemoveHandler(newForm.querySelector('.remove-ramo-btn'));
+        });
+    });
+</script>
+{% endblock %}

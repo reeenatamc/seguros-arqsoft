@@ -53,65 +53,65 @@
                     <!-- Crear nuevo -->
                     <div class="p-2 border-b border-slate-100">
                         <p class="px-3 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Crear nuevo</p>
-                        <a href="/admin/app/poliza/add/" 
+                        <a href="{% url 'poliza_crear' %}"
                            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
                             <div class="w-7 h-7 rounded-lg bg-brand-100 flex items-center justify-center">
                                 <i class="fas fa-file-shield text-brand-600 text-xs"></i>
                             </div>
                             <span class="text-sm text-slate-700">Nueva Póliza</span>
                         </a>
-                        <a href="/admin/app/factura/add/" 
+                        <a href="{% url 'factura_crear' %}"
                            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
                             <div class="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
                                 <i class="fas fa-file-invoice-dollar text-amber-600 text-xs"></i>
                             </div>
                             <span class="text-sm text-slate-700">Nueva Factura</span>
                         </a>
-                        <a href="/admin/app/siniestro/add/" 
+                        <a href="{% url 'siniestro_crear' %}"
                            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
                             <div class="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center">
                                 <i class="fas fa-car-burst text-red-600 text-xs"></i>
                             </div>
                             <span class="text-sm text-slate-700">Nuevo Siniestro</span>
                         </a>
-                        <a href="/admin/app/pago/add/" 
+                        <a href="{% url 'pago_crear' %}"
                            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
                             <div class="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center">
                                 <i class="fas fa-credit-card text-emerald-600 text-xs"></i>
                             </div>
                             <span class="text-sm text-slate-700">Nuevo Pago</span>
                         </a>
+                        <a href="{% url 'documento_crear' %}"
+                           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
+                            <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+                                <i class="fas fa-file-upload text-blue-600 text-xs"></i>
+                            </div>
+                            <span class="text-sm text-slate-700">Nuevo Documento</span>
+                        </a>
                     </div>
-                    <!-- Importar datos -->
+                    <!-- Más opciones -->
                     <div class="p-2">
-                        <p class="px-3 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Importar datos</p>
-                        <a href="/admin/app/poliza/import/" 
+                        <p class="px-3 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Más opciones</p>
+                        <a href="{% url 'grupo_bienes_crear' %}"
                            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
-                            <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
-                                <i class="fas fa-file-import text-blue-600 text-xs"></i>
+                            <div class="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
+                                <i class="fas fa-layer-group text-purple-600 text-xs"></i>
                             </div>
-                            <span class="text-sm text-slate-700">Importar Pólizas</span>
+                            <span class="text-sm text-slate-700">Nuevo Grupo de Bienes</span>
                         </a>
-                        <a href="/admin/app/factura/import/" 
+                        <a href="{% url 'bien_asegurado_crear' %}"
                            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
-                            <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
-                                <i class="fas fa-file-import text-blue-600 text-xs"></i>
+                            <div class="w-7 h-7 rounded-lg bg-cyan-100 flex items-center justify-center">
+                                <i class="fas fa-box text-cyan-600 text-xs"></i>
                             </div>
-                            <span class="text-sm text-slate-700">Importar Facturas</span>
+                            <span class="text-sm text-slate-700">Nuevo Bien Asegurado</span>
                         </a>
-                        <a href="/admin/app/siniestro/import/" 
+                        <a href="{% url 'ramo_crear' %}"
                            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
-                            <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
-                                <i class="fas fa-file-import text-blue-600 text-xs"></i>
+                            <div class="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center">
+                                <i class="fas fa-tags text-orange-600 text-xs"></i>
                             </div>
-                            <span class="text-sm text-slate-700">Importar Siniestros</span>
-                        </a>
-                        <a href="/admin/app/compania_aseguradora/import/" 
-                           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
-                            <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
-                                <i class="fas fa-file-import text-blue-600 text-xs"></i>
-                            </div>
-                            <span class="text-sm text-slate-700">Importar Compañías</span>
+                            <span class="text-sm text-slate-700">Nuevo Ramo</span>
                         </a>
                     </div>
                 </div>

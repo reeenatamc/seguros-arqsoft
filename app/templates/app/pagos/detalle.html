@@ -1,0 +1,180 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Pago - {{ pago.factura.numero_factura }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'factura_detalle' pago.factura.pk %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+                <i class="fas fa-arrow-left text-slate-600"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Detalle de Pago</h1>
+                <p class="text-slate-500 mt-1">Factura {{ pago.factura.numero_factura }}</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'pago_editar' pago.pk %}"
+               class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                <i class="fas fa-edit mr-2"></i>
+                Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Información Principal -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Datos del Pago -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-credit-card text-emerald-500 mr-2"></i>
+                    Información del Pago
+                </h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Fecha de Pago</span>
+                        <p class="font-medium text-slate-800">{{ pago.fecha_pago|date:"d/m/Y" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Forma de Pago</span>
+                        <p class="font-medium text-slate-800">{{ pago.get_forma_pago_display }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Estado</span>
+                        <p class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                            {% if pago.estado == 'aprobado' %}bg-emerald-100 text-emerald-800
+                            {% elif pago.estado == 'pendiente' %}bg-amber-100 text-amber-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ pago.get_estado_display }}
+                        </p>
+                    </div>
+                    {% if pago.referencia %}
+                    <div class="md:col-span-3">
+                        <span class="text-xs text-slate-500 uppercase">Número de Referencia</span>
+                        <p class="font-medium text-slate-800">{{ pago.referencia }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if pago.observaciones %}
+                <div class="mt-4 pt-4 border-t border-slate-200">
+                    <span class="text-xs text-slate-500 uppercase">Observaciones</span>
+                    <p class="text-slate-700 mt-1">{{ pago.observaciones }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Información de la Factura -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-file-invoice text-amber-500 mr-2"></i>
+                    Información de la Factura
+                </h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Número</span>
+                        <a href="{% url 'factura_detalle' pago.factura.pk %}" class="font-medium text-brand-600 hover:underline">
+                            {{ pago.factura.numero_factura }}
+                        </a>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Estado</span>
+                        <p class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                            {% if pago.factura.estado == 'pagada' %}bg-emerald-100 text-emerald-800
+                            {% elif pago.factura.estado == 'pendiente' %}bg-amber-100 text-amber-800
+                            {% elif pago.factura.estado == 'parcial' %}bg-blue-100 text-blue-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ pago.factura.get_estado_display }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Póliza</span>
+                        <a href="{% url 'poliza_detalle' pago.factura.poliza.pk %}" class="font-medium text-brand-600 hover:underline">
+                            {{ pago.factura.poliza.numero_poliza }}
+                        </a>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Compañía</span>
+                        <p class="font-medium text-slate-800">{{ pago.factura.poliza.compania_aseguradora }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Fecha Emisión</span>
+                        <p class="font-medium text-slate-800">{{ pago.factura.fecha_emision|date:"d/m/Y" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Fecha Vencimiento</span>
+                        <p class="font-medium text-slate-800">{{ pago.factura.fecha_vencimiento|date:"d/m/Y" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Resumen del Pago -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-calculator text-brand-500 mr-2"></i>
+                    Resumen del Pago
+                </h2>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-3 bg-emerald-50 -mx-2 px-2 rounded">
+                        <span class="font-semibold text-emerald-700">Monto Pagado</span>
+                        <span class="font-bold text-emerald-700 text-xl">${{ pago.monto|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado de la Factura -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                    Estado de la Factura
+                </h2>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Monto Total</span>
+                        <span class="font-semibold text-slate-800">${{ pago.factura.monto_total|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Pagado</span>
+                        <span class="font-semibold text-emerald-600">${{ pago.factura.total_pagado|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 bg-slate-50 -mx-2 px-2 rounded">
+                        <span class="font-semibold text-slate-700">Saldo Pendiente</span>
+                        <span class="font-bold {% if pago.factura.saldo_pendiente > 0 %}text-red-600{% else %}text-emerald-600{% endif %}">
+                            ${{ pago.factura.saldo_pendiente|floatformat:2 }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fechas del Registro -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-clock text-slate-500 mr-2"></i>
+                    Registro
+                </h2>
+
+                <div class="space-y-3">
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Fecha de Registro</span>
+                        <p class="font-medium text-slate-800">{{ pago.created_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Última Actualización</span>
+                        <p class="font-medium text-slate-800">{{ pago.updated_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

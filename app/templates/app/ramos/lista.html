@@ -1,0 +1,117 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Ramos{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Ramos de Seguros</h1>
+            <p class="text-slate-500 mt-1">Gestiona los ramos y subtipos de pólizas</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'ramos_inicializar' %}"
+               class="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
+                <i class="fas fa-sync-alt mr-2"></i>
+                Cargar Predefinidos
+            </a>
+            <a href="{% url 'ramo_crear' %}"
+               class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                <i class="fas fa-plus mr-2"></i>
+                Nuevo Ramo
+            </a>
+        </div>
+    </div>
+
+    <!-- Búsqueda -->
+    <div class="bg-white rounded-xl shadow-card p-4">
+        <form method="get" class="flex gap-4">
+            <div class="flex-1">
+                <input type="text" name="q" value="{{ query }}"
+                       placeholder="Buscar por código o nombre..."
+                       class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+            </div>
+            <button type="submit" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition">
+                <i class="fas fa-search mr-2"></i>
+                Buscar
+            </button>
+        </form>
+    </div>
+
+    <!-- Tabla de Ramos -->
+    <div class="bg-white rounded-xl shadow-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Código</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Nombre</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Descripción</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Estado</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Predefinido</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for ramo in ramos %}
+                    <tr class="table-row-hover">
+                        <td class="px-6 py-4">
+                            <span class="font-mono font-semibold text-brand-600">{{ ramo.codigo }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-medium text-slate-800">{{ ramo.nombre }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-slate-500 text-sm">{{ ramo.descripcion|truncatewords:10|default:"-" }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if ramo.activo %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                Activo
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                                Inactivo
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if ramo.es_predefinido %}
+                            <i class="fas fa-check-circle text-brand-500"></i>
+                            {% else %}
+                            <i class="fas fa-minus text-slate-300"></i>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="{% url 'ramo_editar' ramo.pk %}"
+                               class="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm transition">
+                                <i class="fas fa-edit mr-1.5"></i>
+                                Editar
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <div class="text-slate-400">
+                                <i class="fas fa-folder-open text-4xl mb-3"></i>
+                                <p class="text-lg">No hay ramos registrados</p>
+                                <p class="text-sm mt-1">Crea un nuevo ramo o carga los predefinidos</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <div class="flex justify-center">
+        {% include 'app/components/pagination.html' %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

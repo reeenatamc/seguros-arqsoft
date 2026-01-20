@@ -1,0 +1,77 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Grupos de Bienes{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Grupos de Bienes</h1>
+            <p class="text-slate-500 mt-1">Organiza los bienes asegurados por grupos</p>
+        </div>
+        <a href="{% url 'grupo_bienes_crear' %}"
+           class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+            <i class="fas fa-plus mr-2"></i>
+            Nuevo Grupo
+        </a>
+    </div>
+
+    <!-- Lista de Grupos -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for grupo in grupos %}
+        <div class="bg-white rounded-xl shadow-card p-6 hover:shadow-card-hover transition-shadow">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="font-semibold text-slate-800">{{ grupo.nombre }}</h3>
+                    <p class="text-sm text-slate-500">{{ grupo.ramo.nombre }}</p>
+                </div>
+                {% if grupo.activo %}
+                <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full">Activo</span>
+                {% else %}
+                <span class="px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">Inactivo</span>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="text-center p-3 bg-slate-50 rounded-lg">
+                    <span class="text-2xl font-bold text-brand-600">{{ grupo.total_bienes }}</span>
+                    <span class="text-xs text-slate-500 block">Bienes</span>
+                </div>
+                <div class="text-center p-3 bg-slate-50 rounded-lg">
+                    <span class="text-sm font-bold text-slate-700">${{ grupo.valor_total|floatformat:0 }}</span>
+                    <span class="text-xs text-slate-500 block">Valor Total</span>
+                </div>
+            </div>
+
+            {% if grupo.responsable %}
+            <div class="text-sm text-slate-600 mb-4">
+                <i class="fas fa-user text-slate-400 mr-1"></i>
+                {{ grupo.responsable.nombre }}
+            </div>
+            {% endif %}
+
+            <a href="{% url 'grupo_bienes_detalle' grupo.pk %}"
+               class="block text-center py-2 text-brand-600 hover:text-brand-700 text-sm font-medium">
+                Ver Detalles <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-span-full bg-white rounded-xl shadow-card p-12 text-center">
+            <i class="fas fa-folder-open text-4xl text-slate-300 mb-3"></i>
+            <p class="text-slate-500">No hay grupos de bienes registrados</p>
+            <a href="{% url 'grupo_bienes_crear' %}" class="inline-flex items-center mt-4 text-brand-600 hover:underline">
+                <i class="fas fa-plus mr-1"></i> Crear primer grupo
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <div class="flex justify-center">
+        {% include 'app/components/pagination.html' %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

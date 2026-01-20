@@ -29,7 +29,7 @@
                     </a>
                 </div>
             </div>
-            <a href="/admin/app/siniestro/add/" 
+            <a href="{% url 'siniestro_crear' %}"
                class="inline-flex items-center gap-2 px-4 py-2.5 gradient-brand text-white rounded-xl hover:shadow-lg hover:shadow-brand-500/25 transition font-medium text-sm">
                 <i class="fas fa-plus"></i>
                 Nuevo Siniestro
@@ -146,11 +146,11 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
-                                <a href="/admin/app/siniestro/{{ siniestro.id }}/change/" 
+                                <a href="{% url 'siniestro_editar' siniestro.pk %}"
                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-600 transition">
                                     <i class="fas fa-pen-to-square"></i>
                                 </a>
-                                <a href="/admin/app/siniestro/{{ siniestro.id }}/" 
+                                <a href="{% url 'siniestro_detalle' siniestro.pk %}"
                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition">
                                     <i class="fas fa-eye"></i>
                                 </a>
