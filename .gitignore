@@ -212,3 +212,26 @@ $RECYCLE.BIN/
 *.tmp
 *.temp
 
+# ===========================================
+# PROJECT SPECIFIC
+# ===========================================
+
+# Database
+*.sqlite3
+*.sqlite3-journal
+
+# Django Migrations (optional - remove if you want to track migrations)
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+
+# Logs
+logs/
+*.log

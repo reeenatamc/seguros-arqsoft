@@ -20,16 +20,23 @@ from .models import (
     Poliza, Factura, Siniestro, Alerta, CompaniaAseguradora, TipoPoliza,
     TipoSiniestro, CorredorSeguros, InsuredAsset, Quote, QuoteOption,
     PolicyRenewal, PaymentApproval, CalendarEvent, Documento, Pago,
-    Ramo, SubtipoRamo, DetallePolizaRamo, GrupoBienes,
+    TipoRamo, GrupoRamo, SubgrupoRamo, BienAsegurado,
+    Ramo, SubtipoRamo,  # Alias de compatibilidad
+    DetallePolizaRamo, GrupoBienes, ResponsableCustodio,
     ChecklistSiniestro, ChecklistSiniestroConfig, AdjuntoSiniestro,
     NotificacionEmail, NotaCredito
 )
 from .forms import (
-    PolizaForm, DetallePolizaRamoFormSet, RamoForm, SubtipoRamoForm,
+    PolizaForm, DetallePolizaRamoFormSet, 
+    TipoRamoForm, GrupoRamoForm, SubgrupoRamoForm,
+    RamoForm, SubtipoRamoForm,  # Alias de compatibilidad
     SiniestroForm, SiniestroGestionForm, AdjuntoSiniestroFormSet,
     GrupoBienesForm, BienAseguradoForm, NotaCreditoForm,
     FiltroPolizasForm, FiltroSiniestrosForm, FiltroReportesForm,
-    ChecklistSiniestroConfigForm, FacturaForm, DocumentoForm, PagoForm
+    ChecklistSiniestroConfigForm, FacturaForm, DocumentoForm, PagoForm,
+    # Formularios de entidades base
+    CompaniaAseguradoraForm, CorredorSegurosForm,
+    TipoSiniestroForm, ResponsableCustodioForm
 )
 from .services import (
     EstadisticasService, ExportacionService, ReportesService,
@@ -168,8 +175,8 @@ def desglose_ramos_lista(request):
     from django.db.models import Sum
     
     detalles = DetallePolizaRamo.objects.select_related(
-        'poliza', 'poliza__compania_aseguradora', 'ramo', 'subtipo_ramo'
-    ).order_by('-poliza__fecha_inicio', 'ramo__nombre')
+        'poliza', 'poliza__compania_aseguradora', 'grupo_ramo', 'subgrupo_ramo'
+    ).order_by('-poliza__fecha_inicio', 'grupo_ramo__nombre')
     
     # Filtro de búsqueda
     query = request.GET.get('q', '').strip()
@@ -185,10 +192,10 @@ def desglose_ramos_lista(request):
     if compania:
         detalles = detalles.filter(poliza__compania_aseguradora_id=compania)
     
-    # Filtro por ramo
+    # Filtro por grupo de ramo
     ramo = request.GET.get('ramo')
     if ramo:
-        detalles = detalles.filter(ramo_id=ramo)
+        detalles = detalles.filter(grupo_ramo_id=ramo)
     
     # Filtro por póliza
     poliza = request.GET.get('poliza')
@@ -236,7 +243,7 @@ def desglose_ramos_lista(request):
     
     # Datos para filtros
     companias = CompaniaAseguradora.objects.filter(activo=True).order_by('nombre')
-    ramos = Ramo.objects.filter(activo=True).order_by('nombre')
+    ramos = GrupoRamo.objects.filter(activo=True).order_by('nombre')
     polizas_lista = Poliza.objects.order_by('-fecha_inicio')[:100]  # Limitar para rendimiento
     
     context = {
@@ -270,8 +277,8 @@ def desglose_ramos_exportar(request):
     formato = request.GET.get('formato', 'excel')
     
     detalles = DetallePolizaRamo.objects.select_related(
-        'poliza', 'poliza__compania_aseguradora', 'ramo'
-    ).order_by('-poliza__fecha_inicio', 'ramo__nombre')
+        'poliza', 'poliza__compania_aseguradora', 'grupo_ramo'
+    ).order_by('-poliza__fecha_inicio', 'grupo_ramo__nombre')
     
     # Aplicar mismos filtros que la vista
     query = request.GET.get('q', '').strip()
@@ -288,7 +295,7 @@ def desglose_ramos_exportar(request):
     
     ramo = request.GET.get('ramo')
     if ramo:
-        detalles = detalles.filter(ramo_id=ramo)
+        detalles = detalles.filter(grupo_ramo_id=ramo)
     
     poliza = request.GET.get('poliza')
     if poliza:
@@ -321,7 +328,7 @@ def desglose_ramos_exportar(request):
         
         for d in detalles:
             writer.writerow([
-                d.ramo.nombre,
+                d.grupo_ramo.nombre,
                 d.numero_factura or '',
                 d.documento_contable or '',
                 d.poliza.numero_poliza,
@@ -373,7 +380,7 @@ def desglose_ramos_exportar(request):
     
     # Datos
     for row, d in enumerate(detalles, 2):
-        ws.cell(row=row, column=1, value=d.ramo.nombre).border = border
+        ws.cell(row=row, column=1, value=d.grupo_ramo.nombre).border = border
         ws.cell(row=row, column=2, value=d.numero_factura or '').border = border
         ws.cell(row=row, column=3, value=d.documento_contable or '').border = border
         ws.cell(row=row, column=4, value=d.poliza.numero_poliza).border = border
@@ -1744,6 +1751,126 @@ class RamoUpdateView(LoginRequiredMixin, UpdateView):
 
 
 # =============================================================================
+# VISTAS RÁPIDAS - CREAR ENTIDADES BASE (popup/modal)
+# =============================================================================
+
+class CompaniaAseguradoraCreateView(LoginRequiredMixin, CreateView):
+    """Crear compañía aseguradora"""
+    model = CompaniaAseguradora
+    form_class = CompaniaAseguradoraForm
+    template_name = 'app/components/crear_rapido.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo'] = 'Nueva Compañía Aseguradora'
+        context['icono'] = 'fas fa-building'
+        context['volver_url'] = self.request.GET.get('next', reverse_lazy('poliza_crear'))
+        return context
+
+    def get_success_url(self):
+        next_url = self.request.GET.get('next')
+        if next_url:
+            return next_url
+        return reverse_lazy('poliza_crear')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'Compañía aseguradora "{self.object.nombre}" creada exitosamente.')
+        return response
+
+
+class CorredorSegurosCreateView(LoginRequiredMixin, CreateView):
+    """Crear corredor de seguros"""
+    model = CorredorSeguros
+    form_class = CorredorSegurosForm
+    template_name = 'app/components/crear_rapido.html'
+
+    def get_initial(self):
+        initial = super().get_initial()
+        # Preseleccionar la compañía si viene en los parámetros
+        compania_id = self.request.GET.get('compania_id')
+        if compania_id:
+            initial['compania_aseguradora'] = compania_id
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo'] = 'Nuevo Corredor de Seguros'
+        context['icono'] = 'fas fa-user-tie'
+        context['volver_url'] = self.request.GET.get('next', reverse_lazy('poliza_crear'))
+        # Mostrar nombre de la compañía si viene preseleccionada
+        compania_id = self.request.GET.get('compania_id')
+        if compania_id:
+            try:
+                compania = CompaniaAseguradora.objects.get(pk=compania_id)
+                context['subtitulo'] = f'Para: {compania.nombre}'
+            except CompaniaAseguradora.DoesNotExist:
+                pass
+        return context
+
+    def get_success_url(self):
+        next_url = self.request.GET.get('next')
+        if next_url:
+            return next_url
+        return reverse_lazy('poliza_crear')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'Corredor de seguros "{self.object.nombre}" creado exitosamente.')
+        return response
+
+
+class TipoSiniestroCreateView(LoginRequiredMixin, CreateView):
+    """Crear tipo de siniestro"""
+    model = TipoSiniestro
+    form_class = TipoSiniestroForm
+    template_name = 'app/components/crear_rapido.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo'] = 'Nuevo Tipo de Siniestro'
+        context['icono'] = 'fas fa-exclamation-triangle'
+        context['volver_url'] = self.request.GET.get('next', reverse_lazy('siniestro_crear'))
+        return context
+
+    def get_success_url(self):
+        next_url = self.request.GET.get('next')
+        if next_url:
+            return next_url
+        return reverse_lazy('siniestro_crear')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'Tipo de siniestro "{self.object.nombre}" creado exitosamente.')
+        return response
+
+
+class ResponsableCustodioCreateView(LoginRequiredMixin, CreateView):
+    """Crear responsable/custodio"""
+    model = ResponsableCustodio
+    form_class = ResponsableCustodioForm
+    template_name = 'app/components/crear_rapido.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo'] = 'Nuevo Responsable/Custodio'
+        context['icono'] = 'fas fa-user-shield'
+        context['volver_url'] = self.request.GET.get('next', reverse_lazy('siniestro_crear'))
+        return context
+
+    def get_success_url(self):
+        next_url = self.request.GET.get('next')
+        if next_url:
+            return next_url
+        return reverse_lazy('siniestro_crear')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'Responsable/Custodio "{self.object.nombre}" creado exitosamente.')
+        return response
+
+
+# =============================================================================
 # VISTAS BASADAS EN CLASES - PÓLIZAS (CRUD Completo)
 # =============================================================================
 
@@ -1767,6 +1894,12 @@ class PolizaCreateView(LoginRequiredMixin, CreateView):
 
         with transaction.atomic():
             form.instance.creado_por = self.request.user
+            # Asignar automáticamente el tipo de póliza "Ramos Generales"
+            tipo_ramos_generales, _ = TipoPoliza.objects.get_or_create(
+                nombre='Ramos Generales',
+                defaults={'descripcion': 'Tipo de póliza por defecto', 'activo': True}
+            )
+            form.instance.tipo_poliza = tipo_ramos_generales
             self.object = form.save()
 
             if detalles_formset.is_valid():
@@ -2444,13 +2577,23 @@ Gestión de Seguros
 """
     
     try:
+        # Email de destino configurado
+        email_destino = 'renataxdalej@gmail.com'
+        
+        # Lista de destinatarios CC (usuario actual y broker si existe)
+        cc_list = []
+        if request.user.email:
+            cc_list.append(request.user.email)
+        if siniestro.poliza.corredor_seguros and siniestro.poliza.corredor_seguros.email:
+            cc_list.append(siniestro.poliza.corredor_seguros.email)
+        
         # Crear email con adjuntos
         email = EmailMessage(
             subject=asunto,
             body=mensaje,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[siniestro.poliza.corredor_seguros.email] if siniestro.poliza.corredor_seguros and siniestro.poliza.corredor_seguros.email else [],
-            cc=[request.user.email] if request.user.email else [],
+            to=[email_destino],
+            cc=cc_list if cc_list else None,
         )
         
         # Adjuntar archivos
@@ -2479,16 +2622,33 @@ Gestión de Seguros
 @login_required
 @require_GET
 def api_subtipos_ramo(request):
-    """API para obtener subtipos de un ramo"""
+    """API para obtener subgrupos de un grupo de ramo"""
     ramo_id = request.GET.get('ramo_id')
-    if not ramo_id:
-        return JsonResponse({'subtipos': []})
+    grupo_ramo_id = request.GET.get('grupo_ramo_id') or ramo_id  # Compatibilidad
+    if not grupo_ramo_id:
+        return JsonResponse({'subtipos': [], 'subgrupos': []})
 
-    subtipos = SubtipoRamo.objects.filter(
-        ramo_id=ramo_id, activo=True
-    ).values('id', 'codigo', 'nombre')
+    subgrupos = SubgrupoRamo.objects.filter(
+        grupo_ramo_id=grupo_ramo_id, activo=True
+    ).values('id', 'codigo', 'nombre').order_by('orden', 'nombre')
 
-    return JsonResponse({'subtipos': list(subtipos)})
+    resultado = list(subgrupos)
+    return JsonResponse({'subtipos': resultado, 'subgrupos': resultado})
+
+
+@login_required
+@require_GET
+def api_corredores_por_compania(request):
+    """API para obtener corredores de una compañía aseguradora"""
+    compania_id = request.GET.get('compania_id')
+    if not compania_id:
+        return JsonResponse({'corredores': []})
+
+    corredores = CorredorSeguros.objects.filter(
+        compania_aseguradora_id=compania_id, activo=True
+    ).values('id', 'nombre', 'email').order_by('nombre')
+
+    return JsonResponse({'corredores': list(corredores)})
 
 
 @login_required
@@ -2684,3 +2844,290 @@ class PagoUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, 'Pago actualizado exitosamente.')
         return super().form_valid(form)
+
+
+# ==========================================================================
+# VISTAS DE SINIESTROS POR EMAIL
+# ==========================================================================
+
+from .models import SiniestroEmail
+
+
+@login_required
+def siniestros_email_pendientes(request):
+    """
+    Vista para listar y gestionar los siniestros reportados por email.
+    Permite filtrar por estado y completar la información faltante.
+    """
+    queryset = SiniestroEmail.objects.select_related(
+        'activo_encontrado', 'siniestro_creado', 'responsable_encontrado'
+    ).order_by('-fecha_recepcion')
+    
+    # Filtros
+    query = request.GET.get('q', '').strip()
+    if query:
+        queryset = queryset.filter(
+            Q(serie__icontains=query) |
+            Q(responsable_nombre__icontains=query) |
+            Q(email_subject__icontains=query) |
+            Q(marca__icontains=query) |
+            Q(modelo__icontains=query)
+        )
+    
+    estado = request.GET.get('estado')
+    if estado:
+        queryset = queryset.filter(estado_procesamiento=estado)
+    
+    # Paginación
+    paginator = Paginator(queryset, 15)
+    page = request.GET.get('page', 1)
+    pendientes = paginator.get_page(page)
+    
+    # Estadísticas
+    stats = {
+        'total': SiniestroEmail.objects.count(),
+        'pendientes': SiniestroEmail.objects.filter(estado_procesamiento='pendiente').count(),
+        'procesados': SiniestroEmail.objects.filter(estado_procesamiento='procesado').count(),
+        'errores': SiniestroEmail.objects.filter(estado_procesamiento='error').count(),
+    }
+    
+    # Datos para el modal de completar
+    polizas = Poliza.objects.filter(estado='vigente').select_related('compania_aseguradora')
+    tipos_siniestro = TipoSiniestro.objects.filter(activo=True)
+    responsables = ResponsableCustodio.objects.filter(activo=True).order_by('nombre')
+    
+    context = {
+        'pendientes': pendientes,
+        'stats': stats,
+        'query': query,
+        'estado_filtro': estado,
+        'polizas': polizas,
+        'tipos_siniestro': tipos_siniestro,
+        'responsables': responsables,
+    }
+    
+    return render(request, 'app/siniestros/email_pendientes.html', context)
+
+
+@login_required
+def siniestro_email_procesar_auto(request, pk):
+    """
+    Intenta crear el siniestro automáticamente buscando el bien por número de serie.
+    Si no encuentra el bien, redirige al formulario manual con mensaje.
+    """
+    from datetime import datetime
+    
+    siniestro_email = get_object_or_404(SiniestroEmail, pk=pk)
+    
+    # Verificar que esté pendiente
+    if siniestro_email.estado_procesamiento != 'pendiente':
+        messages.warning(request, 'Este registro ya fue procesado anteriormente.')
+        return redirect('siniestros_email_pendientes')
+    
+    # Buscar el bien por número de serie
+    bien = InsuredAsset.objects.filter(
+        serial_number__iexact=siniestro_email.serie.strip()
+    ).first()
+    
+    if not bien:
+        messages.warning(
+            request, 
+            f'No se encontró un bien registrado con serie "{siniestro_email.serie}". '
+            'Por favor complete los datos manualmente.'
+        )
+        return redirect('siniestros_email_pendientes')
+    
+    if not bien.policy:
+        messages.warning(
+            request, 
+            f'El bien "{bien.name}" no tiene póliza asignada. '
+            'Por favor complete los datos manualmente.'
+        )
+        return redirect('siniestros_email_pendientes')
+    
+    # Buscar tipo de siniestro "daño" por defecto
+    tipo_siniestro = TipoSiniestro.objects.filter(nombre='daño').first()
+    if not tipo_siniestro:
+        tipo_siniestro = TipoSiniestro.objects.filter(activo=True).first()
+    
+    if not tipo_siniestro:
+        messages.error(request, 'No hay tipos de siniestro configurados en el sistema.')
+        return redirect('siniestros_email_pendientes')
+    
+    # Parsear fecha del reporte
+    fecha_siniestro = timezone.now()
+    if siniestro_email.fecha_reporte:
+        try:
+            fecha_siniestro = timezone.make_aware(
+                datetime.strptime(siniestro_email.fecha_reporte.strip(), '%d/%m/%Y')
+            )
+        except ValueError:
+            pass
+    
+    # Generar número de siniestro
+    from django.db.models import Max
+    ultimo = Siniestro.objects.aggregate(Max('id'))['id__max'] or 0
+    numero_siniestro = f"SIN-{timezone.now().year}-{str(ultimo + 1).zfill(5)}"
+    
+    try:
+        with transaction.atomic():
+            # Crear el siniestro usando datos del bien
+            siniestro = Siniestro.objects.create(
+                poliza=bien.policy,
+                numero_siniestro=numero_siniestro,
+                tipo_siniestro=tipo_siniestro,
+                fecha_siniestro=fecha_siniestro,
+                bien_nombre=bien.name,
+                bien_modelo=bien.model,
+                bien_serie=bien.serial_number,
+                bien_marca=bien.brand,
+                bien_codigo_activo=bien.asset_code,
+                responsable_custodio=bien.custodian,
+                ubicacion=bien.location,
+                causa=siniestro_email.causa,
+                descripcion_detallada=siniestro_email.problema,
+                monto_estimado=bien.current_value or bien.purchase_value,
+                estado='registrado',
+            )
+            
+            # Crear checklist inicial
+            items_config = ChecklistSiniestroConfig.objects.filter(
+                tipo_siniestro=tipo_siniestro,
+                activo=True
+            )
+            for config in items_config:
+                ChecklistSiniestro.objects.create(
+                    siniestro=siniestro,
+                    config_item=config,
+                    completado=False
+                )
+            
+            # Actualizar el registro de email
+            siniestro_email.activo_encontrado = bien
+            siniestro_email.siniestro_creado = siniestro
+            siniestro_email.responsable_encontrado = bien.custodian
+            siniestro_email.estado_procesamiento = 'procesado'
+            siniestro_email.fecha_procesamiento = timezone.now()
+            siniestro_email.procesado_por = request.user
+            siniestro_email.mensaje_procesamiento = (
+                f"Siniestro {numero_siniestro} creado automáticamente. "
+                f"Bien: {bien.asset_code} - {bien.name}"
+            )
+            siniestro_email.save()
+        
+        messages.success(
+            request, 
+            f'✅ Siniestro {numero_siniestro} creado automáticamente. '
+            f'Bien: {bien.name} | Póliza: {bien.policy.numero_poliza}'
+        )
+        return redirect('siniestro_detalle', pk=siniestro.pk)
+        
+    except Exception as e:
+        messages.error(request, f'Error al crear el siniestro: {str(e)}')
+        return redirect('siniestros_email_pendientes')
+
+
+@login_required
+@require_POST
+def siniestro_email_completar(request, pk):
+    """
+    Completa la información de un siniestro recibido por email manualmente.
+    Se usa cuando no se encuentra el bien automáticamente.
+    """
+    from datetime import datetime
+    
+    siniestro_email = get_object_or_404(SiniestroEmail, pk=pk)
+    
+    # Verificar que esté pendiente
+    if siniestro_email.estado_procesamiento != 'pendiente':
+        messages.error(request, 'Este registro ya fue procesado anteriormente.')
+        return redirect('siniestros_email_pendientes')
+    
+    # Obtener datos del formulario
+    poliza_id = request.POST.get('poliza')
+    tipo_siniestro_id = request.POST.get('tipo_siniestro')
+    ubicacion = request.POST.get('ubicacion', '').strip()
+    monto_estimado = request.POST.get('monto_estimado')
+    responsable_id = request.POST.get('responsable_custodio')
+    
+    # Validaciones
+    if not all([poliza_id, tipo_siniestro_id, ubicacion, monto_estimado]):
+        messages.error(request, 'Por favor complete todos los campos obligatorios.')
+        return redirect('siniestros_email_pendientes')
+    
+    try:
+        poliza = Poliza.objects.get(pk=poliza_id)
+        tipo_siniestro = TipoSiniestro.objects.get(pk=tipo_siniestro_id)
+        monto = Decimal(monto_estimado)
+        
+        # Obtener o crear responsable
+        if responsable_id:
+            responsable = ResponsableCustodio.objects.get(pk=responsable_id)
+        else:
+            # Crear responsable con el nombre del correo
+            responsable, created = ResponsableCustodio.objects.get_or_create(
+                nombre=siniestro_email.responsable_nombre,
+                defaults={'activo': True}
+            )
+        
+        # Parsear fecha del reporte
+        fecha_siniestro = timezone.now()
+        if siniestro_email.fecha_reporte:
+            try:
+                fecha_siniestro = timezone.make_aware(
+                    datetime.strptime(siniestro_email.fecha_reporte.strip(), '%d/%m/%Y')
+                )
+            except ValueError:
+                pass
+        
+        # Generar número de siniestro
+        from django.db.models import Max
+        ultimo = Siniestro.objects.aggregate(Max('id'))['id__max'] or 0
+        numero_siniestro = f"SIN-EMAIL-{timezone.now().year}-{str(ultimo + 1).zfill(5)}"
+        
+        # Crear el siniestro
+        with transaction.atomic():
+            siniestro = Siniestro.objects.create(
+                poliza=poliza,
+                numero_siniestro=numero_siniestro,
+                tipo_siniestro=tipo_siniestro,
+                fecha_siniestro=fecha_siniestro,
+                bien_nombre=f"{siniestro_email.periferico} {siniestro_email.marca}".strip(),
+                bien_modelo=siniestro_email.modelo,
+                bien_serie=siniestro_email.serie,
+                bien_marca=siniestro_email.marca,
+                responsable_custodio=responsable,
+                ubicacion=ubicacion,
+                causa=siniestro_email.causa,
+                descripcion_detallada=siniestro_email.problema,
+                monto_estimado=monto,
+                estado='registrado',
+            )
+            
+            # Actualizar el registro de email
+            siniestro_email.siniestro_creado = siniestro
+            siniestro_email.responsable_encontrado = responsable
+            siniestro_email.estado_procesamiento = 'procesado'
+            siniestro_email.fecha_procesamiento = timezone.now()
+            siniestro_email.procesado_por = request.user
+            siniestro_email.mensaje_procesamiento = f"Siniestro {numero_siniestro} creado manualmente por {request.user.username}"
+            siniestro_email.save()
+        
+        messages.success(request, f'Siniestro {numero_siniestro} creado exitosamente.')
+        return redirect('siniestro_detalle', pk=siniestro.pk)
+        
+    except Poliza.DoesNotExist:
+        messages.error(request, 'La póliza seleccionada no existe.')
+    except TipoSiniestro.DoesNotExist:
+        messages.error(request, 'El tipo de siniestro seleccionado no existe.')
+    except Exception as e:
+        messages.error(request, f'Error al crear el siniestro: {str(e)}')
+    
+    return redirect('siniestros_email_pendientes')
+
+
+@login_required
+def siniestros_email_count(request):
+    """API para obtener el conteo de siniestros email pendientes."""
+    count = SiniestroEmail.objects.filter(estado_procesamiento='pendiente').count()
+    return JsonResponse({'count': count})

@@ -9,7 +9,10 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 from .models import (
-    Poliza, DetallePolizaRamo, Ramo, SubtipoRamo,
+    Poliza, DetallePolizaRamo, 
+    TipoRamo, GrupoRamo, SubgrupoRamo, BienAsegurado,
+    # Alias de compatibilidad (deprecados)
+    Ramo, SubtipoRamo,
     Siniestro, AdjuntoSiniestro, ChecklistSiniestro, ChecklistSiniestroConfig,
     GrupoBienes, InsuredAsset, Factura, Documento, Pago,
     CompaniaAseguradora, CorredorSeguros, TipoPoliza, TipoSiniestro,
@@ -42,28 +45,177 @@ class DateTimeInput(forms.DateTimeInput):
 
 
 # ==============================================================================
-# FORMULARIOS DE RAMOS
+# FORMULARIOS DE ENTIDADES BASE (Compañías, Corredores, etc.)
 # ==============================================================================
 
-class RamoForm(forms.ModelForm):
-    """Formulario para crear/editar ramos"""
+class CompaniaAseguradoraForm(forms.ModelForm):
+    """Formulario para crear/editar compañías aseguradoras"""
 
     class Meta:
-        model = Ramo
+        model = CompaniaAseguradora
+        fields = ['nombre', 'ruc', 'direccion', 'telefono', 'email', 
+                  'contacto_nombre', 'contacto_telefono', 'activo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre de la compañía',
+            }),
+            'ruc': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '13 dígitos',
+                'maxlength': '13',
+            }),
+            'direccion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Dirección (opcional)',
+            }),
+            'telefono': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Teléfono (opcional)',
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'email@ejemplo.com',
+            }),
+            'contacto_nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del contacto',
+            }),
+            'contacto_telefono': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Teléfono del contacto',
+            }),
+            'activo': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+        }
+
+
+class CorredorSegurosForm(forms.ModelForm):
+    """Formulario para crear/editar corredores de seguros"""
+
+    class Meta:
+        model = CorredorSeguros
+        fields = ['compania_aseguradora', 'nombre', 'ruc', 'direccion', 'telefono', 'email',
+                  'contacto_nombre', 'contacto_telefono', 'activo']
+        widgets = {
+            'compania_aseguradora': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del corredor/broker',
+            }),
+            'ruc': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '13 dígitos',
+                'maxlength': '13',
+            }),
+            'direccion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+            }),
+            'telefono': forms.TextInput(attrs={
+                'class': 'form-control',
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'email@broker.com',
+            }),
+            'contacto_nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+            }),
+            'contacto_telefono': forms.TextInput(attrs={
+                'class': 'form-control',
+            }),
+            'activo': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Solo mostrar compañías activas
+        self.fields['compania_aseguradora'].queryset = CompaniaAseguradora.objects.filter(activo=True)
+
+
+class TipoSiniestroForm(forms.ModelForm):
+    """Formulario para crear/editar tipos de siniestro"""
+
+    class Meta:
+        model = TipoSiniestro
+        fields = ['nombre', 'descripcion', 'activo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del tipo de siniestro',
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+            }),
+            'activo': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+        }
+
+
+class ResponsableCustodioForm(forms.ModelForm):
+    """Formulario para crear/editar responsables/custodios"""
+
+    class Meta:
+        model = ResponsableCustodio
+        fields = ['nombre', 'cargo', 'departamento', 'email', 'telefono', 'activo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre completo',
+            }),
+            'cargo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Cargo (opcional)',
+            }),
+            'departamento': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Departamento/Área',
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'email@ejemplo.com',
+            }),
+            'telefono': forms.TextInput(attrs={
+                'class': 'form-control',
+            }),
+            'activo': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+        }
+
+
+# ==============================================================================
+# FORMULARIOS DE CATÁLOGO DE RAMOS (JERARQUÍA)
+# ==============================================================================
+
+class TipoRamoForm(forms.ModelForm):
+    """Formulario para crear/editar tipos de ramo (nivel superior)"""
+
+    class Meta:
+        model = TipoRamo
         fields = ['codigo', 'nombre', 'descripcion', 'activo']
         widgets = {
             'codigo': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: INC, ROB, VLI',
+                'placeholder': 'Ej: RG para Ramos Generales',
             }),
             'nombre': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del ramo',
+                'placeholder': 'Nombre del tipo de ramo',
             }),
             'descripcion': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción del ramo (opcional)',
+                'placeholder': 'Descripción del tipo (opcional)',
             }),
             'activo': forms.CheckboxInput(attrs={
                 'class': 'form-check-input',
@@ -72,24 +224,89 @@ class RamoForm(forms.ModelForm):
 
     def clean_codigo(self):
         codigo = self.cleaned_data.get('codigo', '').upper()
-        if Ramo.objects.filter(codigo=codigo).exclude(pk=self.instance.pk).exists():
-            raise ValidationError('Ya existe un ramo con este código.')
+        if TipoRamo.objects.filter(codigo=codigo).exclude(pk=self.instance.pk).exists():
+            raise ValidationError('Ya existe un tipo de ramo con este código.')
         return codigo
 
 
-class SubtipoRamoForm(forms.ModelForm):
-    """Formulario para crear/editar subtipos de ramo"""
+class GrupoRamoForm(forms.ModelForm):
+    """Formulario para crear/editar grupos de ramo (segundo nivel)"""
 
     class Meta:
-        model = SubtipoRamo
-        fields = ['ramo', 'codigo', 'nombre', 'descripcion', 'activo']
+        model = GrupoRamo
+        fields = ['tipo_ramo', 'codigo', 'nombre', 'descripcion', 'orden', 'activo']
         widgets = {
-            'ramo': forms.Select(attrs={'class': 'form-select'}),
-            'codigo': forms.TextInput(attrs={'class': 'form-control'}),
-            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'tipo_ramo': forms.Select(attrs={'class': 'form-select'}),
+            'codigo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: G1, G2, VEH',
+            }),
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del grupo',
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción del grupo (opcional)',
+            }),
+            'orden': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+            }),
+            'activo': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['tipo_ramo'].queryset = TipoRamo.objects.filter(activo=True)
+
+    def clean_codigo(self):
+        codigo = self.cleaned_data.get('codigo', '').upper()
+        tipo_ramo = self.cleaned_data.get('tipo_ramo')
+        if tipo_ramo:
+            exists = GrupoRamo.objects.filter(
+                tipo_ramo=tipo_ramo, codigo=codigo
+            ).exclude(pk=self.instance.pk).exists()
+            if exists:
+                raise ValidationError('Ya existe un grupo con este código para el tipo seleccionado.')
+        return codigo
+
+
+class SubgrupoRamoForm(forms.ModelForm):
+    """Formulario para crear/editar subgrupos de ramo (tercer nivel)"""
+
+    class Meta:
+        model = SubgrupoRamo
+        fields = ['grupo_ramo', 'codigo', 'nombre', 'descripcion', 'orden', 'activo']
+        widgets = {
+            'grupo_ramo': forms.Select(attrs={'class': 'form-select'}),
+            'codigo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Código del subgrupo',
+            }),
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del subgrupo',
+            }),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'orden': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+            }),
             'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['grupo_ramo'].queryset = GrupoRamo.objects.filter(activo=True)
+
+
+# Alias para compatibilidad con código existente (deprecado)
+RamoForm = GrupoRamoForm
+SubtipoRamoForm = SubgrupoRamoForm
 
 
 # ==============================================================================
@@ -103,7 +320,7 @@ class PolizaForm(forms.ModelForm):
         model = Poliza
         fields = [
             'numero_poliza', 'compania_aseguradora', 'corredor_seguros',
-            'tipo_poliza', 'suma_asegurada', 'coberturas',
+            'grupo_ramo', 'suma_asegurada', 'coberturas',
             'fecha_inicio', 'fecha_fin', 'estado',
             'es_gran_contribuyente', 'observaciones',
         ]
@@ -118,7 +335,7 @@ class PolizaForm(forms.ModelForm):
             'corredor_seguros': forms.Select(attrs={
                 'class': 'form-select',
             }),
-            'tipo_poliza': forms.Select(attrs={
+            'grupo_ramo': forms.Select(attrs={
                 'class': 'form-select',
             }),
             'suma_asegurada': forms.NumberInput(attrs={
@@ -149,7 +366,9 @@ class PolizaForm(forms.ModelForm):
         # Filtrar solo compañías y corredores activos
         self.fields['compania_aseguradora'].queryset = CompaniaAseguradora.objects.filter(activo=True)
         self.fields['corredor_seguros'].queryset = CorredorSeguros.objects.filter(activo=True)
-        self.fields['tipo_poliza'].queryset = TipoPoliza.objects.filter(activo=True)
+        # Filtrar grupos de ramo activos
+        self.fields['grupo_ramo'].queryset = GrupoRamo.objects.filter(activo=True).order_by('orden', 'nombre')
+        self.fields['grupo_ramo'].required = False
 
         # Si se selecciona una compañía, limitar los brokers al convenio con esa aseguradora
         compania = None
@@ -185,12 +404,12 @@ class DetallePolizaRamoForm(forms.ModelForm):
     class Meta:
         model = DetallePolizaRamo
         fields = [
-            'ramo', 'subtipo_ramo', 'numero_factura', 'documento_contable',
+            'grupo_ramo', 'subgrupo_ramo', 'numero_factura', 'documento_contable',
             'suma_asegurada', 'total_prima', 'emision', 'observaciones',
         ]
         widgets = {
-            'ramo': forms.Select(attrs={'class': 'form-select ramo-select'}),
-            'subtipo_ramo': forms.Select(attrs={'class': 'form-select'}),
+            'grupo_ramo': forms.Select(attrs={'class': 'form-select grupo-ramo-select'}),
+            'subgrupo_ramo': forms.Select(attrs={'class': 'form-select'}),
             'numero_factura': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'N° Factura',
@@ -223,42 +442,42 @@ class DetallePolizaRamoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Siempre limitar los ramos a los activos
-        self.fields['ramo'].queryset = Ramo.objects.filter(activo=True)
+        # Siempre limitar los grupos a los activos
+        self.fields['grupo_ramo'].queryset = GrupoRamo.objects.filter(activo=True)
 
         # Por defecto, no obligamos el subgrupo y restringimos su queryset
-        self.fields['subtipo_ramo'].required = False
-        self.fields['subtipo_ramo'].queryქვამset = SubtipoRamo.objects.none()
+        self.fields['subgrupo_ramo'].required = False
+        self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.none()
 
-        # Si viene un ramo en el POST, limitar los subgrupos a ese ramo
-        if 'ramo' in self.data:
+        # Si viene un grupo_ramo en el POST, limitar los subgrupos a ese grupo
+        if 'grupo_ramo' in self.data:
             try:
-                ramo_id = int(self.data.get('ramo'))
-                self.fields['subtipo_ramo'].queryset = SubtipoRamo.objects.filter(
-                    ramo_id=ramo_id, activo=True
-                ).order_by('nombre')
+                grupo_id = int(self.data.get('grupo_ramo'))
+                self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.filter(
+                    grupo_ramo_id=grupo_id, activo=True
+                ).order_by('orden', 'nombre')
             except (ValueError, TypeError):
                 # Si algo falla en el parseo, dejamos queryset vacío
                 pass
-        elif self.instance.pk and self.instance.ramo_id:
-            # En edición, mostrar solo los subgrupos del ramo ya asociado
-            self.fields['subtipo_ramo'].queryset = SubtipoRamo.objects.filter(
-                ramo=self.instance.ramo, activo=True
-            ).order_by('nombre')
+        elif self.instance.pk and self.instance.grupo_ramo_id:
+            # En edición, mostrar solo los subgrupos del grupo ya asociado
+            self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.filter(
+                grupo_ramo=self.instance.grupo_ramo, activo=True
+            ).order_by('orden', 'nombre')
 
-    def clean_subtipo_ramo(self):
+    def clean_subgrupo_ramo(self):
         """
-        Garantiza que el subgrupo seleccionado pertenezca al grupo (ramo) elegido.
+        Garantiza que el subgrupo seleccionado pertenezca al grupo elegido.
         """
-        subtipo = self.cleaned_data.get('subtipo_ramo')
-        ramo = self.cleaned_data.get('ramo')
+        subgrupo = self.cleaned_data.get('subgrupo_ramo')
+        grupo = self.cleaned_data.get('grupo_ramo')
 
-        if subtipo and ramo and subtipo.ramo_id != ramo.id:
+        if subgrupo and grupo and subgrupo.grupo_ramo_id != grupo.id:
             raise ValidationError(
-                "El subgrupo seleccionado no pertenece al grupo (ramo) escogido."
+                "El subgrupo seleccionado no pertenece al grupo escogido."
             )
 
-        return subtipo
+        return subgrupo
 
 
 # Formset para detalles de ramo en póliza
@@ -283,7 +502,7 @@ class SiniestroForm(forms.ModelForm):
     class Meta:
         model = Siniestro
         fields = [
-            'poliza', 'numero_siniestro', 'tipo_siniestro',
+            'bien_asegurado', 'poliza', 'numero_siniestro', 'tipo_siniestro',
             'fecha_siniestro', 'ubicacion', 'causa', 'descripcion_detallada',
             'bien_nombre', 'bien_marca', 'bien_modelo', 'bien_serie', 'bien_codigo_activo',
             'responsable_custodio', 'monto_estimado',
@@ -291,7 +510,14 @@ class SiniestroForm(forms.ModelForm):
             'email_broker', 'observaciones',
         ]
         widgets = {
-            'poliza': forms.Select(attrs={'class': 'form-select'}),
+            'bien_asegurado': forms.Select(attrs={
+                'class': 'form-select',
+                'data-placeholder': 'Seleccione un bien asegurado...',
+            }),
+            'poliza': forms.Select(attrs={
+                'class': 'form-select',
+                'data-placeholder': 'Seleccione póliza (opcional si selecciona bien)...',
+            }),
             'numero_siniestro': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Número de siniestro',
@@ -316,7 +542,7 @@ class SiniestroForm(forms.ModelForm):
             }),
             'bien_nombre': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del bien afectado',
+                'placeholder': 'Nombre del bien (llenar solo si no selecciona bien asegurado)',
             }),
             'bien_marca': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -376,16 +602,28 @@ class SiniestroForm(forms.ModelForm):
         # Obtener la instancia actual si existe (modo edición)
         instance = getattr(self, 'instance', None)
 
+        # Bienes asegurados: activos de pólizas vigentes + el actual si existe
+        bienes_qs = BienAsegurado.objects.filter(
+            activo=True,
+            poliza__estado__in=['vigente', 'por_vencer']
+        ).select_related('poliza', 'subgrupo_ramo')
+        
+        if instance and instance.bien_asegurado_id:
+            bienes_qs = bienes_qs | BienAsegurado.objects.filter(pk=instance.bien_asegurado_id)
+        
+        self.fields['bien_asegurado'].queryset = bienes_qs.distinct()
+        self.fields['bien_asegurado'].required = False
+
         # Polizas: incluir vigentes/por_vencer + la póliza actual si existe
         polizas_qs = Poliza.objects.filter(
             estado__in=['vigente', 'por_vencer']
         ).select_related('compania_aseguradora')
         
         if instance and instance.poliza_id:
-            # Incluir la póliza actual aunque tenga otro estado
             polizas_qs = polizas_qs | Poliza.objects.filter(pk=instance.poliza_id)
         
         self.fields['poliza'].queryset = polizas_qs.distinct()
+        self.fields['poliza'].required = False
         
         # Tipos de siniestro: activos + el actual si existe
         tipos_qs = TipoSiniestro.objects.filter(activo=True)
@@ -398,9 +636,9 @@ class SiniestroForm(forms.ModelForm):
         if instance and instance.responsable_custodio_id:
             responsables_qs = responsables_qs | ResponsableCustodio.objects.filter(pk=instance.responsable_custodio_id)
         self.fields['responsable_custodio'].queryset = responsables_qs.distinct()
+        self.fields['responsable_custodio'].required = False
 
         # Prefill del email del broker desde la póliza cuando sea posible
-        # Solo si el campo está vacío para no pisar cambios manuales
         try:
             if not (instance and instance.email_broker):
                 poliza_obj = None
@@ -408,26 +646,51 @@ class SiniestroForm(forms.ModelForm):
                     poliza_id = self.data.get('poliza')
                     if poliza_id:
                         poliza_obj = Poliza.objects.select_related('corredor_seguros').filter(pk=poliza_id).first()
+                elif 'bien_asegurado' in self.data:
+                    bien_id = self.data.get('bien_asegurado')
+                    if bien_id:
+                        bien = BienAsegurado.objects.select_related('poliza__corredor_seguros').filter(pk=bien_id).first()
+                        if bien:
+                            poliza_obj = bien.poliza
                 elif instance and instance.poliza_id:
                     poliza_obj = instance.poliza
 
                 if poliza_obj and poliza_obj.corredor_seguros and poliza_obj.corredor_seguros.email:
                     self.fields['email_broker'].initial = poliza_obj.corredor_seguros.email
         except Exception:
-            # Prefill es best-effort; no debe romper el formulario si algo falla
             pass
 
-        # Asegurar que el campo fecha_siniestro use formatos compatibles con datetime-local
-        # para que se muestre correctamente al editar y acepte el valor enviado.
+        # Formatos de fecha compatibles con datetime-local
         self.fields['fecha_siniestro'].input_formats = [
-            '%Y-%m-%dT%H:%M',      # formato de input datetime-local
-            '%Y-%m-%d %H:%M:%S',   # formato que Django suele guardar
-            '%Y-%m-%d %H:%M',      # variante sin segundos
+            '%Y-%m-%dT%H:%M',
+            '%Y-%m-%d %H:%M:%S',
+            '%Y-%m-%d %H:%M',
         ]
 
-        # Campos opcionales
-        for field in ['valor_reclamo', 'deducible', 'depreciacion', 'suma_asegurada_bien', 'email_broker']:
+        # Campos opcionales (campos legacy del bien son opcionales si se usa bien_asegurado)
+        self.fields['bien_nombre'].required = False
+        for field in ['bien_marca', 'bien_modelo', 'bien_serie', 'bien_codigo_activo',
+                      'valor_reclamo', 'deducible', 'depreciacion', 'suma_asegurada_bien', 'email_broker']:
             self.fields[field].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        bien_asegurado = cleaned_data.get('bien_asegurado')
+        poliza = cleaned_data.get('poliza')
+        bien_nombre = cleaned_data.get('bien_nombre')
+
+        # Debe tener al menos un bien_asegurado, o una póliza + bien_nombre
+        if not bien_asegurado and not bien_nombre:
+            raise ValidationError(
+                'Debe seleccionar un Bien Asegurado o llenar los datos del bien manualmente.'
+            )
+        
+        if not bien_asegurado and not poliza:
+            raise ValidationError(
+                'Si no selecciona un Bien Asegurado, debe especificar una Póliza.'
+            )
+
+        return cleaned_data
 
 
 class SiniestroGestionForm(forms.ModelForm):
@@ -535,7 +798,7 @@ class GrupoBienesForm(forms.ModelForm):
 
     class Meta:
         model = GrupoBienes
-        fields = ['nombre', 'descripcion', 'ramo', 'subtipo_ramo', 'responsable', 'poliza', 'activo']
+        fields = ['nombre', 'descripcion', 'grupo_ramo', 'subgrupo_ramo', 'responsable', 'poliza', 'activo']
         widgets = {
             'nombre': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -545,8 +808,8 @@ class GrupoBienesForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 2,
             }),
-            'ramo': forms.Select(attrs={'class': 'form-select'}),
-            'subtipo_ramo': forms.Select(attrs={'class': 'form-select'}),
+            'grupo_ramo': forms.Select(attrs={'class': 'form-select'}),
+            'subgrupo_ramo': forms.Select(attrs={'class': 'form-select'}),
             'responsable': forms.Select(attrs={'class': 'form-select'}),
             'poliza': forms.Select(attrs={'class': 'form-select'}),
             'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
@@ -554,8 +817,24 @@ class GrupoBienesForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['ramo'].queryset = Ramo.objects.filter(activo=True)
-        self.fields['subtipo_ramo'].required = False
+        self.fields['grupo_ramo'].queryset = GrupoRamo.objects.filter(activo=True)
+        self.fields['subgrupo_ramo'].required = False
+        self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.none()
+        
+        # Si viene un grupo_ramo en el POST, limitar los subgrupos
+        if 'grupo_ramo' in self.data:
+            try:
+                grupo_id = int(self.data.get('grupo_ramo'))
+                self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.filter(
+                    grupo_ramo_id=grupo_id, activo=True
+                ).order_by('orden', 'nombre')
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk and self.instance.grupo_ramo_id:
+            self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.filter(
+                grupo_ramo=self.instance.grupo_ramo, activo=True
+            ).order_by('orden', 'nombre')
+        
         self.fields['responsable'].queryset = ResponsableCustodio.objects.filter(activo=True)
         self.fields['responsable'].required = False
         self.fields['poliza'].queryset = Poliza.objects.filter(estado__in=['vigente', 'por_vencer'])
@@ -563,7 +842,121 @@ class GrupoBienesForm(forms.ModelForm):
 
 
 class BienAseguradoForm(forms.ModelForm):
-    """Formulario para crear/editar bienes asegurados"""
+    """Formulario para crear/editar bienes asegurados (nuevo modelo relacional)"""
+
+    class Meta:
+        model = BienAsegurado
+        fields = [
+            'codigo_bien', 'nombre', 'descripcion',
+            'poliza', 'subgrupo_ramo',
+            'marca', 'modelo', 'serie', 'codigo_activo', 'anio_fabricacion',
+            'ubicacion', 'responsable_custodio',
+            'valor_asegurado', 'valor_comercial',
+            'estado', 'fecha_adquisicion',
+            'grupo_bienes', 'observaciones',
+        ]
+        widgets = {
+            'codigo_bien': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Código único del bien',
+            }),
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del bien',
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+            }),
+            'poliza': forms.Select(attrs={'class': 'form-select'}),
+            'subgrupo_ramo': forms.Select(attrs={'class': 'form-select'}),
+            'marca': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Marca',
+            }),
+            'modelo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Modelo',
+            }),
+            'serie': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Número de serie',
+            }),
+            'codigo_activo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Código de activo fijo institucional',
+            }),
+            'anio_fabricacion': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1900',
+                'max': '2100',
+            }),
+            'ubicacion': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ubicación física del bien',
+            }),
+            'responsable_custodio': forms.Select(attrs={'class': 'form-select'}),
+            'valor_asegurado': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0.01',
+            }),
+            'valor_comercial': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+            }),
+            'estado': forms.Select(attrs={'class': 'form-select'}),
+            'fecha_adquisicion': DateInput(attrs={'class': 'form-control'}),
+            'grupo_bienes': forms.Select(attrs={'class': 'form-select'}),
+            'observaciones': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Pólizas vigentes o por vencer
+        self.fields['poliza'].queryset = Poliza.objects.filter(
+            estado__in=['vigente', 'por_vencer']
+        ).select_related('compania_aseguradora', 'grupo_ramo')
+        
+        # Subgrupos: depende de si hay una póliza seleccionada con grupo_ramo
+        self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.filter(activo=True)
+        
+        # Si hay una póliza seleccionada con grupo_ramo, filtrar subgrupos
+        poliza_id = None
+        if 'poliza' in self.data:
+            try:
+                poliza_id = int(self.data.get('poliza'))
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk and self.instance.poliza_id:
+            poliza_id = self.instance.poliza_id
+        
+        if poliza_id:
+            try:
+                poliza = Poliza.objects.get(pk=poliza_id)
+                if poliza.grupo_ramo_id:
+                    self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.filter(
+                        grupo_ramo_id=poliza.grupo_ramo_id, activo=True
+                    ).order_by('orden', 'nombre')
+            except Poliza.DoesNotExist:
+                pass
+        
+        self.fields['responsable_custodio'].queryset = ResponsableCustodio.objects.filter(activo=True)
+        self.fields['responsable_custodio'].required = False
+        self.fields['grupo_bienes'].queryset = GrupoBienes.objects.filter(activo=True)
+        self.fields['grupo_bienes'].required = False
+        self.fields['valor_comercial'].required = False
+        self.fields['fecha_adquisicion'].required = False
+        self.fields['anio_fabricacion'].required = False
+
+
+class InsuredAssetForm(forms.ModelForm):
+    """Formulario legacy para InsuredAsset (modelo antiguo)"""
 
     class Meta:
         model = InsuredAsset
@@ -578,65 +971,20 @@ class BienAseguradoForm(forms.ModelForm):
             'notes',
         ]
         widgets = {
-            'asset_code': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Código de activo único',
-            }),
-            'name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Nombre del bien',
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 2,
-            }),
-            'category': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Categoría',
-            }),
-            'brand': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Marca',
-            }),
-            'model': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Modelo',
-            }),
-            'serial_number': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Número de serie',
-            }),
-            'location': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Ubicación',
-            }),
-            'building': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Edificio',
-            }),
-            'floor': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Piso',
-            }),
-            'department': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Departamento',
-            }),
-            'purchase_value': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'min': '0',
-            }),
-            'current_value': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'min': '0',
-            }),
-            'insured_value': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'min': '0',
-            }),
+            'asset_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'category': forms.TextInput(attrs={'class': 'form-control'}),
+            'brand': forms.TextInput(attrs={'class': 'form-control'}),
+            'model': forms.TextInput(attrs={'class': 'form-control'}),
+            'serial_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'location': forms.TextInput(attrs={'class': 'form-control'}),
+            'building': forms.TextInput(attrs={'class': 'form-control'}),
+            'floor': forms.TextInput(attrs={'class': 'form-control'}),
+            'department': forms.TextInput(attrs={'class': 'form-control'}),
+            'purchase_value': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'current_value': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'insured_value': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'purchase_date': DateInput(attrs={'class': 'form-control'}),
             'warranty_expiry': DateInput(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
@@ -644,10 +992,7 @@ class BienAseguradoForm(forms.ModelForm):
             'policy': forms.Select(attrs={'class': 'form-select'}),
             'custodian': forms.Select(attrs={'class': 'form-select'}),
             'grupo': forms.Select(attrs={'class': 'form-select'}),
-            'notes': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 2,
-            }),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
 
     def __init__(self, *args, **kwargs):

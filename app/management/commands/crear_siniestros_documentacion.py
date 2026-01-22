@@ -8,6 +8,8 @@ from app.models import (
     Poliza,
     TipoSiniestro,
     ResponsableCustodio,
+    ChecklistSiniestroConfig,
+    ChecklistSiniestro,
 )
 
 
@@ -117,6 +119,56 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Siniestro 2 creado: {siniestro2.numero_siniestro}"))
         else:
             self.stdout.write(self.style.WARNING(f"Siniestro 2 ya existía: {siniestro2.numero_siniestro}"))
+
+        # Crear instancias de checklist para cada siniestro
+        self.stdout.write("\n📋 Creando checklist para los siniestros...")
+        
+        # Obtener items de checklist configurados para el tipo de siniestro
+        items_config = ChecklistSiniestroConfig.objects.filter(
+            tipo_siniestro=tipo_siniestro,
+            activo=True
+        ).order_by('orden')
+
+        if not items_config.exists():
+            self.stdout.write(self.style.WARNING(
+                "⚠️  No hay checklist configurado para este tipo de siniestro."
+            ))
+            self.stdout.write(self.style.WARNING(
+                "   Ejecuta primero: python manage.py poblar_checklist"
+            ))
+        else:
+            # Crear checklist para siniestro 1
+            count1 = 0
+            for item_config in items_config:
+                checklist_item, created = ChecklistSiniestro.objects.get_or_create(
+                    siniestro=siniestro1,
+                    config_item=item_config,
+                    defaults={
+                        'completado': False,
+                    }
+                )
+                if created:
+                    count1 += 1
+
+            # Crear checklist para siniestro 2
+            count2 = 0
+            for item_config in items_config:
+                checklist_item, created = ChecklistSiniestro.objects.get_or_create(
+                    siniestro=siniestro2,
+                    config_item=item_config,
+                    defaults={
+                        'completado': False,
+                    }
+                )
+                if created:
+                    count2 += 1
+
+            self.stdout.write(self.style.SUCCESS(
+                f"   ✓ Checklist creado para {siniestro1.numero_siniestro}: {count1} items"
+            ))
+            self.stdout.write(self.style.SUCCESS(
+                f"   ✓ Checklist creado para {siniestro2.numero_siniestro}: {count2} items"
+            ))
 
         self.stdout.write(self.style.SUCCESS("\n✅ Siniestros listos para subir documentación!"))
         self.stdout.write(self.style.SUCCESS(f"   - {siniestro1.numero_siniestro}: {siniestro1.bien_nombre}"))

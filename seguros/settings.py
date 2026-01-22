@@ -508,3 +508,24 @@ UNFOLD = {
     },
 }
 
+
+# ==============================================================================
+# IMAP CONFIGURATION (Lectura de correos entrantes)
+# ==============================================================================
+# Configuración para conectar al servidor IMAP y leer correos de siniestros
+# Para Gmail, necesitas generar una "Contraseña de aplicación":
+# 1. Ve a myaccount.google.com → Seguridad
+# 2. Habilita "Verificación en 2 pasos" si no está activa
+# 3. Ve a "Contraseñas de aplicaciones"
+# 4. Genera una contraseña para "Correo" - "Otro"
+# 5. Usa esa contraseña de 16 caracteres en IMAP_PASSWORD
+
+IMAP_HOST = os.getenv('IMAP_HOST', 'imap.gmail.com')
+IMAP_PORT = int(os.getenv('IMAP_PORT', '993'))
+IMAP_EMAIL = os.getenv('IMAP_EMAIL', 'renataaa150505@gmail.com')
+IMAP_PASSWORD = os.getenv('IMAP_PASSWORD', '')  # App Password de Gmail
+IMAP_USE_SSL = os.getenv('IMAP_USE_SSL', 'True').lower() == 'true'
+
+# Palabras clave para identificar correos de siniestros
+SINIESTRO_EMAIL_SUBJECT_TAG = '[SINIESTRO]'
+

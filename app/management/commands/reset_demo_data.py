@@ -19,6 +19,9 @@ from app.models import (
     InsuredAsset,
     PolicyRenewal,
     DetallePolizaRamo,
+    ChecklistSiniestro,
+    ChecklistSiniestroConfig,
+    AdjuntoSiniestro,
 )
 
 
@@ -36,6 +39,15 @@ class Command(BaseCommand):
         ))
 
         # Borrar en orden para respetar FKs (siniestros primero, luego pólizas, luego catálogos)
+        self.stdout.write("Eliminando adjuntos de siniestros...")
+        AdjuntoSiniestro.objects.all().delete()
+
+        self.stdout.write("Eliminando checklists de siniestros...")
+        ChecklistSiniestro.objects.all().delete()
+
+        self.stdout.write("Eliminando configuración de checklists...")
+        ChecklistSiniestroConfig.objects.all().delete()
+
         self.stdout.write("Eliminando aprobaciones de pagos...")
         PaymentApproval.objects.all().delete()
 

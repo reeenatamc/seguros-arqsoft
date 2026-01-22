@@ -76,11 +76,11 @@ class NotificacionesService:
         """
         Notifica un siniestro al broker (NO a la aseguradora directamente),
         usando la plantilla de correo profesional reutilizable.
-    
+
         Args:
             siniestro: Instancia del modelo Siniestro
             usuario: Usuario que realiza la acción
-    
+
         Returns:
             NotificacionEmail: La notificación creada
         """
@@ -91,10 +91,10 @@ class NotificacionesService:
         email_broker = siniestro.email_broker
         if not email_broker and siniestro.poliza.corredor_seguros:
             email_broker = siniestro.poliza.corredor_seguros.email
-    
+
         if not email_broker:
             raise ValueError("No se encontró email del broker para notificar")
-    
+
         asunto = f"Notificación de Siniestro - {siniestro.numero_siniestro}"
 
         context = {

@@ -1,3 +1,4 @@
+{% load static %}
 <!-- Sidebar con menú colapsable y animaciones -->
 <aside id="sidebar" class="sidebar-expanded w-72 gradient-brand flex flex-col shadow-2xl relative overflow-visible transition-all duration-300 ease-in-out lg:translate-x-0 -translate-x-full fixed lg:relative h-full z-50">
     <!-- Decoración de fondo -->
@@ -16,8 +17,8 @@
     <!-- Logo y título -->
     <div class="relative z-10 p-5 border-b border-white/10">
         <div class="flex items-center gap-3 justify-center lg:justify-start">
-            <div class="logo-icon w-11 h-11 gradient-gold rounded-xl flex items-center justify-center shadow-lg transform hover:scale-110 hover:rotate-3 transition-all duration-300 cursor-pointer flex-shrink-0">
-                <i class="fas fa-shield-halved text-brand-900 text-lg"></i>
+            <div class="logo-icon flex items-center justify-center transform hover:scale-110 transition-all duration-300 cursor-pointer flex-shrink-0">
+                <img src="{% static 'images/minilogo-final-final.png' %}" alt="Seguros UTPL" class="h-12 w-auto object-contain drop-shadow-2xl filter brightness-110">
             </div>
             <div class="sidebar-text overflow-hidden">
                 <h1 class="text-xl font-bold text-white tracking-tight whitespace-nowrap">Seguros</h1>

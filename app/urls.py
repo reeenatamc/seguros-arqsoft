@@ -22,6 +22,10 @@ urlpatterns = [
     # Siniestros
     path('siniestros/', views.siniestros_lista, name='siniestros_lista'),
     path('siniestros/exportar/', views.siniestros_exportar, name='siniestros_exportar'),
+    path('siniestros/email-pendientes/', views.siniestros_email_pendientes, name='siniestros_email_pendientes'),
+    path('siniestros/email/<int:pk>/procesar-auto/', views.siniestro_email_procesar_auto, name='siniestro_email_procesar_auto'),
+    path('siniestros/email/<int:pk>/completar/', views.siniestro_email_completar, name='siniestro_email_completar'),
+    path('api/siniestros/email/count/', views.siniestros_email_count, name='siniestros_email_count'),
     
     # Alertas
     path('alertas/', views.alertas_lista, name='alertas_lista'),
@@ -96,10 +100,26 @@ urlpatterns = [
     path('api/analytics/insurers/', views.api_analytics_insurers, name='api_analytics_insurers'),
 
     # =========================================================================
-    # NUEVAS RUTAS - SISTEMA DE RAMOS
+    # NUEVAS RUTAS - CREACIÓN RÁPIDA DE ENTIDADES (para popups)
+    # =========================================================================
+    
+    # Compañías Aseguradoras
+    path('aseguradoras/crear/', views.CompaniaAseguradoraCreateView.as_view(), name='aseguradora_crear'),
+    
+    # Corredores de Seguros
+    path('corredores/crear/', views.CorredorSegurosCreateView.as_view(), name='corredor_crear'),
+    
+    # Tipos de Siniestro
+    path('tipos-siniestro/crear/', views.TipoSiniestroCreateView.as_view(), name='tipo_siniestro_crear'),
+    
+    # Responsables/Custodios
+    path('responsables/crear/', views.ResponsableCustodioCreateView.as_view(), name='responsable_crear'),
+
+    # =========================================================================
+    # SISTEMA DE RAMOS
     # =========================================================================
 
-    # Ramos
+    # Ramos (Grupos de Ramo)
     path('ramos/', views.RamoListView.as_view(), name='ramos_lista'),
     path('ramos/crear/', views.RamoCreateView.as_view(), name='ramo_crear'),
     path('ramos/<int:pk>/editar/', views.RamoUpdateView.as_view(), name='ramo_editar'),
@@ -144,6 +164,7 @@ urlpatterns = [
 
     # APIs Adicionales
     path('api/subtipos-ramo/', views.api_subtipos_ramo, name='api_subtipos_ramo'),
+    path('api/corredores-por-compania/', views.api_corredores_por_compania, name='api_corredores_por_compania'),
     path('api/calcular-desglose-ramo/', views.api_calcular_desglose_ramo, name='api_calcular_desglose_ramo'),
     path('api/reporte-siniestralidad/', views.api_reporte_siniestralidad, name='api_reporte_siniestralidad'),
 ]

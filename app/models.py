@@ -197,14 +197,7 @@ class CompaniaAseguradora(models.Model):
     activo = models.BooleanField(default=True, verbose_name="Activo")
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
-    # Relación opcional con brokers autorizados
-    brokers = models.ManyToManyField(
-        'CorredorSeguros',
-        related_name='companias_aseguradas',
-        verbose_name="Brokers autorizados",
-        blank=True,
-        help_text="Listado de brokers con convenio para esta aseguradora.",
-    )
+    # Nota: La relación con corredores se maneja desde CorredorSeguros.compania_aseguradora
 
     class Meta:
         verbose_name = "Compañía Aseguradora"
@@ -213,11 +206,22 @@ class CompaniaAseguradora(models.Model):
 
     def __str__(self):
         return self.nombre
+    
+    @property
+    def corredores_activos(self):
+        """Retorna los corredores activos de esta compañía"""
+        return self.corredores.filter(activo=True)
 
 
 class CorredorSeguros(models.Model):
-    """Modelo para los corredores de seguros"""
-    nombre = models.CharField(max_length=200, unique=True, verbose_name="Nombre del Corredor")
+    """Modelo para los corredores de seguros - pertenecen a una compañía aseguradora"""
+    compania_aseguradora = models.ForeignKey(
+        CompaniaAseguradora,
+        on_delete=models.PROTECT,
+        related_name='corredores',
+        verbose_name="Compañía Aseguradora"
+    )
+    nombre = models.CharField(max_length=200, verbose_name="Nombre del Corredor")
     ruc = models.CharField(
         max_length=13, 
         unique=True, 
@@ -236,10 +240,11 @@ class CorredorSeguros(models.Model):
     class Meta:
         verbose_name = "Corredor de Seguros"
         verbose_name_plural = "Corredores de Seguros"
-        ordering = ['nombre']
+        ordering = ['compania_aseguradora__nombre', 'nombre']
+        unique_together = ['compania_aseguradora', 'nombre']  # Un corredor único por compañía
 
     def __str__(self):
-        return self.nombre
+        return f"{self.nombre} ({self.compania_aseguradora.nombre})"
 
 
 class TipoPoliza(models.Model):
@@ -299,6 +304,12 @@ class Poliza(models.Model):
                                         related_name='polizas', verbose_name="Corredor de Seguros")
     tipo_poliza = models.ForeignKey(TipoPoliza, on_delete=models.PROTECT, 
                                    related_name='polizas', verbose_name="Tipo de Póliza")
+    
+    # Clasificación de ramo (grupo al que pertenece la póliza)
+    grupo_ramo = models.ForeignKey('GrupoRamo', on_delete=models.PROTECT,
+                                   related_name='polizas', verbose_name="Grupo de Ramo",
+                                   null=True, blank=True,
+                                   help_text="Categoría de la póliza según clasificación de ramos")
     
     # Coberturas y sumas
     suma_asegurada = models.DecimalField(max_digits=15, decimal_places=2, 
@@ -386,19 +397,18 @@ class Poliza(models.Model):
                 )
             })
 
-        # Validar coherencia aseguradora-broker si la compañía tiene brokers configurados
+        # Validar coherencia: el corredor debe pertenecer a la compañía seleccionada
         if (
             self.compania_aseguradora_id
             and self.corredor_seguros_id
-            and self.compania_aseguradora.brokers.exists()
+            and self.corredor_seguros.compania_aseguradora_id != self.compania_aseguradora_id
         ):
-            if self.corredor_seguros not in self.compania_aseguradora.brokers.all():
-                raise ValidationError({
-                    'corredor_seguros': (
-                        'El corredor seleccionado no está configurado como broker autorizado '
-                        'para esta compañía aseguradora.'
-                    )
-                })
+            raise ValidationError({
+                'corredor_seguros': (
+                    f'El corredor "{self.corredor_seguros}" no pertenece a la compañía '
+                    f'"{self.compania_aseguradora}". Seleccione un corredor de esta compañía.'
+                )
+            })
 
     def save(self, *args, **kwargs):
         if self.fecha_inicio and self.fecha_fin:
@@ -877,9 +887,17 @@ class Siniestro(models.Model):
         ('cerrado', 'Cerrado'),
     ]
 
-    # Relación con póliza
+    # Relación principal con Bien Asegurado (nuevo modelo relacional)
+    bien_asegurado = models.ForeignKey('BienAsegurado', on_delete=models.PROTECT,
+                                       related_name='siniestros', verbose_name="Bien Asegurado",
+                                       null=True, blank=True,
+                                       help_text="Bien específico afectado por el siniestro")
+    
+    # Relación con póliza (mantener para compatibilidad, se obtiene del bien_asegurado si existe)
     poliza = models.ForeignKey(Poliza, on_delete=models.PROTECT, 
-                              related_name='siniestros', verbose_name="Póliza")
+                              related_name='siniestros', verbose_name="Póliza",
+                              null=True, blank=True,
+                              help_text="Póliza asociada (se obtiene automáticamente del bien asegurado)")
     
     # Información del siniestro
     numero_siniestro = models.CharField(max_length=100, unique=True, 
@@ -889,8 +907,10 @@ class Siniestro(models.Model):
     fecha_siniestro = models.DateTimeField(verbose_name="Fecha y Hora del Siniestro")
     fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
     
-    # Información del bien asegurado
-    bien_nombre = models.CharField(max_length=200, verbose_name="Nombre del Bien")
+    # Información del bien asegurado (campos legacy, se obtienen del bien_asegurado si existe)
+    bien_nombre = models.CharField(max_length=200, verbose_name="Nombre del Bien",
+                                   blank=True, default='',
+                                   help_text="Campo legacy: usar bien_asegurado en su lugar")
     bien_modelo = models.CharField(max_length=100, blank=True, verbose_name="Modelo")
     bien_serie = models.CharField(max_length=100, blank=True, verbose_name="Número de Serie")
     bien_marca = models.CharField(max_length=100, blank=True, verbose_name="Marca")
@@ -898,7 +918,8 @@ class Siniestro(models.Model):
     
     # Detalles del siniestro
     responsable_custodio = models.ForeignKey(ResponsableCustodio, on_delete=models.PROTECT,
-                                            related_name='siniestros', verbose_name="Responsable/Custodio")
+                                            related_name='siniestros', verbose_name="Responsable/Custodio",
+                                            null=True, blank=True)
     ubicacion = models.CharField(max_length=300, verbose_name="Ubicación del Siniestro")
     causa = models.TextField(verbose_name="Causa del Siniestro")
     descripcion_detallada = models.TextField(verbose_name="Descripción Detallada")
@@ -971,14 +992,51 @@ class Siniestro(models.Model):
         indexes = [
             models.Index(fields=['numero_siniestro']),
             models.Index(fields=['estado', 'fecha_siniestro']),
+            models.Index(fields=['bien_asegurado']),
         ]
 
     def __str__(self):
-        return f"{self.numero_siniestro} - {self.bien_nombre}"
+        nombre_bien = self.get_nombre_bien()
+        return f"{self.numero_siniestro} - {nombre_bien}"
+
+    def get_nombre_bien(self):
+        """Obtiene el nombre del bien, priorizando bien_asegurado sobre campos legacy"""
+        if self.bien_asegurado_id:
+            return self.bien_asegurado.nombre
+        return self.bien_nombre or "Sin bien especificado"
+
+    def get_poliza(self):
+        """Obtiene la póliza, priorizando la del bien_asegurado"""
+        if self.bien_asegurado_id:
+            return self.bien_asegurado.poliza
+        return self.poliza
+
+    def save(self, *args, **kwargs):
+        """Sincroniza campos legacy con bien_asegurado antes de guardar"""
+        if self.bien_asegurado_id:
+            # Sincronizar campos legacy desde bien_asegurado
+            self.bien_nombre = self.bien_asegurado.nombre
+            self.bien_modelo = self.bien_asegurado.modelo or ''
+            self.bien_serie = self.bien_asegurado.serie or ''
+            self.bien_marca = self.bien_asegurado.marca or ''
+            self.bien_codigo_activo = self.bien_asegurado.codigo_activo or ''
+            # Sincronizar póliza
+            if not self.poliza_id:
+                self.poliza = self.bien_asegurado.poliza
+            # Sincronizar responsable si no está especificado
+            if not self.responsable_custodio_id and self.bien_asegurado.responsable_custodio_id:
+                self.responsable_custodio = self.bien_asegurado.responsable_custodio
+        super().save(*args, **kwargs)
 
     def clean(self):
         """Validaciones del siniestro."""
         super().clean()
+        
+        # Validar que tenga al menos un bien_asegurado o campos legacy
+        if not self.bien_asegurado_id and not self.bien_nombre:
+            raise ValidationError({
+                'bien_asegurado': 'Debe especificar un bien asegurado o llenar los campos del bien manualmente.'
+            })
         
         # Validar que la fecha del siniestro no sea futura
         if self.fecha_siniestro:
@@ -988,14 +1046,17 @@ class Siniestro(models.Model):
                     'fecha_siniestro': 'La fecha del siniestro no puede ser futura.'
                 })
         
+        # Obtener la póliza efectiva (del bien o directa)
+        poliza_efectiva = self.get_poliza()
+        
         # Validar que el siniestro esté dentro del período de vigencia de la póliza
-        if self.poliza_id and self.fecha_siniestro:
+        if poliza_efectiva and self.fecha_siniestro:
             fecha_sin = self.fecha_siniestro.date()
-            if not (self.poliza.fecha_inicio <= fecha_sin <= self.poliza.fecha_fin):
+            if not (poliza_efectiva.fecha_inicio <= fecha_sin <= poliza_efectiva.fecha_fin):
                 raise ValidationError({
                     'fecha_siniestro': (
                         f'El siniestro debe ocurrir dentro del período de vigencia de la póliza '
-                        f'({self.poliza.fecha_inicio} - {self.poliza.fecha_fin}).'
+                        f'({poliza_efectiva.fecha_inicio} - {poliza_efectiva.fecha_fin}).'
                     )
                 })
         
@@ -1013,6 +1074,18 @@ class Siniestro(models.Model):
             raise ValidationError({
                 'monto_indemnizado': 'Un siniestro liquidado debe tener un monto indemnizado.'
             })
+
+    @property
+    def poliza_efectiva(self):
+        """Propiedad para obtener la póliza efectiva"""
+        return self.get_poliza()
+
+    @property
+    def clasificacion_bien(self):
+        """Obtiene la clasificación del bien si usa bien_asegurado"""
+        if self.bien_asegurado_id:
+            return self.bien_asegurado.clasificacion_completa
+        return None
 
     @property
     def dias_desde_registro(self):
@@ -2184,24 +2257,25 @@ class PaymentApproval(models.Model):
         return not pending
 
 
-# ==================== MODELOS DE RAMOS ====================
+# ==================== MODELOS DE CATÁLOGO DE RAMOS (JERARQUÍA) ====================
 
-class Ramo(models.Model):
+class TipoRamo(models.Model):
     """
-    Modelo para los ramos de seguros.
-    Permite categorizar las pólizas por tipo de cobertura específica.
+    Nivel más alto de la jerarquía de clasificación de riesgos.
+    Ejemplo: Ramos Generales, Ramos de Vida, etc.
     """
     codigo = models.CharField(max_length=50, unique=True, verbose_name="Código")
-    nombre = models.CharField(max_length=200, verbose_name="Nombre del Ramo")
+    nombre = models.CharField(max_length=200, verbose_name="Nombre del Tipo")
     descripcion = models.TextField(blank=True, verbose_name="Descripción")
     activo = models.BooleanField(default=True, verbose_name="Activo")
-    es_predefinido = models.BooleanField(default=False, verbose_name="Es Predefinido")
+    es_predefinido = models.BooleanField(default=False, verbose_name="Es Predefinido",
+                                         help_text="Los tipos predefinidos no pueden eliminarse")
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
 
     class Meta:
-        verbose_name = "Ramo"
-        verbose_name_plural = "Ramos"
+        verbose_name = "Tipo de Ramo"
+        verbose_name_plural = "Tipos de Ramo"
         ordering = ['nombre']
         indexes = [
             models.Index(fields=['codigo']),
@@ -2211,61 +2285,228 @@ class Ramo(models.Model):
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
 
-    @classmethod
-    def crear_ramos_predefinidos(cls):
-        """Crea los ramos predefinidos del sistema"""
-        ramos_predefinidos = [
-            ('INC', 'Incendio'),
-            ('LCI', 'Lucro cesante incendio'),
-            ('LCR', 'Lucro cesante rotura de maquinaria'),
-            ('ROB', 'Robo y Asalto'),
-            ('RCV', 'Robo contenido y valores'),
-            ('EEL', 'Equipo Electrónico'),
-            ('MPR', 'Maquinaria de producción'),
-            ('MPE', 'Maquinaria pesada'),
-            ('TIM', 'Transporte importación'),
-            ('TIN', 'Transporte Interno'),
-            ('RC1', 'Responsabilidad civil 1era Capa'),
-            ('RC2', 'Responsabilidad civil 2da Capa'),
-            ('RCP', 'RC profesional'),
-            ('RCD', 'RC Directores'),
-            ('VLI', 'Vehículos livianos'),
-            ('VPE', 'Vehículos pesados'),
-            ('ACP', 'Accidentes personales'),
-        ]
-
-        for codigo, nombre in ramos_predefinidos:
-            cls.objects.get_or_create(
-                codigo=codigo,
-                defaults={
-                    'nombre': nombre,
-                    'es_predefinido': True,
-                    'activo': True,
-                }
-            )
+    def delete(self, *args, **kwargs):
+        if self.es_predefinido:
+            raise ValidationError("No se puede eliminar un tipo de ramo predefinido.")
+        super().delete(*args, **kwargs)
 
 
-class SubtipoRamo(models.Model):
+class GrupoRamo(models.Model):
     """
-    Modelo para subtipos de ramo.
-    Proporciona granularidad adicional dentro de cada ramo.
+    Segundo nivel de la jerarquía. Representa la categoría de póliza.
+    Pertenece a un TipoRamo.
+    Ejemplos: Póliza de Vehículos, Póliza de Incendio, Responsabilidad Civil, etc.
     """
-    ramo = models.ForeignKey(Ramo, on_delete=models.CASCADE,
-                             related_name='subtipos', verbose_name="Ramo")
+    tipo_ramo = models.ForeignKey(TipoRamo, on_delete=models.PROTECT,
+                                  related_name='grupos', verbose_name="Tipo de Ramo")
     codigo = models.CharField(max_length=50, verbose_name="Código")
-    nombre = models.CharField(max_length=200, verbose_name="Nombre del Subtipo")
+    nombre = models.CharField(max_length=200, verbose_name="Nombre del Grupo")
     descripcion = models.TextField(blank=True, verbose_name="Descripción")
     activo = models.BooleanField(default=True, verbose_name="Activo")
+    es_predefinido = models.BooleanField(default=False, verbose_name="Es Predefinido",
+                                         help_text="Los grupos predefinidos no pueden eliminarse")
+    orden = models.PositiveIntegerField(default=0, verbose_name="Orden",
+                                        help_text="Orden de visualización")
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
 
     class Meta:
-        verbose_name = "Subtipo de Ramo"
-        verbose_name_plural = "Subtipos de Ramo"
-        ordering = ['ramo__nombre', 'nombre']
-        unique_together = ['ramo', 'codigo']
+        verbose_name = "Grupo de Ramo"
+        verbose_name_plural = "Grupos de Ramo"
+        ordering = ['tipo_ramo', 'orden', 'nombre']
+        unique_together = ['tipo_ramo', 'codigo']
+        indexes = [
+            models.Index(fields=['codigo']),
+            models.Index(fields=['activo']),
+        ]
 
     def __str__(self):
-        return f"{self.ramo.codigo}/{self.codigo} - {self.nombre}"
+        return f"{self.codigo} - {self.nombre}"
+
+    def delete(self, *args, **kwargs):
+        if self.es_predefinido:
+            raise ValidationError("No se puede eliminar un grupo de ramo predefinido.")
+        super().delete(*args, **kwargs)
+
+
+class SubgrupoRamo(models.Model):
+    """
+    Tercer nivel de la jerarquía. Clasificación específica del objeto asegurado.
+    Pertenece a un GrupoRamo.
+    Ejemplos: Vehículo Liviano, Equipo Electrónico, Incendio, etc.
+    """
+    grupo_ramo = models.ForeignKey(GrupoRamo, on_delete=models.PROTECT,
+                                   related_name='subgrupos', verbose_name="Grupo de Ramo")
+    codigo = models.CharField(max_length=50, verbose_name="Código")
+    nombre = models.CharField(max_length=200, verbose_name="Nombre del Subgrupo")
+    descripcion = models.TextField(blank=True, verbose_name="Descripción")
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+    es_predefinido = models.BooleanField(default=False, verbose_name="Es Predefinido",
+                                         help_text="Los subgrupos predefinidos no pueden eliminarse")
+    orden = models.PositiveIntegerField(default=0, verbose_name="Orden",
+                                        help_text="Orden de visualización")
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
+
+    class Meta:
+        verbose_name = "Subgrupo de Ramo"
+        verbose_name_plural = "Subgrupos de Ramo"
+        ordering = ['grupo_ramo', 'orden', 'nombre']
+        unique_together = ['grupo_ramo', 'codigo']
+        indexes = [
+            models.Index(fields=['codigo']),
+            models.Index(fields=['activo']),
+        ]
+
+    def __str__(self):
+        return f"{self.grupo_ramo.codigo}/{self.codigo} - {self.nombre}"
+
+    def delete(self, *args, **kwargs):
+        if self.es_predefinido:
+            raise ValidationError("No se puede eliminar un subgrupo de ramo predefinido.")
+        super().delete(*args, **kwargs)
+
+    @property
+    def nombre_completo(self):
+        """Retorna la ruta completa: Tipo > Grupo > Subgrupo"""
+        return f"{self.grupo_ramo.tipo_ramo.nombre} > {self.grupo_ramo.nombre} > {self.nombre}"
+
+
+# Alias para compatibilidad con código existente (deprecado)
+Ramo = GrupoRamo
+SubtipoRamo = SubgrupoRamo
+
+
+# ==================== MODELO BIEN ASEGURADO ====================
+
+class BienAsegurado(models.Model):
+    """
+    Modelo que representa un bien asegurado específico.
+    Actúa como pivote entre la Póliza (contrato) y el SubgrupoRamo (clasificación).
+    
+    El siniestro se relaciona con el BienAsegurado, no directamente con la Póliza,
+    porque el evento de pérdida ocurre sobre un objeto específico.
+    """
+    ESTADO_CHOICES = [
+        ('activo', 'Activo'),
+        ('inactivo', 'Inactivo'),
+        ('dado_de_baja', 'Dado de Baja'),
+        ('siniestrado', 'Siniestrado'),
+    ]
+
+    # Relación con Póliza (contrato al que pertenece)
+    poliza = models.ForeignKey('Poliza', on_delete=models.PROTECT,
+                               related_name='bienes_asegurados',
+                               verbose_name="Póliza")
+    
+    # Relación con SubgrupoRamo (clasificación específica del bien)
+    subgrupo_ramo = models.ForeignKey(SubgrupoRamo, on_delete=models.PROTECT,
+                                      related_name='bienes_asegurados',
+                                      verbose_name="Subgrupo de Ramo")
+    
+    # Identificación del bien
+    codigo_bien = models.CharField(max_length=100, unique=True, verbose_name="Código del Bien",
+                                   help_text="Identificador único del bien asegurado")
+    nombre = models.CharField(max_length=200, verbose_name="Nombre del Bien")
+    descripcion = models.TextField(blank=True, verbose_name="Descripción")
+    
+    # Características del bien
+    marca = models.CharField(max_length=100, blank=True, verbose_name="Marca")
+    modelo = models.CharField(max_length=100, blank=True, verbose_name="Modelo")
+    serie = models.CharField(max_length=100, blank=True, verbose_name="Número de Serie")
+    codigo_activo = models.CharField(max_length=100, blank=True, verbose_name="Código de Activo Fijo",
+                                     help_text="Código institucional del activo fijo")
+    anio_fabricacion = models.PositiveIntegerField(null=True, blank=True, 
+                                                    verbose_name="Año de Fabricación")
+    
+    # Ubicación y responsable
+    ubicacion = models.CharField(max_length=300, blank=True, verbose_name="Ubicación")
+    responsable_custodio = models.ForeignKey('ResponsableCustodio', on_delete=models.SET_NULL,
+                                             null=True, blank=True,
+                                             related_name='bienes_asegurados',
+                                             verbose_name="Responsable/Custodio")
+    
+    # Valores
+    valor_asegurado = models.DecimalField(max_digits=15, decimal_places=2,
+                                          validators=[MinValueValidator(Decimal('0.01'))],
+                                          verbose_name="Valor Asegurado")
+    valor_comercial = models.DecimalField(max_digits=15, decimal_places=2,
+                                          null=True, blank=True,
+                                          validators=[MinValueValidator(Decimal('0.00'))],
+                                          verbose_name="Valor Comercial")
+    
+    # Estado
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, 
+                              default='activo', verbose_name="Estado")
+    
+    # Fechas
+    fecha_adquisicion = models.DateField(null=True, blank=True, verbose_name="Fecha de Adquisición")
+    
+    # Observaciones
+    observaciones = models.TextField(blank=True, verbose_name="Observaciones")
+    
+    # Grupo de bienes (opcional, para agrupar bienes relacionados)
+    grupo_bienes = models.ForeignKey('GrupoBienes', on_delete=models.SET_NULL,
+                                     null=True, blank=True,
+                                     related_name='bienes_asegurados',
+                                     verbose_name="Grupo de Bienes")
+    
+    # Auditoría
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
+                                   related_name='bienes_creados', verbose_name="Creado por")
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
+
+    # Historial de cambios
+    history = HistoricalRecords(
+        verbose_name="Historial",
+        verbose_name_plural="Historial de cambios"
+    )
+
+    class Meta:
+        verbose_name = "Bien Asegurado"
+        verbose_name_plural = "Bienes Asegurados"
+        ordering = ['poliza', 'nombre']
+        indexes = [
+            models.Index(fields=['codigo_bien']),
+            models.Index(fields=['poliza', 'estado']),
+            models.Index(fields=['subgrupo_ramo']),
+            models.Index(fields=['codigo_activo']),
+        ]
+
+    def __str__(self):
+        return f"{self.codigo_bien} - {self.nombre}"
+
+    def clean(self):
+        """Validaciones del bien asegurado."""
+        super().clean()
+        
+        # Validar que el subgrupo pertenezca al grupo de la póliza (si la póliza tiene grupo)
+        if self.poliza_id and self.subgrupo_ramo_id:
+            if hasattr(self.poliza, 'grupo_ramo') and self.poliza.grupo_ramo:
+                if self.subgrupo_ramo.grupo_ramo_id != self.poliza.grupo_ramo_id:
+                    raise ValidationError({
+                        'subgrupo_ramo': (
+                            f'El subgrupo "{self.subgrupo_ramo.nombre}" no pertenece al grupo '
+                            f'"{self.poliza.grupo_ramo.nombre}" de la póliza.'
+                        )
+                    })
+
+    @property
+    def clasificacion_completa(self):
+        """Retorna la clasificación completa del bien: Tipo > Grupo > Subgrupo"""
+        return self.subgrupo_ramo.nombre_completo
+
+    @property
+    def tiene_siniestros(self):
+        """Verifica si el bien tiene siniestros asociados"""
+        return self.siniestros.exists()
+
+    @property
+    def total_siniestros(self):
+        """Retorna el número total de siniestros del bien"""
+        return self.siniestros.count()
 
 
 class DetallePolizaRamo(models.Model):
@@ -2275,11 +2516,11 @@ class DetallePolizaRamo(models.Model):
     """
     poliza = models.ForeignKey('Poliza', on_delete=models.CASCADE,
                                related_name='detalles_ramo', verbose_name="Póliza")
-    ramo = models.ForeignKey(Ramo, on_delete=models.PROTECT,
-                             related_name='detalles_poliza', verbose_name="Ramo")
-    subtipo_ramo = models.ForeignKey(SubtipoRamo, on_delete=models.SET_NULL,
-                                     null=True, blank=True,
-                                     related_name='detalles_poliza', verbose_name="Subtipo de Ramo")
+    grupo_ramo = models.ForeignKey(GrupoRamo, on_delete=models.PROTECT,
+                                   related_name='detalles_poliza', verbose_name="Grupo de Ramo")
+    subgrupo_ramo = models.ForeignKey(SubgrupoRamo, on_delete=models.SET_NULL,
+                                      null=True, blank=True,
+                                      related_name='detalles_poliza', verbose_name="Subgrupo de Ramo")
 
     # Información de facturación
     numero_factura = models.CharField(max_length=100, blank=True, verbose_name="N° Factura")
@@ -2346,13 +2587,13 @@ class DetallePolizaRamo(models.Model):
     class Meta:
         verbose_name = "Detalle de Póliza por Ramo"
         verbose_name_plural = "Detalles de Póliza por Ramo"
-        ordering = ['poliza', 'ramo__nombre']
+        ordering = ['poliza', 'grupo_ramo__nombre']
         indexes = [
-            models.Index(fields=['poliza', 'ramo']),
+            models.Index(fields=['poliza', 'grupo_ramo']),
         ]
 
     def __str__(self):
-        return f"{self.poliza.numero_poliza} - {self.ramo.nombre}"
+        return f"{self.poliza.numero_poliza} - {self.grupo_ramo.nombre}"
 
     def save(self, *args, **kwargs):
         """Calcula automáticamente los valores derivados antes de guardar"""
@@ -2431,11 +2672,11 @@ class GrupoBienes(models.Model):
     """
     nombre = models.CharField(max_length=200, verbose_name="Nombre del Grupo")
     descripcion = models.TextField(blank=True, verbose_name="Descripción")
-    ramo = models.ForeignKey(Ramo, on_delete=models.PROTECT,
-                             related_name='grupos_bienes', verbose_name="Ramo")
-    subtipo_ramo = models.ForeignKey(SubtipoRamo, on_delete=models.SET_NULL,
-                                     null=True, blank=True,
-                                     related_name='grupos_bienes', verbose_name="Subtipo de Ramo")
+    grupo_ramo = models.ForeignKey(GrupoRamo, on_delete=models.PROTECT,
+                                   related_name='grupos_bienes', verbose_name="Grupo de Ramo")
+    subgrupo_ramo = models.ForeignKey(SubgrupoRamo, on_delete=models.SET_NULL,
+                                      null=True, blank=True,
+                                      related_name='grupos_bienes', verbose_name="Subgrupo de Ramo")
     responsable = models.ForeignKey(ResponsableCustodio, on_delete=models.SET_NULL,
                                     null=True, blank=True,
                                     related_name='grupos_bienes', verbose_name="Responsable")
@@ -2453,7 +2694,7 @@ class GrupoBienes(models.Model):
         verbose_name_plural = "Grupos de Bienes"
         ordering = ['nombre']
         indexes = [
-            models.Index(fields=['ramo']),
+            models.Index(fields=['grupo_ramo']),
             models.Index(fields=['activo']),
         ]
 
@@ -2593,3 +2834,228 @@ class CalendarEvent(models.Model):
             }
         )
         return event
+
+
+# ==================== MODELO SINIESTRO EMAIL ====================
+
+class SiniestroEmail(models.Model):
+    """
+    Modelo para almacenar los datos de siniestros extraídos de correos electrónicos.
+    Permite guardar la información aunque no se pueda crear el siniestro automáticamente.
+    """
+    ESTADO_PROCESAMIENTO_CHOICES = [
+        ('pendiente', 'Pendiente de Revisión'),
+        ('procesado', 'Procesado - Siniestro Creado'),
+        ('error', 'Error en Procesamiento'),
+        ('descartado', 'Descartado'),
+    ]
+
+    # Información del correo
+    email_id = models.CharField(max_length=100, verbose_name="ID del Correo")
+    email_subject = models.CharField(max_length=500, verbose_name="Asunto del Correo")
+    email_from = models.CharField(max_length=300, verbose_name="Remitente")
+    email_date = models.DateTimeField(null=True, blank=True, verbose_name="Fecha del Correo")
+    email_body = models.TextField(blank=True, verbose_name="Cuerpo del Correo")
+
+    # Datos extraídos del reporte
+    responsable_nombre = models.CharField(max_length=300, verbose_name="Nombre del Responsable")
+    fecha_reporte = models.CharField(max_length=50, verbose_name="Fecha de Reporte (texto)")
+    problema = models.TextField(verbose_name="Descripción del Problema")
+    causa = models.TextField(verbose_name="Causa del Daño")
+
+    # Datos del equipo
+    periferico = models.CharField(max_length=200, verbose_name="Tipo de Periférico")
+    marca = models.CharField(max_length=200, verbose_name="Marca")
+    modelo = models.CharField(max_length=200, verbose_name="Modelo")
+    serie = models.CharField(max_length=200, verbose_name="Número de Serie")
+    codigo_activo = models.CharField(max_length=200, blank=True, verbose_name="Código de Activo")
+
+    # Estado del procesamiento
+    estado_procesamiento = models.CharField(
+        max_length=20, 
+        choices=ESTADO_PROCESAMIENTO_CHOICES, 
+        default='pendiente',
+        verbose_name="Estado de Procesamiento"
+    )
+    mensaje_procesamiento = models.TextField(blank=True, verbose_name="Mensaje de Procesamiento")
+
+    # Relaciones (se llenan si se puede procesar automáticamente)
+    activo_encontrado = models.ForeignKey(
+        'InsuredAsset', 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True,
+        related_name='siniestros_email',
+        verbose_name="Activo Encontrado"
+    )
+    siniestro_creado = models.ForeignKey(
+        'Siniestro', 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True,
+        related_name='origen_email',
+        verbose_name="Siniestro Creado"
+    )
+    responsable_encontrado = models.ForeignKey(
+        'ResponsableCustodio', 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True,
+        related_name='siniestros_email',
+        verbose_name="Responsable Encontrado"
+    )
+
+    # Auditoría
+    fecha_recepcion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Recepción")
+    fecha_procesamiento = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Procesamiento")
+    procesado_por = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True,
+        related_name='siniestros_email_procesados',
+        verbose_name="Procesado por"
+    )
+
+    class Meta:
+        verbose_name = "Siniestro por Email"
+        verbose_name_plural = "Siniestros por Email"
+        ordering = ['-fecha_recepcion']
+        indexes = [
+            models.Index(fields=['serie']),
+            models.Index(fields=['estado_procesamiento']),
+            models.Index(fields=['email_id']),
+        ]
+
+    def __str__(self):
+        return f"Email: {self.email_subject[:50]} - {self.get_estado_procesamiento_display()}"
+
+    def buscar_activo_por_serie(self):
+        """Busca un activo en el sistema por número de serie."""
+        if not self.serie:
+            return None
+        
+        try:
+            activo = InsuredAsset.objects.filter(
+                serial_number__iexact=self.serie.strip()
+            ).first()
+            return activo
+        except Exception:
+            return None
+
+    def buscar_responsable(self):
+        """Busca un responsable por nombre (búsqueda parcial)."""
+        if not self.responsable_nombre:
+            return None
+        
+        try:
+            # Buscar coincidencia exacta primero
+            responsable = ResponsableCustodio.objects.filter(
+                nombre__iexact=self.responsable_nombre.strip()
+            ).first()
+            
+            if not responsable:
+                # Buscar coincidencia parcial
+                responsable = ResponsableCustodio.objects.filter(
+                    nombre__icontains=self.responsable_nombre.strip().split()[0]
+                ).first()
+            
+            return responsable
+        except Exception:
+            return None
+
+    def crear_siniestro_automatico(self):
+        """
+        Intenta crear un siniestro automáticamente si se encuentra el activo.
+        
+        Returns:
+            tuple: (siniestro_creado, mensaje)
+        """
+        from django.utils import timezone
+        from datetime import datetime
+        
+        # Buscar activo
+        activo = self.buscar_activo_por_serie()
+        self.activo_encontrado = activo
+        
+        if not activo:
+            self.estado_procesamiento = 'pendiente'
+            self.mensaje_procesamiento = (
+                f"No se encontró activo con número de serie '{self.serie}'. "
+                "Requiere revisión manual para asignar póliza."
+            )
+            self.save()
+            return None, self.mensaje_procesamiento
+        
+        # Verificar que el activo tenga póliza
+        if not activo.policy:
+            self.estado_procesamiento = 'pendiente'
+            self.mensaje_procesamiento = (
+                f"Activo encontrado ({activo.asset_code}) pero no tiene póliza asignada. "
+                "Requiere revisión manual."
+            )
+            self.save()
+            return None, self.mensaje_procesamiento
+        
+        # Buscar o usar el custodio del activo
+        responsable = self.buscar_responsable() or activo.custodian
+        self.responsable_encontrado = responsable
+        
+        # Buscar tipo de siniestro "daño" por defecto
+        tipo_siniestro = TipoSiniestro.objects.filter(nombre='daño').first()
+        if not tipo_siniestro:
+            tipo_siniestro = TipoSiniestro.objects.first()
+        
+        if not tipo_siniestro:
+            self.estado_procesamiento = 'error'
+            self.mensaje_procesamiento = "No existe ningún tipo de siniestro en el sistema."
+            self.save()
+            return None, self.mensaje_procesamiento
+        
+        # Parsear fecha del reporte
+        fecha_siniestro = timezone.now()
+        if self.fecha_reporte:
+            try:
+                fecha_siniestro = timezone.make_aware(
+                    datetime.strptime(self.fecha_reporte.strip(), '%d/%m/%Y')
+                )
+            except ValueError:
+                pass  # Usar fecha actual si no se puede parsear
+        
+        # Generar número de siniestro
+        from django.db.models import Max
+        ultimo = Siniestro.objects.aggregate(Max('id'))['id__max'] or 0
+        numero_siniestro = f"SIN-EMAIL-{timezone.now().year}-{str(ultimo + 1).zfill(5)}"
+        
+        try:
+            # Crear el siniestro
+            siniestro = Siniestro.objects.create(
+                poliza=activo.policy,
+                numero_siniestro=numero_siniestro,
+                tipo_siniestro=tipo_siniestro,
+                fecha_siniestro=fecha_siniestro,
+                bien_nombre=f"{self.periferico} {self.marca}".strip(),
+                bien_modelo=self.modelo,
+                bien_serie=self.serie,
+                bien_marca=self.marca,
+                bien_codigo_activo=activo.asset_code,
+                responsable_custodio=responsable,
+                ubicacion=activo.location or "Ver correo original",
+                causa=self.causa,
+                descripcion_detallada=self.problema,
+                monto_estimado=activo.current_value or activo.purchase_value,
+                estado='registrado',
+            )
+            
+            self.siniestro_creado = siniestro
+            self.estado_procesamiento = 'procesado'
+            self.fecha_procesamiento = timezone.now()
+            self.mensaje_procesamiento = (
+                f"Siniestro {numero_siniestro} creado exitosamente. "
+                f"Póliza: {activo.policy.numero_poliza}"
+            )
+            self.save()
+            
+            return siniestro, self.mensaje_procesamiento
+            
+        except Exception as e:
+            self.estado_procesamiento = 'error'
+            self.mensaje_procesamiento = f"Error al crear siniestro: {str(e)}"
+            self.save()
+            return None, self.mensaje_procesamiento
