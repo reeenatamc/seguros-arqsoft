@@ -171,12 +171,21 @@
             </button>
             <div id="analisis-menu" class="submenu space-y-1 mt-1 overflow-hidden transition-all duration-300" style="max-height: 400px;">
                 <a href="{% url 'reportes_dashboard' %}" 
-                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'reportes' in request.path %}active{% endif %}"
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'reportes' in request.path and 'dias-gestion' not in request.path %}active{% endif %}"
                    title="Reportes">
                     <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Reportes</span>
+                </a>
+                
+                <a href="{% url 'reporte_dias_gestion' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'dias-gestion' in request.path %}active{% endif %}"
+                   title="Días de Gestión - Contaduría">
+                    <div class="nav-icon w-9 h-9 rounded-lg bg-indigo-500/30 flex items-center justify-center group-hover:bg-indigo-500/50 transition-all duration-300 flex-shrink-0">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Contaduría</span>
                 </a>
                 
                 <a href="{% url 'analytics_dashboard' %}" 

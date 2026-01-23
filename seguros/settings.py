@@ -419,7 +419,7 @@ UNFOLD = {
                     {
                         "title": _("Bienes Asegurados"),
                         "icon": "inventory_2",
-                        "link": reverse_lazy("admin:app_insuredasset_changelist"),
+                        "link": reverse_lazy("admin:app_bienasegurado_changelist"),
                     },
                     {
                         "title": _("Aprobaciones de Pago"),

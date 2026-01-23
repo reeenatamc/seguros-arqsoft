@@ -9,6 +9,7 @@ from app.models import (
     TipoSiniestro,
     Ramo,
     SubtipoRamo,
+    SubgrupoRamo,
     Poliza,
     ResponsableCustodio,
     Siniestro,
@@ -16,7 +17,7 @@ from app.models import (
     Factura,
     Pago,
     PaymentApproval,
-    InsuredAsset,
+    BienAsegurado,
     PolicyRenewal,
     DetallePolizaRamo,
     ChecklistSiniestro,
@@ -58,7 +59,7 @@ class Command(BaseCommand):
         Factura.objects.all().delete()
 
         self.stdout.write("Eliminando bienes asegurados...")
-        InsuredAsset.objects.all().delete()
+        BienAsegurado.objects.all().delete()
 
         self.stdout.write("Eliminando renovaciones...")
         PolicyRenewal.objects.all().delete()
@@ -102,6 +103,7 @@ class Command(BaseCommand):
 
         broker = CorredorSeguros.objects.create(
             nombre="Broker UTPL",
+            compania_aseguradora=aseguradora,
             ruc="1790098765001",
             direccion="Loja, Ecuador",
             telefono="072654321",
@@ -110,9 +112,6 @@ class Command(BaseCommand):
             contacto_telefono="0988888888",
             activo=True,
         )
-
-        # Relación compañía ↔ broker autorizado
-        aseguradora.brokers.add(broker)
 
         tipo_poliza = TipoPoliza.objects.create(
             nombre="Multiriesgo Incendio",
@@ -248,28 +247,30 @@ class Command(BaseCommand):
         )
 
         # 8) Bien asegurado de ejemplo
-        bien = InsuredAsset.objects.create(
-            policy=poliza,
-            custodian=responsable,
-            grupo=grupo,
-            asset_code="ACT-UTPL-0001",
-            name="Laptop Dell Latitude 7420",
-            description="Laptop Dell Latitude 7420 para uso administrativo",
-            category="Equipos de Cómputo",
-            brand="Dell",
-            model="Latitude 7420",
-            serial_number="ABC123456",
-            location="Campus UTPL - Edificio Central",
-            building="Edificio Central",
-            floor="2",
-            department="Tecnologías de la Información",
-            purchase_value=Decimal("1500.00"),
-            current_value=Decimal("1200.00"),
-            insured_value=Decimal("1500.00"),
-            purchase_date=hoy - timedelta(days=180),
-            warranty_expiry=hoy + timedelta(days=545),
-            status="active",
-            condition="good",
+        subgrupo = SubgrupoRamo.objects.first()  # Obtener un subgrupo existente
+        bien = BienAsegurado.objects.create(
+            poliza=poliza,
+            subgrupo_ramo=subgrupo,
+            responsable_custodio=responsable,
+            grupo_bienes=grupo,
+            codigo_bien="ACT-UTPL-0001",
+            nombre="Laptop Dell Latitude 7420",
+            descripcion="Laptop Dell Latitude 7420 para uso administrativo",
+            categoria="Equipos de Cómputo",
+            marca="Dell",
+            modelo="Latitude 7420",
+            serie="ABC123456",
+            ubicacion="Campus UTPL - Edificio Central",
+            edificio="Edificio Central",
+            piso="2",
+            departamento="Tecnologías de la Información",
+            valor_compra=Decimal("1500.00"),
+            valor_actual=Decimal("1200.00"),
+            valor_asegurado=Decimal("1500.00"),
+            fecha_adquisicion=hoy - timedelta(days=180),
+            fecha_garantia=hoy + timedelta(days=545),
+            estado="activo",
+            condicion="bueno",
         )
 
         # 9) Renovación de póliza de ejemplo

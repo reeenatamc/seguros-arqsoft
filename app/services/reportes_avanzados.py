@@ -351,6 +351,65 @@ class ReportesAvanzadosService:
                 'promedio_dias': valores['total_dias'] / valores['cantidad'] if valores['cantidad'] > 0 else 0,
             })
 
+        # Detalle para contadora con fechas clave y montos
+        detalle_contadora = []
+        total_estimado = Decimal('0.00')
+        total_pagado = Decimal('0.00')
+        total_deducible = Decimal('0.00')
+        pendientes_pago = 0
+        
+        for siniestro in siniestros.select_related('tipo_siniestro', 'poliza__compania_aseguradora'):
+            # Calcular días entre hitos
+            dias_hasta_envio = None
+            dias_envio_respuesta = None
+            dias_respuesta_pago = None
+            
+            if siniestro.fecha_envio_aseguradora and siniestro.fecha_registro:
+                dias_hasta_envio = (siniestro.fecha_envio_aseguradora - siniestro.fecha_registro.date()).days
+            
+            if siniestro.fecha_respuesta_aseguradora and siniestro.fecha_envio_aseguradora:
+                dias_envio_respuesta = (siniestro.fecha_respuesta_aseguradora - siniestro.fecha_envio_aseguradora).days
+            
+            if siniestro.fecha_pago and siniestro.fecha_respuesta_aseguradora:
+                dias_respuesta_pago = (siniestro.fecha_pago - siniestro.fecha_respuesta_aseguradora).days
+            
+            # Acumular totales
+            total_estimado += siniestro.monto_estimado or Decimal('0.00')
+            total_pagado += siniestro.valor_pagado or Decimal('0.00')
+            total_deducible += siniestro.deducible_aplicado or Decimal('0.00')
+            
+            if siniestro.estado not in ['liquidado', 'cerrado', 'rechazado'] and not siniestro.fecha_pago:
+                pendientes_pago += 1
+            
+            detalle_contadora.append({
+                'id': siniestro.pk,
+                'numero_siniestro': siniestro.numero_siniestro,
+                'tipo': siniestro.tipo_siniestro.nombre if siniestro.tipo_siniestro else 'N/A',
+                'compania': siniestro.poliza.compania_aseguradora.nombre if siniestro.poliza and siniestro.poliza.compania_aseguradora else 'N/A',
+                'estado': siniestro.get_estado_display(),
+                'estado_raw': siniestro.estado,
+                # Fechas clave
+                'fecha_registro': siniestro.fecha_registro.strftime('%d/%m/%Y') if siniestro.fecha_registro else '-',
+                'fecha_envio': siniestro.fecha_envio_aseguradora.strftime('%d/%m/%Y') if siniestro.fecha_envio_aseguradora else '-',
+                'fecha_respuesta': siniestro.fecha_respuesta_aseguradora.strftime('%d/%m/%Y') if siniestro.fecha_respuesta_aseguradora else '-',
+                'fecha_liquidacion': siniestro.fecha_liquidacion.strftime('%d/%m/%Y') if siniestro.fecha_liquidacion else '-',
+                'fecha_pago': siniestro.fecha_pago.strftime('%d/%m/%Y') if siniestro.fecha_pago else '-',
+                # Días entre hitos
+                'dias_hasta_envio': dias_hasta_envio,
+                'dias_envio_respuesta': dias_envio_respuesta,
+                'dias_respuesta_pago': dias_respuesta_pago,
+                'dias_total': siniestro.dias_gestion,
+                # Montos
+                'monto_estimado': float(siniestro.monto_estimado or 0),
+                'valor_reclamo': float(siniestro.valor_reclamo or 0),
+                'deducible': float(siniestro.deducible_aplicado or 0),
+                'monto_indemnizado': float(siniestro.monto_indemnizado or 0),
+                'valor_pagado': float(siniestro.valor_pagado or 0),
+            })
+        
+        # Ordenar por fecha de registro (más reciente primero)
+        detalle_contadora = sorted(detalle_contadora, key=lambda x: x['fecha_registro'], reverse=True)
+
         return {
             'periodo': {
                 'desde': fecha_desde.isoformat(),
@@ -361,9 +420,17 @@ class ReportesAvanzadosService:
                 'siniestros_cerrados': siniestros_cerrados,
                 'promedio_dias_gestion': round(promedio_general, 1),
             },
+            'resumen_contadora': {
+                'total_estimado': float(total_estimado),
+                'total_pagado': float(total_pagado),
+                'total_deducible': float(total_deducible),
+                'pendientes_pago': pendientes_pago,
+                'monto_pendiente': float(total_estimado - total_pagado - total_deducible),
+            },
             'por_tipo': sorted(resumen_por_tipo, key=lambda x: -x['promedio_dias']),
             'por_estado': sorted(resumen_por_estado, key=lambda x: -x['cantidad_siniestros']),
             'detalle': sorted(datos_siniestros, key=lambda x: -x['dias_gestion'])[:50],
+            'detalle_contadora': detalle_contadora,
         }
 
     @classmethod

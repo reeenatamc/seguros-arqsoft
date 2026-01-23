@@ -26,11 +26,12 @@ validador_ruc = RegexValidator(
 
 class ConfiguracionSistema(models.Model):
     clave = models.CharField(max_length=100, unique=True, verbose_name="Clave")
-    valor = models.CharField(max_length=255, verbose_name="Valor")
+    valor = models.TextField(verbose_name="Valor")  # TextField para soportar JSON
     tipo = models.CharField(max_length=20, choices=[
         ('decimal', 'Decimal'),
         ('entero', 'Entero'),
         ('texto', 'Texto'),
+        ('json', 'JSON'),  # Nuevo tipo para estructuras complejas
     ], default='texto', verbose_name="Tipo")
     descripcion = models.TextField(blank=True, verbose_name="Descripción")
     categoria = models.CharField(max_length=50, choices=[
@@ -89,6 +90,12 @@ class ConfiguracionSistema(models.Model):
             return Decimal(self.valor)
         elif self.tipo == 'entero':
             return int(self.valor)
+        elif self.tipo == 'json':
+            import json
+            try:
+                return json.loads(self.valor)
+            except (json.JSONDecodeError, TypeError):
+                return None
         return self.valor
     
     @classmethod
@@ -171,6 +178,20 @@ class ConfiguracionSistema(models.Model):
                 'tipo': 'texto',
                 'descripcion': 'Cargo que aparecerá como firmante en cartas y recibos',
                 'categoria': 'siniestros'
+            },
+            {
+                'clave': 'PORCENTAJE_IVA',
+                'valor': '0.15',
+                'tipo': 'decimal',
+                'descripcion': 'Porcentaje de IVA aplicable (15%)',
+                'categoria': 'facturas'
+            },
+            {
+                'clave': 'TABLA_TASAS_EMISION',
+                'valor': '[{"limite": 250, "tasa": "0.50"}, {"limite": 500, "tasa": "1.00"}, {"limite": 1000, "tasa": "3.00"}, {"limite": 2000, "tasa": "5.00"}, {"limite": 4000, "tasa": "7.00"}, {"limite": null, "tasa": "9.00"}]',
+                'tipo': 'json',
+                'descripcion': 'Tabla de tasas de emisión por rangos de prima. Formato: [{limite: número, tasa: "decimal"}]. El último debe tener limite: null.',
+                'categoria': 'facturas'
             },
         ]
         
@@ -316,6 +337,36 @@ class Poliza(models.Model):
                                         validators=[MinValueValidator(Decimal('0.01'))],
                                         verbose_name="Suma Asegurada")
     coberturas = models.TextField(verbose_name="Coberturas Detalladas")
+    
+    # Prima del seguro (campos agregados para modelado correcto)
+    prima_neta = models.DecimalField(max_digits=15, decimal_places=2,
+                                     validators=[MinValueValidator(Decimal('0.00'))],
+                                     default=Decimal('0.00'),
+                                     verbose_name="Prima Neta",
+                                     help_text="Costo base del seguro sin impuestos ni contribuciones")
+    prima_total = models.DecimalField(max_digits=15, decimal_places=2,
+                                      validators=[MinValueValidator(Decimal('0.00'))],
+                                      default=Decimal('0.00'),
+                                      verbose_name="Prima Total",
+                                      help_text="Prima neta + IVA + contribuciones")
+    
+    # Deducible (característica del contrato, no del siniestro)
+    deducible = models.DecimalField(max_digits=15, decimal_places=2,
+                                    validators=[MinValueValidator(Decimal('0.00'))],
+                                    default=Decimal('0.00'),
+                                    verbose_name="Deducible",
+                                    help_text="Monto que asume el asegurado en cada siniestro")
+    porcentaje_deducible = models.DecimalField(max_digits=5, decimal_places=2,
+                                               validators=[MinValueValidator(Decimal('0.00')),
+                                                          MaxValueValidator(Decimal('100.00'))],
+                                               default=Decimal('0.00'),
+                                               verbose_name="% Deducible",
+                                               help_text="Porcentaje del siniestro que asume el asegurado (alternativo al monto fijo)")
+    deducible_minimo = models.DecimalField(max_digits=15, decimal_places=2,
+                                           validators=[MinValueValidator(Decimal('0.00'))],
+                                           default=Decimal('0.00'),
+                                           verbose_name="Deducible Mínimo",
+                                           help_text="Monto mínimo de deducible cuando se usa porcentaje")
     
     # Fechas
     fecha_inicio = models.DateField(verbose_name="Fecha de Inicio de Vigencia")
@@ -467,7 +518,14 @@ class Poliza(models.Model):
 
     @property
     def total_prima_ramos(self):
-        """Retorna la prima total de todos los ramos"""
+        """
+        Retorna la prima total de todos los ramos.
+        Si existe valor pre-calculado con annotate(), lo usa para evitar query adicional.
+        """
+        # Usar valor pre-calculado si existe (desde annotate en la vista)
+        if hasattr(self, 'total_prima_calculado') and self.total_prima_calculado is not None:
+            return self.total_prima_calculado
+        # Fallback a aggregate (genera query adicional)
         return self.detalles_ramo.aggregate(
             total=models.Sum('total_prima')
         )['total'] or Decimal('0.00')
@@ -499,6 +557,21 @@ class Poliza(models.Model):
     def cantidad_ramos(self):
         """Retorna la cantidad de ramos asociados"""
         return self.detalles_ramo.count()
+
+    def calcular_deducible_aplicable(self, monto_siniestro):
+        """
+        Calcula el deducible aplicable para un monto de siniestro dado.
+        Retorna el mayor entre: deducible fijo, o (porcentaje * monto) con mínimo.
+        """
+        deducible_fijo = self.deducible or Decimal('0.00')
+        
+        if self.porcentaje_deducible > 0:
+            deducible_porcentaje = (self.porcentaje_deducible / 100) * monto_siniestro
+            deducible_minimo = self.deducible_minimo or Decimal('0.00')
+            deducible_porcentaje = max(deducible_porcentaje, deducible_minimo)
+            return max(deducible_fijo, deducible_porcentaje)
+        
+        return deducible_fijo
 
 
 class Factura(models.Model):
@@ -931,11 +1004,12 @@ class Siniestro(models.Model):
     monto_indemnizado = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True,
                                            verbose_name="Monto Indemnizado")
 
-    # Nuevos campos de valoración del siniestro
+    # Campos de valoración del siniestro
     valor_reclamo = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True,
                                         verbose_name="Valor del Reclamo (según proforma)")
-    deducible = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True,
-                                    verbose_name="Deducible")
+    deducible_aplicado = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True,
+                                             verbose_name="Deducible Aplicado",
+                                             help_text="Deducible efectivamente aplicado en este siniestro (calculado desde la póliza)")
     depreciacion = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True,
                                        verbose_name="Depreciación")
     suma_asegurada_bien = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True,
@@ -1086,6 +1160,27 @@ class Siniestro(models.Model):
         if self.bien_asegurado_id:
             return self.bien_asegurado.clasificacion_completa
         return None
+
+    @property
+    def deducible_calculado(self):
+        """Calcula el deducible desde la póliza según el monto del siniestro"""
+        poliza = self.get_poliza()
+        if poliza and self.monto_estimado:
+            return poliza.calcular_deducible_aplicable(self.monto_estimado)
+        return Decimal('0.00')
+
+    @property
+    def monto_a_indemnizar(self):
+        """
+        Calcula el monto estimado a indemnizar:
+        Monto estimado - Deducible - Depreciación
+        """
+        monto = self.monto_estimado or Decimal('0.00')
+        deducible = self.deducible_aplicado or self.deducible_calculado
+        depreciacion = self.depreciacion or Decimal('0.00')
+        
+        resultado = monto - deducible - depreciacion
+        return max(resultado, Decimal('0.00'))
 
     @property
     def dias_desde_registro(self):
@@ -1717,126 +1812,6 @@ class NotaCredito(models.Model):
 
 # ==================== NUEVOS MODELOS (Código en inglés, interfaz en español) ====================
 
-class InsuredAsset(models.Model):
-    """
-    Modelo para el inventario de bienes asegurados.
-    Permite un control preciso de qué bienes están cubiertos por cada póliza.
-    """
-    STATUS_CHOICES = [
-        ('active', 'Activo'),
-        ('inactive', 'Inactivo'),
-        ('disposed', 'Dado de Baja'),
-        ('transferred', 'Transferido'),
-    ]
-
-    CONDITION_CHOICES = [
-        ('excellent', 'Excelente'),
-        ('good', 'Bueno'),
-        ('fair', 'Regular'),
-        ('poor', 'Malo'),
-    ]
-
-    # Relaciones
-    policy = models.ForeignKey(Poliza, on_delete=models.PROTECT,
-                               related_name='insured_assets', verbose_name="Póliza",
-                               null=True, blank=True)
-    custodian = models.ForeignKey(ResponsableCustodio, on_delete=models.PROTECT,
-                                  related_name='assigned_assets', verbose_name="Custodio/Responsable")
-    grupo = models.ForeignKey('GrupoBienes', on_delete=models.SET_NULL,
-                              null=True, blank=True,
-                              related_name='bienes', verbose_name="Grupo de Bienes")
-    
-    # Identificación del bien
-    asset_code = models.CharField(max_length=100, unique=True, verbose_name="Código de Activo")
-    name = models.CharField(max_length=200, verbose_name="Nombre del Bien")
-    description = models.TextField(blank=True, verbose_name="Descripción")
-    category = models.CharField(max_length=100, verbose_name="Categoría")
-    
-    # Detalles técnicos
-    brand = models.CharField(max_length=100, blank=True, verbose_name="Marca")
-    model = models.CharField(max_length=100, blank=True, verbose_name="Modelo")
-    serial_number = models.CharField(max_length=100, blank=True, verbose_name="Número de Serie")
-    
-    # Ubicación
-    location = models.CharField(max_length=300, verbose_name="Ubicación")
-    building = models.CharField(max_length=100, blank=True, verbose_name="Edificio")
-    floor = models.CharField(max_length=50, blank=True, verbose_name="Piso")
-    department = models.CharField(max_length=100, blank=True, verbose_name="Departamento")
-    
-    # Valores financieros
-    purchase_value = models.DecimalField(max_digits=15, decimal_places=2,
-                                         validators=[MinValueValidator(Decimal('0.01'))],
-                                         verbose_name="Valor de Compra")
-    current_value = models.DecimalField(max_digits=15, decimal_places=2,
-                                        validators=[MinValueValidator(Decimal('0.00'))],
-                                        verbose_name="Valor Actual")
-    insured_value = models.DecimalField(max_digits=15, decimal_places=2,
-                                        validators=[MinValueValidator(Decimal('0.00'))],
-                                        null=True, blank=True, verbose_name="Valor Asegurado")
-    
-    # Fechas
-    purchase_date = models.DateField(verbose_name="Fecha de Compra")
-    warranty_expiry = models.DateField(null=True, blank=True, verbose_name="Vencimiento de Garantía")
-    
-    # Estado
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active',
-                              verbose_name="Estado")
-    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, default='good',
-                                 verbose_name="Condición")
-    
-    # Imagen/QR
-    image = models.ImageField(upload_to='assets/images/%Y/%m/', null=True, blank=True,
-                              verbose_name="Imagen")
-    qr_code = models.CharField(max_length=200, blank=True, verbose_name="Código QR")
-    
-    # Auditoría
-    notes = models.TextField(blank=True, verbose_name="Notas")
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
-                                   related_name='assets_created', verbose_name="Creado por")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
-    
-    # Historial
-    history = HistoricalRecords(
-        verbose_name="Historial",
-        verbose_name_plural="Historial de cambios"
-    )
-
-    class Meta:
-        verbose_name = "Bien Asegurado"
-        verbose_name_plural = "Bienes Asegurados"
-        ordering = ['name']
-        indexes = [
-            models.Index(fields=['asset_code']),
-            models.Index(fields=['status']),
-            models.Index(fields=['category']),
-        ]
-
-    def __str__(self):
-        return f"{self.asset_code} - {self.name}"
-    
-    @property
-    def depreciation_percentage(self):
-        """Calcula el porcentaje de depreciación"""
-        if self.purchase_value and self.purchase_value > 0:
-            return ((self.purchase_value - self.current_value) / self.purchase_value) * 100
-        return 0
-    
-    @property
-    def is_covered(self):
-        """Verifica si el bien está cubierto por una póliza vigente"""
-        if self.policy:
-            return self.policy.esta_vigente
-        return False
-    
-    @property
-    def claims_count(self):
-        """Retorna la cantidad de siniestros asociados a este bien"""
-        return Siniestro.objects.filter(
-            bien_codigo_activo=self.asset_code
-        ).count()
-
-
 class Quote(models.Model):
     """
     Modelo para cotizaciones/proformas de seguros.
@@ -2381,17 +2356,28 @@ SubtipoRamo = SubgrupoRamo
 
 class BienAsegurado(models.Model):
     """
-    Modelo que representa un bien asegurado específico.
+    Modelo UNIFICADO que representa un bien asegurado específico.
     Actúa como pivote entre la Póliza (contrato) y el SubgrupoRamo (clasificación).
     
     El siniestro se relaciona con el BienAsegurado, no directamente con la Póliza,
     porque el evento de pérdida ocurre sobre un objeto específico.
+    
+    NOTA: Este modelo unifica BienAsegurado + InsuredAsset (deprecado).
+    Todos los bienes deben crearse usando este modelo.
     """
     ESTADO_CHOICES = [
         ('activo', 'Activo'),
         ('inactivo', 'Inactivo'),
         ('dado_de_baja', 'Dado de Baja'),
         ('siniestrado', 'Siniestrado'),
+        ('transferido', 'Transferido'),
+    ]
+    
+    CONDICION_CHOICES = [
+        ('excelente', 'Excelente'),
+        ('bueno', 'Bueno'),
+        ('regular', 'Regular'),
+        ('malo', 'Malo'),
     ]
 
     # Relación con Póliza (contrato al que pertenece)
@@ -2409,6 +2395,8 @@ class BienAsegurado(models.Model):
                                    help_text="Identificador único del bien asegurado")
     nombre = models.CharField(max_length=200, verbose_name="Nombre del Bien")
     descripcion = models.TextField(blank=True, verbose_name="Descripción")
+    categoria = models.CharField(max_length=100, blank=True, verbose_name="Categoría",
+                                 help_text="Categoría del bien (ej: Equipos de Cómputo, Vehículos)")
     
     # Características del bien
     marca = models.CharField(max_length=100, blank=True, verbose_name="Marca")
@@ -2419,14 +2407,27 @@ class BienAsegurado(models.Model):
     anio_fabricacion = models.PositiveIntegerField(null=True, blank=True, 
                                                     verbose_name="Año de Fabricación")
     
-    # Ubicación y responsable
-    ubicacion = models.CharField(max_length=300, blank=True, verbose_name="Ubicación")
+    # Ubicación detallada
+    ubicacion = models.CharField(max_length=300, blank=True, verbose_name="Ubicación General")
+    edificio = models.CharField(max_length=100, blank=True, verbose_name="Edificio")
+    piso = models.CharField(max_length=50, blank=True, verbose_name="Piso")
+    departamento = models.CharField(max_length=100, blank=True, verbose_name="Departamento/Área")
+    
+    # Responsable
     responsable_custodio = models.ForeignKey('ResponsableCustodio', on_delete=models.SET_NULL,
                                              null=True, blank=True,
                                              related_name='bienes_asegurados',
                                              verbose_name="Responsable/Custodio")
     
-    # Valores
+    # Valores financieros
+    valor_compra = models.DecimalField(max_digits=15, decimal_places=2,
+                                       null=True, blank=True,
+                                       validators=[MinValueValidator(Decimal('0.01'))],
+                                       verbose_name="Valor de Compra")
+    valor_actual = models.DecimalField(max_digits=15, decimal_places=2,
+                                       null=True, blank=True,
+                                       validators=[MinValueValidator(Decimal('0.00'))],
+                                       verbose_name="Valor Actual (Depreciado)")
     valor_asegurado = models.DecimalField(max_digits=15, decimal_places=2,
                                           validators=[MinValueValidator(Decimal('0.01'))],
                                           verbose_name="Valor Asegurado")
@@ -2435,12 +2436,21 @@ class BienAsegurado(models.Model):
                                           validators=[MinValueValidator(Decimal('0.00'))],
                                           verbose_name="Valor Comercial")
     
-    # Estado
+    # Estado y condición
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, 
                               default='activo', verbose_name="Estado")
+    condicion = models.CharField(max_length=20, choices=CONDICION_CHOICES,
+                                 default='bueno', verbose_name="Condición Física")
     
     # Fechas
     fecha_adquisicion = models.DateField(null=True, blank=True, verbose_name="Fecha de Adquisición")
+    fecha_garantia = models.DateField(null=True, blank=True, verbose_name="Vencimiento de Garantía")
+    
+    # Imagen y QR
+    imagen = models.ImageField(upload_to='bienes/imagenes/%Y/%m/', null=True, blank=True,
+                               verbose_name="Imagen del Bien")
+    codigo_qr = models.CharField(max_length=200, blank=True, verbose_name="Código QR",
+                                 help_text="Código QR para identificación rápida")
     
     # Observaciones
     observaciones = models.TextField(blank=True, verbose_name="Observaciones")
@@ -2603,7 +2613,10 @@ class DetallePolizaRamo(models.Model):
     @staticmethod
     def calcular_derechos_emision(valor_prima: Decimal) -> Decimal:
         """
-        Calcula los derechos de emisión según tabla escalonada:
+        Calcula los derechos de emisión según tabla escalonada configurable.
+        La tabla se obtiene de ConfiguracionSistema (TABLA_TASAS_EMISION).
+        
+        Valores por defecto:
           0 - 250      -> 0.50
           251 - 500    -> 1.00
           501 - 1000   -> 3.00
@@ -2611,18 +2624,8 @@ class DetallePolizaRamo(models.Model):
           2001 - 4000  -> 7.00
           > 4001       -> 9.00
         """
-        if valor_prima <= Decimal('250'):
-            return Decimal('0.50')
-        elif valor_prima <= Decimal('500'):
-            return Decimal('1.00')
-        elif valor_prima <= Decimal('1000'):
-            return Decimal('3.00')
-        elif valor_prima <= Decimal('2000'):
-            return Decimal('5.00')
-        elif valor_prima <= Decimal('4000'):
-            return Decimal('7.00')
-        else:
-            return Decimal('9.00')
+        from app.services.calculations import DetalleRamoCalculationService
+        return DetalleRamoCalculationService.calcular_derechos_emision(valor_prima)
 
     def calcular_valores(self):
         """Calcula todos los valores financieros derivados"""
@@ -2881,7 +2884,7 @@ class SiniestroEmail(models.Model):
 
     # Relaciones (se llenan si se puede procesar automáticamente)
     activo_encontrado = models.ForeignKey(
-        'InsuredAsset', 
+        'BienAsegurado', 
         on_delete=models.SET_NULL, 
         null=True, blank=True,
         related_name='siniestros_email',
@@ -2932,8 +2935,8 @@ class SiniestroEmail(models.Model):
             return None
         
         try:
-            activo = InsuredAsset.objects.filter(
-                serial_number__iexact=self.serie.strip()
+            activo = BienAsegurado.objects.filter(
+                serie__iexact=self.serie.strip()
             ).first()
             return activo
         except Exception:

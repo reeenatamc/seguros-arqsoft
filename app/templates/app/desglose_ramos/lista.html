@@ -200,9 +200,9 @@
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2.5 min-w-[200px]">
                                 <span class="flex-shrink-0 px-1.5 py-0.5 rounded bg-brand-100 text-brand-600 font-semibold text-[10px] leading-none whitespace-nowrap">
-                                    {{ detalle.ramo.codigo|slice:":6" }}
+                                    {{ detalle.grupo_ramo.codigo|default:"---"|slice:":6" }}
                                 </span>
-                                <span class="font-medium text-slate-800 truncate">{{ detalle.ramo.nombre }}</span>
+                                <span class="font-medium text-slate-800 truncate">{{ detalle.grupo_ramo.nombre|default:"-" }}</span>
                             </div>
                         </td>
                         <td class="px-4 py-3 text-slate-600">{{ detalle.numero_factura|default:"-" }}</td>

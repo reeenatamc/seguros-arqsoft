@@ -16,7 +16,7 @@ import calendar
 from app.models import (
     ConfiguracionSistema, CompaniaAseguradora, CorredorSeguros, 
     TipoPoliza, ResponsableCustodio, Poliza, Factura, Pago, TipoSiniestro, Siniestro, Alerta,
-    InsuredAsset, Quote, QuoteOption, PolicyRenewal, PaymentApproval, CalendarEvent
+    BienAsegurado, SubgrupoRamo, Quote, QuoteOption, PolicyRenewal, PaymentApproval, CalendarEvent
 )
 
 
@@ -991,6 +991,12 @@ class Command(BaseCommand):
         
         num_assets = 40 if self.extendido else 15
         
+        # Obtener subgrupos para asignar a los bienes
+        subgrupos = list(SubgrupoRamo.objects.all())
+        if not subgrupos:
+            self.stdout.write(self.style.WARNING('No hay SubgrupoRamo disponibles. Ejecuta poblar_catalogo_ramos primero.'))
+            return assets
+        
         for i in range(num_assets):
             sample = random.choice(sample_assets)
             location = random.choice(locations)
@@ -1004,35 +1010,49 @@ class Command(BaseCommand):
             
             purchase_date = hoy - timedelta(days=int(years_old * 365))
             
-            asset = InsuredAsset.objects.create(
-                policy=poliza,
-                custodian=random.choice(responsables),
-                asset_code=f'ACT-{base_id + i:05d}',
-                name=f"{sample['name']} #{i+1}",
-                description=f"Bien {sample['name']} asignado para uso institucional.",
-                category=sample['category'],
-                brand=sample['brand'],
-                model=sample['model'],
-                serial_number=f"SN-{random.randint(100000, 999999)}",
-                location=f"{location[0]} - {location[2]}",
-                building=location[0],
-                floor=location[1],
-                department=location[2],
-                purchase_value=purchase_value.quantize(Decimal('0.01')),
-                current_value=current_value.quantize(Decimal('0.01')),
-                insured_value=current_value.quantize(Decimal('0.01')) if poliza else None,
-                purchase_date=purchase_date,
-                warranty_expiry=purchase_date + timedelta(days=730) if random.random() > 0.4 else None,
-                status=random.choices(
-                    ['active', 'inactive', 'disposed'],
-                    weights=[0.85, 0.10, 0.05]
-                )[0],
-                condition=random.choices(
-                    ['excellent', 'good', 'fair', 'poor'],
-                    weights=[0.2, 0.5, 0.25, 0.05]
-                )[0],
-                notes=f"Bien registrado en inventario el {purchase_date}.",
-                created_by=usuario,
+            # Mapeo de estados y condiciones a español
+            estado_map = {'active': 'activo', 'inactive': 'inactivo', 'disposed': 'dado_de_baja'}
+            condicion_map = {'excellent': 'excelente', 'good': 'bueno', 'fair': 'regular', 'poor': 'malo'}
+            
+            estado_en = random.choices(
+                ['active', 'inactive', 'disposed'],
+                weights=[0.85, 0.10, 0.05]
+            )[0]
+            condicion_en = random.choices(
+                ['excellent', 'good', 'fair', 'poor'],
+                weights=[0.2, 0.5, 0.25, 0.05]
+            )[0]
+            
+            # Si no hay póliza, usar la primera disponible (BienAsegurado requiere póliza)
+            if not poliza:
+                poliza = polizas[0] if polizas else None
+            if not poliza:
+                continue  # Saltar si no hay póliza
+            
+            asset = BienAsegurado.objects.create(
+                poliza=poliza,
+                subgrupo_ramo=random.choice(subgrupos),
+                responsable_custodio=random.choice(responsables),
+                codigo_bien=f'ACT-{base_id + i:05d}',
+                nombre=f"{sample['name']} #{i+1}",
+                descripcion=f"Bien {sample['name']} asignado para uso institucional.",
+                categoria=sample['category'],
+                marca=sample['brand'],
+                modelo=sample['model'],
+                serie=f"SN-{random.randint(100000, 999999)}",
+                ubicacion=f"{location[0]} - {location[2]}",
+                edificio=location[0],
+                piso=location[1],
+                departamento=location[2],
+                valor_compra=purchase_value.quantize(Decimal('0.01')),
+                valor_actual=current_value.quantize(Decimal('0.01')),
+                valor_asegurado=current_value.quantize(Decimal('0.01')),
+                fecha_adquisicion=purchase_date,
+                fecha_garantia=purchase_date + timedelta(days=730) if random.random() > 0.4 else None,
+                estado=estado_map[estado_en],
+                condicion=condicion_map[condicion_en],
+                observaciones=f"Bien registrado en inventario el {purchase_date}.",
+                creado_por=usuario,
             )
             assets.append(asset)
         

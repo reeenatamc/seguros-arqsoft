@@ -14,7 +14,7 @@ from .models import (
     # Alias de compatibilidad (deprecados)
     Ramo, SubtipoRamo,
     Siniestro, AdjuntoSiniestro, ChecklistSiniestro, ChecklistSiniestroConfig,
-    GrupoBienes, InsuredAsset, Factura, Documento, Pago,
+    GrupoBienes, Factura, Documento, Pago,
     CompaniaAseguradora, CorredorSeguros, TipoPoliza, TipoSiniestro,
     ResponsableCustodio, NotaCredito
 )
@@ -320,8 +320,9 @@ class PolizaForm(forms.ModelForm):
         model = Poliza
         fields = [
             'numero_poliza', 'compania_aseguradora', 'corredor_seguros',
-            'grupo_ramo', 'suma_asegurada', 'coberturas',
-            'fecha_inicio', 'fecha_fin', 'estado',
+            'grupo_ramo', 'suma_asegurada', 'prima_neta', 'prima_total',
+            'deducible', 'porcentaje_deducible', 'deducible_minimo',
+            'coberturas', 'fecha_inicio', 'fecha_fin', 'estado',
             'es_gran_contribuyente', 'observaciones',
         ]
         widgets = {
@@ -342,6 +343,37 @@ class PolizaForm(forms.ModelForm):
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0',
+            }),
+            'prima_neta': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Prima sin impuestos',
+            }),
+            'prima_total': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Prima con impuestos y contribuciones',
+            }),
+            'deducible': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Monto fijo de deducible',
+            }),
+            'porcentaje_deducible': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'max': '100',
+                'placeholder': '% del siniestro',
+            }),
+            'deducible_minimo': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Mínimo si usa %',
             }),
             'coberturas': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -369,8 +401,15 @@ class PolizaForm(forms.ModelForm):
         # Filtrar grupos de ramo activos
         self.fields['grupo_ramo'].queryset = GrupoRamo.objects.filter(activo=True).order_by('orden', 'nombre')
         self.fields['grupo_ramo'].required = False
+        
+        # Campos opcionales
+        self.fields['prima_neta'].required = False
+        self.fields['prima_total'].required = False
+        self.fields['deducible'].required = False
+        self.fields['porcentaje_deducible'].required = False
+        self.fields['deducible_minimo'].required = False
 
-        # Si se selecciona una compañía, limitar los brokers al convenio con esa aseguradora
+        # Si se selecciona una compañía, limitar los corredores a esa compañía
         compania = None
         if 'compania_aseguradora' in self.data:
             try:
@@ -381,8 +420,10 @@ class PolizaForm(forms.ModelForm):
         elif self.instance.pk and self.instance.compania_aseguradora_id:
             compania = self.instance.compania_aseguradora
 
-        if compania and compania.brokers.exists():
-            self.fields['corredor_seguros'].queryset = compania.brokers.filter(activo=True)
+        if compania:
+            self.fields['corredor_seguros'].queryset = CorredorSeguros.objects.filter(
+                compania_aseguradora=compania, activo=True
+            )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -502,21 +543,16 @@ class SiniestroForm(forms.ModelForm):
     class Meta:
         model = Siniestro
         fields = [
-            'bien_asegurado', 'poliza', 'numero_siniestro', 'tipo_siniestro',
+            'bien_asegurado', 'numero_siniestro', 'tipo_siniestro',
             'fecha_siniestro', 'ubicacion', 'causa', 'descripcion_detallada',
-            'bien_nombre', 'bien_marca', 'bien_modelo', 'bien_serie', 'bien_codigo_activo',
             'responsable_custodio', 'monto_estimado',
-            'valor_reclamo', 'deducible', 'depreciacion', 'suma_asegurada_bien',
+            'valor_reclamo', 'deducible_aplicado', 'depreciacion', 'suma_asegurada_bien',
             'email_broker', 'observaciones',
         ]
         widgets = {
             'bien_asegurado': forms.Select(attrs={
                 'class': 'form-select',
                 'data-placeholder': 'Seleccione un bien asegurado...',
-            }),
-            'poliza': forms.Select(attrs={
-                'class': 'form-select',
-                'data-placeholder': 'Seleccione póliza (opcional si selecciona bien)...',
             }),
             'numero_siniestro': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -540,26 +576,6 @@ class SiniestroForm(forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'Descripción detallada del siniestro',
             }),
-            'bien_nombre': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Nombre del bien (llenar solo si no selecciona bien asegurado)',
-            }),
-            'bien_marca': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Marca',
-            }),
-            'bien_modelo': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Modelo',
-            }),
-            'bien_serie': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Número de serie',
-            }),
-            'bien_codigo_activo': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Código de activo',
-            }),
             'responsable_custodio': forms.Select(attrs={'class': 'form-select'}),
             'monto_estimado': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -571,10 +587,11 @@ class SiniestroForm(forms.ModelForm):
                 'step': '0.01',
                 'min': '0',
             }),
-            'deducible': forms.NumberInput(attrs={
+            'deducible_aplicado': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0',
+                'placeholder': 'Se calcula desde la póliza si no se especifica',
             }),
             'depreciacion': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -613,17 +630,6 @@ class SiniestroForm(forms.ModelForm):
         
         self.fields['bien_asegurado'].queryset = bienes_qs.distinct()
         self.fields['bien_asegurado'].required = False
-
-        # Polizas: incluir vigentes/por_vencer + la póliza actual si existe
-        polizas_qs = Poliza.objects.filter(
-            estado__in=['vigente', 'por_vencer']
-        ).select_related('compania_aseguradora')
-        
-        if instance and instance.poliza_id:
-            polizas_qs = polizas_qs | Poliza.objects.filter(pk=instance.poliza_id)
-        
-        self.fields['poliza'].queryset = polizas_qs.distinct()
-        self.fields['poliza'].required = False
         
         # Tipos de siniestro: activos + el actual si existe
         tipos_qs = TipoSiniestro.objects.filter(activo=True)
@@ -667,27 +673,20 @@ class SiniestroForm(forms.ModelForm):
             '%Y-%m-%d %H:%M',
         ]
 
-        # Campos opcionales (campos legacy del bien son opcionales si se usa bien_asegurado)
-        self.fields['bien_nombre'].required = False
-        for field in ['bien_marca', 'bien_modelo', 'bien_serie', 'bien_codigo_activo',
-                      'valor_reclamo', 'deducible', 'depreciacion', 'suma_asegurada_bien', 'email_broker']:
-            self.fields[field].required = False
+        # Campos opcionales
+        for field in ['valor_reclamo', 'deducible_aplicado', 'depreciacion', 
+                      'suma_asegurada_bien', 'email_broker', 'observaciones']:
+            if field in self.fields:
+                self.fields[field].required = False
 
     def clean(self):
         cleaned_data = super().clean()
         bien_asegurado = cleaned_data.get('bien_asegurado')
-        poliza = cleaned_data.get('poliza')
-        bien_nombre = cleaned_data.get('bien_nombre')
 
-        # Debe tener al menos un bien_asegurado, o una póliza + bien_nombre
-        if not bien_asegurado and not bien_nombre:
+        # El bien asegurado es requerido (la póliza se obtiene de él)
+        if not bien_asegurado:
             raise ValidationError(
-                'Debe seleccionar un Bien Asegurado o llenar los datos del bien manualmente.'
-            )
-        
-        if not bien_asegurado and not poliza:
-            raise ValidationError(
-                'Si no selecciona un Bien Asegurado, debe especificar una Póliza.'
+                'Debe seleccionar un Bien Asegurado.'
             )
 
         return cleaned_data
@@ -842,17 +841,33 @@ class GrupoBienesForm(forms.ModelForm):
 
 
 class BienAseguradoForm(forms.ModelForm):
-    """Formulario para crear/editar bienes asegurados (nuevo modelo relacional)"""
+    """
+    Formulario UNIFICADO para crear/editar bienes asegurados.
+    Combina campos de BienAsegurado + InsuredAsset (deprecado).
+    """
 
     class Meta:
         model = BienAsegurado
         fields = [
-            'codigo_bien', 'nombre', 'descripcion',
+            # Identificación
+            'codigo_bien', 'nombre', 'descripcion', 'categoria',
+            # Relaciones
             'poliza', 'subgrupo_ramo',
+            # Características técnicas
             'marca', 'modelo', 'serie', 'codigo_activo', 'anio_fabricacion',
-            'ubicacion', 'responsable_custodio',
-            'valor_asegurado', 'valor_comercial',
-            'estado', 'fecha_adquisicion',
+            # Ubicación detallada
+            'ubicacion', 'edificio', 'piso', 'departamento',
+            # Responsable
+            'responsable_custodio',
+            # Valores financieros
+            'valor_compra', 'valor_actual', 'valor_asegurado', 'valor_comercial',
+            # Estado y condición
+            'estado', 'condicion',
+            # Fechas
+            'fecha_adquisicion', 'fecha_garantia',
+            # Imagen y QR
+            'imagen', 'codigo_qr',
+            # Otros
             'grupo_bienes', 'observaciones',
         ]
         widgets = {
@@ -867,6 +882,10 @@ class BienAseguradoForm(forms.ModelForm):
             'descripcion': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
+            }),
+            'categoria': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Equipos de Cómputo, Vehículos',
             }),
             'poliza': forms.Select(attrs={'class': 'form-select'}),
             'subgrupo_ramo': forms.Select(attrs={'class': 'form-select'}),
@@ -893,9 +912,31 @@ class BienAseguradoForm(forms.ModelForm):
             }),
             'ubicacion': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ubicación física del bien',
+                'placeholder': 'Ubicación general',
+            }),
+            'edificio': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Edificio',
+            }),
+            'piso': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Piso',
+            }),
+            'departamento': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Departamento/Área',
             }),
             'responsable_custodio': forms.Select(attrs={'class': 'form-select'}),
+            'valor_compra': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0.01',
+            }),
+            'valor_actual': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+            }),
             'valor_asegurado': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
@@ -907,7 +948,14 @@ class BienAseguradoForm(forms.ModelForm):
                 'min': '0',
             }),
             'estado': forms.Select(attrs={'class': 'form-select'}),
+            'condicion': forms.Select(attrs={'class': 'form-select'}),
             'fecha_adquisicion': DateInput(attrs={'class': 'form-control'}),
+            'fecha_garantia': DateInput(attrs={'class': 'form-control'}),
+            'imagen': forms.FileInput(attrs={'class': 'form-control'}),
+            'codigo_qr': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Código QR',
+            }),
             'grupo_bienes': forms.Select(attrs={'class': 'form-select'}),
             'observaciones': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -950,62 +998,21 @@ class BienAseguradoForm(forms.ModelForm):
         self.fields['responsable_custodio'].required = False
         self.fields['grupo_bienes'].queryset = GrupoBienes.objects.filter(activo=True)
         self.fields['grupo_bienes'].required = False
+        
+        # Campos opcionales
+        self.fields['categoria'].required = False
+        self.fields['edificio'].required = False
+        self.fields['piso'].required = False
+        self.fields['departamento'].required = False
+        self.fields['valor_compra'].required = False
+        self.fields['valor_actual'].required = False
         self.fields['valor_comercial'].required = False
+        self.fields['condicion'].required = False
         self.fields['fecha_adquisicion'].required = False
+        self.fields['fecha_garantia'].required = False
         self.fields['anio_fabricacion'].required = False
-
-
-class InsuredAssetForm(forms.ModelForm):
-    """Formulario legacy para InsuredAsset (modelo antiguo)"""
-
-    class Meta:
-        model = InsuredAsset
-        fields = [
-            'asset_code', 'name', 'description', 'category',
-            'brand', 'model', 'serial_number',
-            'location', 'building', 'floor', 'department',
-            'purchase_value', 'current_value', 'insured_value',
-            'purchase_date', 'warranty_expiry',
-            'status', 'condition',
-            'policy', 'custodian', 'grupo',
-            'notes',
-        ]
-        widgets = {
-            'asset_code': forms.TextInput(attrs={'class': 'form-control'}),
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'category': forms.TextInput(attrs={'class': 'form-control'}),
-            'brand': forms.TextInput(attrs={'class': 'form-control'}),
-            'model': forms.TextInput(attrs={'class': 'form-control'}),
-            'serial_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'location': forms.TextInput(attrs={'class': 'form-control'}),
-            'building': forms.TextInput(attrs={'class': 'form-control'}),
-            'floor': forms.TextInput(attrs={'class': 'form-control'}),
-            'department': forms.TextInput(attrs={'class': 'form-control'}),
-            'purchase_value': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'current_value': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'insured_value': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'purchase_date': DateInput(attrs={'class': 'form-control'}),
-            'warranty_expiry': DateInput(attrs={'class': 'form-control'}),
-            'status': forms.Select(attrs={'class': 'form-select'}),
-            'condition': forms.Select(attrs={'class': 'form-select'}),
-            'policy': forms.Select(attrs={'class': 'form-select'}),
-            'custodian': forms.Select(attrs={'class': 'form-select'}),
-            'grupo': forms.Select(attrs={'class': 'form-select'}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['policy'].queryset = Poliza.objects.filter(
-            estado__in=['vigente', 'por_vencer']
-        ).select_related('compania_aseguradora')
-        self.fields['policy'].required = False
-        self.fields['custodian'].queryset = ResponsableCustodio.objects.filter(activo=True)
-        self.fields['grupo'].queryset = GrupoBienes.objects.filter(activo=True)
-        self.fields['grupo'].required = False
-        self.fields['insured_value'].required = False
-        self.fields['warranty_expiry'].required = False
+        self.fields['imagen'].required = False
+        self.fields['codigo_qr'].required = False
 
 
 # ==============================================================================

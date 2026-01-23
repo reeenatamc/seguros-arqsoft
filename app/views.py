@@ -18,7 +18,7 @@ from decimal import Decimal
 
 from .models import (
     Poliza, Factura, Siniestro, Alerta, CompaniaAseguradora, TipoPoliza,
-    TipoSiniestro, CorredorSeguros, InsuredAsset, Quote, QuoteOption,
+    TipoSiniestro, CorredorSeguros, Quote, QuoteOption,
     PolicyRenewal, PaymentApproval, CalendarEvent, Documento, Pago,
     TipoRamo, GrupoRamo, SubgrupoRamo, BienAsegurado,
     Ramo, SubtipoRamo,  # Alias de compatibilidad
@@ -232,14 +232,19 @@ def desglose_ramos_lista(request):
     )
     totales['retenciones'] = (totales.get('retencion_prima') or 0) + (totales.get('retencion_iva') or 0)
     
+    # Optimización: Pre-calcular total_retenciones con annotate() en lugar de loop
+    from django.db.models import F, DecimalField, Value
+    from django.db.models.functions import Coalesce
+    from decimal import Decimal
+    detalles = detalles.annotate(
+        total_retenciones=Coalesce(F('retencion_prima'), Value(Decimal('0')), output_field=DecimalField()) + 
+                          Coalesce(F('retencion_iva'), Value(Decimal('0')), output_field=DecimalField())
+    )
+    
     # Paginación
     paginator = Paginator(detalles, 20)
     page = request.GET.get('page', 1)
     detalles_page = paginator.get_page(page)
-    
-    # Agregar propiedad total_retenciones a cada detalle
-    for detalle in detalles_page:
-        detalle.total_retenciones = (detalle.retencion_prima or 0) + (detalle.retencion_iva or 0)
     
     # Datos para filtros
     companias = CompaniaAseguradora.objects.filter(activo=True).order_by('nombre')
@@ -1290,34 +1295,35 @@ def quotes_list(request):
 
 @login_required
 def assets_list(request):
-    """Lista de bienes asegurados con filtros"""
-    assets = InsuredAsset.objects.select_related(
-        'policy', 'policy__compania_aseguradora', 'custodian', 'created_by'
-    ).order_by('name')
+    """Lista de bienes asegurados con filtros (usa modelo unificado BienAsegurado)"""
+    assets = BienAsegurado.objects.select_related(
+        'poliza', 'poliza__compania_aseguradora', 'responsable_custodio', 
+        'subgrupo_ramo', 'creado_por'
+    ).order_by('nombre')
     
     # Filtros
     query = request.GET.get('q', '').strip()
     if query:
         assets = assets.filter(
-            Q(asset_code__icontains=query) |
-            Q(name__icontains=query) |
-            Q(serial_number__icontains=query) |
-            Q(brand__icontains=query)
+            Q(codigo_bien__icontains=query) |
+            Q(nombre__icontains=query) |
+            Q(serie__icontains=query) |
+            Q(marca__icontains=query)
         )
     
     status = request.GET.get('status')
     if status:
-        assets = assets.filter(status=status)
+        assets = assets.filter(estado=status)
     
     category = request.GET.get('category')
     if category:
-        assets = assets.filter(category=category)
+        assets = assets.filter(categoria=category)
     
     covered = request.GET.get('covered')
     if covered == 'yes':
-        assets = assets.filter(policy__isnull=False)
+        assets = assets.filter(poliza__isnull=False)
     elif covered == 'no':
-        assets = assets.filter(policy__isnull=True)
+        assets = assets.filter(poliza__isnull=True)
     
     # Paginación
     paginator = Paginator(assets, 20)
@@ -1327,20 +1333,20 @@ def assets_list(request):
     # Estadísticas
     from django.db.models import Sum
     stats = {
-        'total': InsuredAsset.objects.count(),
-        'active': InsuredAsset.objects.filter(status='active').count(),
-        'covered': InsuredAsset.objects.filter(policy__isnull=False).count(),
-        'not_covered': InsuredAsset.objects.filter(policy__isnull=True).count(),
-        'total_value': InsuredAsset.objects.aggregate(total=Sum('current_value'))['total'] or 0,
+        'total': BienAsegurado.objects.count(),
+        'active': BienAsegurado.objects.filter(estado='activo').count(),
+        'covered': BienAsegurado.objects.filter(poliza__isnull=False).count(),
+        'not_covered': BienAsegurado.objects.filter(poliza__isnull=True).count(),
+        'total_value': BienAsegurado.objects.aggregate(total=Sum('valor_actual'))['total'] or 0,
     }
     
     # Categorías únicas para el filtro
-    categories = InsuredAsset.objects.values_list('category', flat=True).distinct().order_by('category')
+    categories = BienAsegurado.objects.values_list('categoria', flat=True).distinct().order_by('categoria')
     
     context = {
         'assets': assets_page,
         'stats': stats,
-        'status_choices': InsuredAsset.STATUS_CHOICES,
+        'status_choices': BienAsegurado.ESTADO_CHOICES,
         'categories': categories,
         'query': query,
         'selected_status': status,
@@ -1950,11 +1956,27 @@ class PolizaDetailView(LoginRequiredMixin, DetailView):
     template_name = 'app/polizas/detalle.html'
     context_object_name = 'poliza'
 
+    def get_queryset(self):
+        """Optimización: Pre-calcular total_prima_ramos con annotate()"""
+        from django.db.models import Sum
+        return super().get_queryset().annotate(
+            total_prima_calculado=Sum('detalles_ramo__total_prima')
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['detalles_ramo'] = self.object.detalles_ramo.select_related('ramo', 'subtipo_ramo')
-        context['siniestros'] = self.object.siniestros.all()[:5]
-        context['facturas'] = self.object.facturas.all()[:5]
+        # Usar select_related para evitar N+1 en ramos
+        context['detalles_ramo'] = self.object.detalles_ramo.select_related(
+            'grupo_ramo', 'subgrupo_ramo'
+        )
+        context['siniestros'] = self.object.siniestros.select_related(
+            'tipo_siniestro'
+        ).order_by('-fecha_siniestro')[:5]
+        context['facturas'] = self.object.facturas.order_by('-fecha_emision')[:5]
+        # Usar el valor pre-calculado si está disponible
+        context['total_prima_ramos'] = getattr(
+            self.object, 'total_prima_calculado', None
+        ) or self.object.total_prima_ramos
         return context
 
 
@@ -2250,25 +2272,25 @@ class GrupoBienesDetailView(LoginRequiredMixin, DetailView):
 
 
 # =============================================================================
-# VISTAS BASADAS EN CLASES - BIENES ASEGURADOS
+# VISTAS BASADAS EN CLASES - BIENES ASEGURADOS (Modelo Unificado)
 # =============================================================================
 
 class BienAseguradoCreateView(LoginRequiredMixin, CreateView):
-    """Crear bien asegurado"""
-    model = InsuredAsset
+    """Crear bien asegurado (modelo unificado BienAsegurado)"""
+    model = BienAsegurado
     form_class = BienAseguradoForm
     template_name = 'app/bienes/crear.html'
     success_url = reverse_lazy('assets_list')
 
     def form_valid(self, form):
-        form.instance.created_by = self.request.user
+        form.instance.creado_por = self.request.user
         messages.success(self.request, 'Bien asegurado creado exitosamente.')
         return super().form_valid(form)
 
 
 class BienAseguradoUpdateView(LoginRequiredMixin, UpdateView):
-    """Editar bien asegurado"""
-    model = InsuredAsset
+    """Editar bien asegurado (modelo unificado BienAsegurado)"""
+    model = BienAsegurado
     form_class = BienAseguradoForm
     template_name = 'app/bienes/editar.html'
     success_url = reverse_lazy('assets_list')
@@ -2279,10 +2301,16 @@ class BienAseguradoUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class BienAseguradoDetailView(LoginRequiredMixin, DetailView):
-    """Detalle de bien asegurado"""
-    model = InsuredAsset
+    """Detalle de bien asegurado (modelo unificado BienAsegurado)"""
+    model = BienAsegurado
     template_name = 'app/bienes/detalle.html'
     context_object_name = 'bien'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Agregar siniestros relacionados
+        context['siniestros'] = self.object.siniestros.select_related('tipo_siniestro').order_by('-fecha_siniestro')[:5]
+        return context
 
 
 # =============================================================================
@@ -2924,10 +2952,10 @@ def siniestro_email_procesar_auto(request, pk):
         messages.warning(request, 'Este registro ya fue procesado anteriormente.')
         return redirect('siniestros_email_pendientes')
     
-    # Buscar el bien por número de serie
-    bien = InsuredAsset.objects.filter(
-        serial_number__iexact=siniestro_email.serie.strip()
-    ).first()
+    # Buscar el bien por número de serie (modelo unificado BienAsegurado)
+    bien = BienAsegurado.objects.filter(
+        serie__iexact=siniestro_email.serie.strip()
+    ).select_related('poliza').first()
     
     if not bien:
         messages.warning(
@@ -2937,10 +2965,10 @@ def siniestro_email_procesar_auto(request, pk):
         )
         return redirect('siniestros_email_pendientes')
     
-    if not bien.policy:
+    if not bien.poliza:
         messages.warning(
             request, 
-            f'El bien "{bien.name}" no tiene póliza asignada. '
+            f'El bien "{bien.nombre}" no tiene póliza asignada. '
             'Por favor complete los datos manualmente.'
         )
         return redirect('siniestros_email_pendientes')

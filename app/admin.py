@@ -11,7 +11,7 @@ from import_export.widgets import ForeignKeyWidget, DateWidget, DateTimeWidget
 from .models import (
     ConfiguracionSistema, CompaniaAseguradora, CorredorSeguros, TipoPoliza, 
     ResponsableCustodio, Poliza, Factura, Pago, TipoSiniestro, Siniestro, Documento, Alerta,
-    InsuredAsset, Quote, QuoteOption, PolicyRenewal, PaymentApproval, CalendarEvent
+    Quote, QuoteOption, PolicyRenewal, PaymentApproval, CalendarEvent
 )
 
 
@@ -931,144 +931,143 @@ class QuoteOptionInline(TabularInline):
     readonly_fields = []
 
 
-@admin.register(InsuredAsset)
-class InsuredAssetAdmin(HistoryModelAdmin):
-    """Administración de bienes asegurados"""
+# =============================================================================
+# BIENES ASEGURADOS - MODELO UNIFICADO
+# =============================================================================
+
+from app.models import BienAsegurado
+
+@admin.register(BienAsegurado)
+class BienAseguradoAdmin(HistoryModelAdmin):
+    """Administración de bienes asegurados (modelo unificado)"""
     icon_name = "inventory_2"
     list_display = [
-        'asset_code',
-        'name',
-        'category',
-        'custodian',
-        'policy_display',
-        'current_value_formatted',
-        'status_badge',
-        'condition_badge',
-        'is_covered_display'
+        'codigo_bien',
+        'nombre',
+        'categoria',
+        'responsable_custodio',
+        'poliza_display',
+        'valor_asegurado_formatted',
+        'estado_badge',
+        'condicion_badge',
     ]
     list_filter = [
-        'status',
-        'condition',
-        'category',
-        'policy',
-        'custodian__departamento'
+        'estado',
+        'condicion',
+        'categoria',
+        'poliza',
+        'responsable_custodio__departamento',
+        'subgrupo_ramo',
     ]
     search_fields = [
-        'asset_code',
-        'name',
-        'serial_number',
-        'brand',
-        'model',
-        'custodian__nombre',
-        'location'
+        'codigo_bien',
+        'nombre',
+        'serie',
+        'marca',
+        'modelo',
+        'responsable_custodio__nombre',
+        'ubicacion',
     ]
     readonly_fields = [
-        'created_at',
-        'updated_at',
-        'created_by',
-        'depreciation_percentage_display',
-        'is_covered_display',
-        'claims_count_display'
+        'fecha_creacion',
+        'fecha_modificacion',
+        'creado_por',
+        'clasificacion_completa',
     ]
-    date_hierarchy = 'purchase_date'
-    autocomplete_fields = ['policy', 'custodian']
+    date_hierarchy = 'fecha_adquisicion'
+    autocomplete_fields = ['poliza', 'responsable_custodio']
     
     fieldsets = (
         ('Identificación', {
-            'fields': ('asset_code', 'name', 'description', 'category')
+            'fields': ('codigo_bien', 'nombre', 'descripcion', 'categoria')
+        }),
+        ('Clasificación de Seguro', {
+            'fields': ('poliza', 'subgrupo_ramo', 'clasificacion_completa')
         }),
         ('Detalles Técnicos', {
-            'fields': ('brand', 'model', 'serial_number', 'image', 'qr_code')
+            'fields': ('marca', 'modelo', 'serie', 'codigo_activo', 'anio_fabricacion')
+        }),
+        ('Imagen e Identificación', {
+            'fields': ('imagen', 'codigo_qr'),
+            'classes': ('collapse',)
         }),
         ('Ubicación', {
-            'fields': ('location', 'building', 'floor', 'department')
+            'fields': ('ubicacion', 'edificio', 'piso', 'departamento')
         }),
         ('Responsable', {
-            'fields': ('custodian',)
-        }),
-        ('Cobertura de Seguro', {
-            'fields': ('policy', 'insured_value', 'is_covered_display')
+            'fields': ('responsable_custodio',)
         }),
         ('Valores Financieros', {
-            'fields': ('purchase_value', 'current_value', 'purchase_date', 'warranty_expiry', 'depreciation_percentage_display')
+            'fields': ('valor_compra', 'valor_actual', 'valor_asegurado', 'valor_comercial')
+        }),
+        ('Fechas', {
+            'fields': ('fecha_adquisicion', 'fecha_garantia')
         }),
         ('Estado', {
-            'fields': ('status', 'condition', 'claims_count_display')
+            'fields': ('estado', 'condicion', 'activo')
         }),
-        ('Notas', {
-            'fields': ('notes',),
+        ('Agrupación', {
+            'fields': ('grupo_bienes',),
+            'classes': ('collapse',)
+        }),
+        ('Observaciones', {
+            'fields': ('observaciones',),
             'classes': ('collapse',)
         }),
         ('Auditoría', {
-            'fields': ('created_by', 'created_at', 'updated_at'),
+            'fields': ('creado_por', 'fecha_creacion', 'fecha_modificacion'),
             'classes': ('collapse',)
         }),
     )
 
     @display(description='Póliza')
-    def policy_display(self, obj):
-        if obj.policy:
-            return obj.policy.numero_poliza
-        return format_html('<span style="color: #ef4444;">Sin póliza</span>')
-
-    @display(description='Valor Actual', ordering='current_value')
-    def current_value_formatted(self, obj):
-        return f"${obj.current_value:,.2f}"
-
-    @display(description='Estado', ordering='status')
-    def status_badge(self, obj):
-        colors = {
-            'active': '#10b981',
-            'inactive': '#6b7280',
-            'disposed': '#ef4444',
-            'transferred': '#3b82f6'
-        }
-        color = colors.get(obj.status, '#6b7280')
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px;">{}</span>',
-            color, obj.get_status_display()
-        )
-
-    @display(description='Condición', ordering='condition')
-    def condition_badge(self, obj):
-        colors = {
-            'excellent': '#10b981',
-            'good': '#3b82f6',
-            'fair': '#f59e0b',
-            'poor': '#ef4444'
-        }
-        color = colors.get(obj.condition, '#6b7280')
-        return format_html(
-            '<span style="color: {}; font-weight: bold;">{}</span>',
-            color, obj.get_condition_display()
-        )
-
-    @display(description='% Depreciación')
-    def depreciation_percentage_display(self, obj):
-        pct = obj.depreciation_percentage
-        color = '#10b981' if pct < 30 else '#f59e0b' if pct < 60 else '#ef4444'
-        return format_html(
-            '<span style="color: {}; font-weight: bold;">{:.1f}%</span>',
-            color, pct
-        )
-
-    @display(description='¿Cubierto?', boolean=True)
-    def is_covered_display(self, obj):
-        return obj.is_covered
-
-    @display(description='Siniestros')
-    def claims_count_display(self, obj):
-        count = obj.claims_count
-        if count > 0:
+    def poliza_display(self, obj):
+        if obj.poliza:
             return format_html(
-                '<span style="background-color: #ef4444; color: white; padding: 2px 8px; border-radius: 10px;">{}</span>',
-                count
+                '<a href="{}">{}</a>',
+                reverse('admin:app_poliza_change', args=[obj.poliza.pk]),
+                obj.poliza.numero_poliza
             )
-        return '0'
+        return format_html('<span class="text-muted">Sin póliza</span>')
+
+    @display(description='Valor Asegurado')
+    def valor_asegurado_formatted(self, obj):
+        return format_html('${:,.2f}', obj.valor_asegurado)
+
+    @display(description='Estado')
+    def estado_badge(self, obj):
+        colors = {
+            'activo': 'bg-success',
+            'inactivo': 'bg-secondary',
+            'dado_de_baja': 'bg-danger',
+            'siniestrado': 'bg-warning',
+            'transferido': 'bg-info',
+        }
+        color = colors.get(obj.estado, 'bg-secondary')
+        return format_html(
+            '<span class="badge {}">{}</span>',
+            color,
+            obj.get_estado_display()
+        )
+
+    @display(description='Condición')
+    def condicion_badge(self, obj):
+        colors = {
+            'excelente': 'bg-success',
+            'bueno': 'bg-info',
+            'regular': 'bg-warning',
+            'malo': 'bg-danger',
+        }
+        color = colors.get(obj.condicion, 'bg-secondary')
+        return format_html(
+            '<span class="badge {}">{}</span>',
+            color,
+            obj.get_condicion_display()
+        )
 
     def save_model(self, request, obj, form, change):
         if not change:
-            obj.created_by = request.user
+            obj.creado_por = request.user
         super().save_model(request, obj, form, change)
 
 
