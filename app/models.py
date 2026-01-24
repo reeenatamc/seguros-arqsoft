@@ -51,39 +51,23 @@ class ConfiguracionSistema(models.Model):
 
     def clean(self):
         """
-        Validaciones de negocio para configuraciones sensibles.
-        En particular, se validan los porcentajes financieros críticos.
+        Validaciones usando el registro de validadores extensible.
+        
+        Para agregar nuevas validaciones, registrar en:
+        app/services/config_validators.py
+        
+        Ejemplo:
+            from app.services.config_validators import registro_validadores, RangoNumericoValidator
+            registro_validadores.registrar('MI_CONFIG', RangoNumericoValidator(min_valor=1, max_valor=100))
         """
         super().clean()
-
-        # Validar porcentajes de contribuciones financieras
-        claves_porcentaje = {
-            'PORCENTAJE_SUPERINTENDENCIA',
-            'PORCENTAJE_SEGURO_CAMPESINO',
-        }
-
-        if self.clave in claves_porcentaje:
-            # Debe ser de tipo decimal
-            if self.tipo != 'decimal':
-                raise ValidationError({
-                    'tipo': 'Este parámetro debe ser de tipo "decimal".',
-                })
-
-            try:
-                valor_decimal = Decimal(self.valor)
-            except (ArithmeticError, ValueError, TypeError):
-                raise ValidationError({
-                    'valor': 'El valor debe ser un número decimal válido.',
-                })
-
-            # Rango seguro: entre 0.0 y 0.1 (0% a 10%)
-            if not (Decimal('0.0') <= valor_decimal <= Decimal('0.1')):
-                raise ValidationError({
-                    'valor': (
-                        'El porcentaje debe estar entre 0.0 y 0.1 '
-                        '(por ejemplo, 0.035 para 3.5%).'
-                    )
-                })
+        
+        # Usar el registro de validadores extensible
+        from app.services.config_validators import validar_configuracion
+        
+        errores = validar_configuracion(self.clave, self.valor, self.tipo)
+        if errores:
+            raise ValidationError(errores)
 
     def get_valor_tipado(self):
         if self.tipo == 'decimal':
@@ -411,80 +395,41 @@ class Poliza(models.Model):
 
     def clean(self):
         """
-        Validación personalizada de negocio:
-          - Evitar duplicidad de pólizas con fechas superpuestas.
-          - Validar coherencia entre compañía aseguradora y corredor, si hay brokers configurados.
+        Validación básica. La lógica de negocio completa está en PolizaService.
+        NOTA: Para nuevos desarrollos, usar PolizaService.crear_poliza() o PolizaService.actualizar_poliza()
         """
         super().clean()
-
-        if not self.fecha_inicio or not self.fecha_fin:
-            return
-
-        # Validar que fecha_inicio sea anterior a fecha_fin
-        if self.fecha_inicio >= self.fecha_fin:
-            raise ValidationError({
-                'fecha_fin': 'La fecha de fin debe ser posterior a la fecha de inicio.'
-            })
-
-        # Buscar pólizas con el mismo número y fechas superpuestas
-        query = Q(numero_poliza=self.numero_poliza) & (
-            Q(fecha_inicio__lte=self.fecha_fin) &
-            Q(fecha_fin__gte=self.fecha_inicio)
-        )
-
-        if self.pk:
-            query &= ~Q(pk=self.pk)
-
-        polizas_superpuestas = Poliza.objects.filter(query)
-
-        if polizas_superpuestas.exists():
-            primera_superpuesta = polizas_superpuestas.first()
-            raise ValidationError({
-                'numero_poliza': (
-                    f'Ya existe una póliza con el número \"{self.numero_poliza}\" '
-                    f'con fechas superpuestas: {primera_superpuesta.fecha_inicio} - '
-                    f'{primera_superpuesta.fecha_fin}. '
-                    f'No pueden existir dos pólizas con el mismo número vigentes al mismo tiempo.'
-                )
-            })
-
-        # Validar coherencia: el corredor debe pertenecer a la compañía seleccionada
-        if (
-            self.compania_aseguradora_id
-            and self.corredor_seguros_id
-            and self.corredor_seguros.compania_aseguradora_id != self.compania_aseguradora_id
-        ):
-            raise ValidationError({
-                'corredor_seguros': (
-                    f'El corredor "{self.corredor_seguros}" no pertenece a la compañía '
-                    f'"{self.compania_aseguradora}". Seleccione un corredor de esta compañía.'
-                )
-            })
+        # Delegar validación al servicio para mantener compatibilidad con admin/forms
+        from app.services.domain_services import PolizaService
+        
+        if self.fecha_inicio and self.fecha_fin:
+            resultado = PolizaService.validar_fechas(
+                self.fecha_inicio, self.fecha_fin, self.numero_poliza, self.pk
+            )
+            if not resultado.es_valido:
+                raise ValidationError(resultado.errores)
+            
+            resultado = PolizaService.validar_corredor_compania(
+                self.compania_aseguradora, getattr(self, 'corredor_seguros', None)
+            )
+            if not resultado.es_valido:
+                raise ValidationError(resultado.errores)
 
     def save(self, *args, **kwargs):
+        """
+        Guarda la póliza. Actualiza estado automáticamente.
+        NOTA: Para nuevos desarrollos, usar PolizaService.crear_poliza() o PolizaService.actualizar_poliza()
+        """
+        # Delegar actualización de estado al servicio
+        from app.services.domain_services import PolizaService
         if self.fecha_inicio and self.fecha_fin:
-            self.clean()
-            self.actualizar_estado()
+            PolizaService.actualizar_estado(self)
         super().save(*args, **kwargs)
 
     def actualizar_estado(self):
-        try:
-            if not self.fecha_inicio or not self.fecha_fin:
-                return
-            
-            hoy = timezone.now().date()
-            dias_alerta = ConfiguracionSistema.get_config('DIAS_ALERTA_VENCIMIENTO_POLIZA', 30)
-            
-            if self.fecha_fin < hoy:
-                self.estado = 'vencida'
-            elif self.fecha_inicio <= hoy and self.fecha_fin <= hoy + timedelta(days=dias_alerta):
-                self.estado = 'por_vencer'
-            elif self.fecha_inicio <= hoy <= self.fecha_fin:
-                self.estado = 'vigente'
-            elif hoy < self.fecha_inicio and self.estado != 'cancelada':
-                self.estado = 'vigente'
-        except (TypeError, AttributeError):
-            pass
+        """DEPRECATED: Usar PolizaService.actualizar_estado() en su lugar."""
+        from app.services.domain_services import PolizaService
+        PolizaService.actualizar_estado(self)
 
     @property
     def dias_para_vencer(self):
@@ -641,101 +586,61 @@ class Factura(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Sobrescribe save para calcular montos automáticamente.
-        El estado se actualiza después del save inicial para evitar errores con relaciones.
+        Guarda la factura con cálculos automáticos.
+        NOTA: Para nuevos desarrollos, usar FacturaService.crear_factura() o FacturaService.actualizar_factura()
         """
-        # Calcular montos antes de guardar
-        self.calcular_contribuciones()
-        self.calcular_descuento_pronto_pago()
-        self.calcular_monto_total()
+        from app.services.domain_services import FacturaService
         
-        # Guardar primero para obtener PK si es nuevo
+        # Obtener fecha del primer pago si existe
+        fecha_primer_pago = None
+        if self.pk:
+            pago = self.pagos.filter(estado='aprobado').order_by('fecha_pago').first()
+            fecha_primer_pago = pago.fecha_pago if pago else None
+        
+        # Delegar cálculos al servicio
+        FacturaService.aplicar_calculos(self, fecha_primer_pago)
+        
+        # Guardar
         es_nuevo = self.pk is None
         super().save(*args, **kwargs)
         
-        # Actualizar estado solo si ya existe (tiene pagos)
+        # Actualizar estado si no es nuevo
         if not es_nuevo:
-            self._actualizar_estado_con_pagos()
+            FacturaService.actualizar_estado(self)
+            if self.estado != Factura.objects.get(pk=self.pk).estado:
+                Factura.objects.filter(pk=self.pk).update(estado=self.estado)
 
     def calcular_contribuciones(self):
-        porcentaje_super = ConfiguracionSistema.get_config('PORCENTAJE_SUPERINTENDENCIA', Decimal('0.035'))
-        porcentaje_campesino = ConfiguracionSistema.get_config('PORCENTAJE_SEGURO_CAMPESINO', Decimal('0.005'))
-        
-        self.contribucion_superintendencia = self.subtotal * porcentaje_super
-        self.contribucion_seguro_campesino = self.subtotal * porcentaje_campesino
+        """DEPRECATED: Usar FacturaService.calcular_contribuciones() en su lugar."""
+        from app.services.domain_services import FacturaService
+        contrib_super, contrib_campesino = FacturaService.calcular_contribuciones(self.subtotal)
+        self.contribucion_superintendencia = contrib_super
+        self.contribucion_seguro_campesino = contrib_campesino
 
     def calcular_descuento_pronto_pago(self):
-        try:
-            if not self.fecha_emision:
-                self.descuento_pronto_pago = Decimal('0.00')
-                return
-
-            # Si no tiene PK aún, no puede acceder a relaciones inversas
-            if not self.pk:
-                self.descuento_pronto_pago = Decimal('0.00')
-                return
-
-            dias_limite = ConfiguracionSistema.get_config('DIAS_LIMITE_DESCUENTO_PRONTO_PAGO', 20)
-            porcentaje_descuento = ConfiguracionSistema.get_config('PORCENTAJE_DESCUENTO_PRONTO_PAGO', Decimal('0.05'))
-
-            # Buscar el primer pago aprobado asociado a la factura
+        """DEPRECATED: Usar FacturaService.calcular_descuento_pronto_pago() en su lugar."""
+        from app.services.domain_services import FacturaService
+        
+        fecha_primer_pago = None
+        if self.pk:
             pago = self.pagos.filter(estado='aprobado').order_by('fecha_pago').first()
-
-            if not pago or not pago.fecha_pago:
-                # Sin pagos aprobados o sin fecha de pago => no aplica descuento
-                self.descuento_pronto_pago = Decimal('0.00')
-                return
-
-            fecha_limite_descuento = self.fecha_emision + timedelta(days=dias_limite)
-
-            # Regla de negocio: si la fecha de pago es <= fecha_emision + 20 días
-            if pago.fecha_pago <= fecha_limite_descuento:
-                self.descuento_pronto_pago = self.subtotal * porcentaje_descuento
-            else:
-                self.descuento_pronto_pago = Decimal('0.00')
-        except (TypeError, AttributeError, ValueError):
-            self.descuento_pronto_pago = Decimal('0.00')
+            fecha_primer_pago = pago.fecha_pago if pago else None
+        
+        self.descuento_pronto_pago = FacturaService.calcular_descuento_pronto_pago(
+            self.subtotal, self.fecha_emision, fecha_primer_pago
+        )
 
     def calcular_monto_total(self):
-        """
-        Calcula el monto total de la factura sumando todos los componentes.
-        """
-        self.monto_total = (
-            self.subtotal + 
-            self.iva + 
-            self.contribucion_superintendencia + 
-            self.contribucion_seguro_campesino - 
-            self.retenciones - 
-            self.descuento_pronto_pago
+        """DEPRECATED: Usar FacturaService.calcular_monto_total() en su lugar."""
+        from app.services.domain_services import FacturaService
+        self.monto_total = FacturaService.calcular_monto_total(
+            subtotal=self.subtotal,
+            iva=self.iva,
+            contribucion_super=self.contribucion_superintendencia,
+            contribucion_campesino=self.contribucion_seguro_campesino,
+            retenciones=self.retenciones or Decimal('0.00'),
+            descuento=self.descuento_pronto_pago or Decimal('0.00')
         )
-        
-        # Asegurar que el monto total no sea negativo
-        if self.monto_total < Decimal('0.00'):
-            self.monto_total = Decimal('0.00')
-
-    def _actualizar_estado_con_pagos(self):
-        """
-        Método privado para actualizar el estado basándose en pagos.
-        Solo se llama después del save inicial para evitar errores.
-        """
-        # Calcular total pagado
-        total_pagado = self._calcular_total_pagado()
-        
-        # Determinar nuevo estado
-        if total_pagado >= self.monto_total:
-            nuevo_estado = 'pagada'
-        elif total_pagado > Decimal('0.00'):
-            nuevo_estado = 'parcial'
-        elif timezone.now().date() > self.fecha_vencimiento:
-            nuevo_estado = 'vencida'
-        else:
-            nuevo_estado = 'pendiente'
-        
-        # Actualizar solo si cambió
-        if nuevo_estado != self.estado:
-            self.estado = nuevo_estado
-            # Usar update para evitar recursión infinita
-            Factura.objects.filter(pk=self.pk).update(estado=nuevo_estado)
 
     def _calcular_total_pagado(self):
         """Calcula el total de pagos aprobados."""
@@ -749,12 +654,10 @@ class Factura(models.Model):
         return total if total is not None else Decimal('0.00')
 
     def actualizar_estado(self):
-        """
-        Método público para actualizar el estado.
-        Puede ser llamado manualmente desde comandos de gestión.
-        """
+        """DEPRECATED: Usar FacturaService.actualizar_estado() en su lugar."""
+        from app.services.domain_services import FacturaService
         if self.pk:
-            self._actualizar_estado_con_pagos()
+            FacturaService.actualizar_estado(self)
 
     @property
     def saldo_pendiente(self):
@@ -859,41 +762,34 @@ class Pago(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Guarda el pago y actualiza la factura (estado y descuento pronto pago)
-        solo si es necesario.
+        Guarda el pago y actualiza la factura si está aprobado.
+        NOTA: Para nuevos desarrollos, usar PagoService.crear_pago() o PagoService.aprobar_pago()
         """
         super().save(*args, **kwargs)
-
-        # Solo actualizar la factura si este pago está aprobado
-        # Esto evita múltiples actualizaciones innecesarias
+        
+        # Delegar actualización de factura al servicio
         if self.estado == 'aprobado' and self.factura_id:
-            factura = self.factura
-            # Recalcular descuento por pronto pago y montos totales
-            factura.calcular_contribuciones()
-            factura.calcular_descuento_pronto_pago()
-            factura.calcular_monto_total()
-            factura.actualizar_estado()
-            factura.save(update_fields=[
-                'contribucion_superintendencia',
-                'contribucion_seguro_campesino',
-                'descuento_pronto_pago',
-                'monto_total',
-                'estado',
-            ])
+            from app.services.domain_services import PagoService
+            PagoService._actualizar_factura_por_pago(self.factura, self.fecha_pago)
 
     def delete(self, *args, **kwargs):
         """
-        Al borrar un pago, se deben recalcular el descuento por pronto pago
-        y los montos de la factura asociada.
+        Al borrar un pago, recalcula la factura asociada.
+        NOTA: Para nuevos desarrollos, usar PagoService.eliminar_pago()
         """
         factura = self.factura if self.factura_id else None
+        era_aprobado = self.estado == 'aprobado'
         super().delete(*args, **kwargs)
 
-        if factura:
-            factura.calcular_contribuciones()
-            factura.calcular_descuento_pronto_pago()
-            factura.calcular_monto_total()
-            factura.actualizar_estado()
+        if factura and era_aprobado:
+            from app.services.domain_services import FacturaService
+            
+            # Obtener fecha del primer pago restante
+            primer_pago = factura.pagos.filter(estado='aprobado').order_by('fecha_pago').first()
+            fecha_primer_pago = primer_pago.fecha_pago if primer_pago else None
+            
+            FacturaService.aplicar_calculos(factura, fecha_primer_pago)
+            FacturaService.actualizar_estado(factura)
             factura.save(update_fields=[
                 'contribucion_superintendencia',
                 'contribucion_seguro_campesino',
@@ -903,21 +799,19 @@ class Pago(models.Model):
             ])
     
     def clean(self):
-        """Validaciones del pago."""
+        """
+        Validaciones del pago.
+        NOTA: Para nuevos desarrollos, usar PagoService.validar_monto()
+        """
         super().clean()
         
-        # Validar que el monto no exceda el saldo pendiente (con un pequeño margen)
+        # Delegar validación al servicio
+        from app.services.domain_services import PagoService
+        
         if self.factura_id and self.monto:
-            saldo = self.factura.saldo_pendiente
-            if self.pk:  # Si es una actualización, no contar este pago
-                pago_anterior = Pago.objects.filter(pk=self.pk).first()
-                if pago_anterior and pago_anterior.estado == 'aprobado':
-                    saldo += pago_anterior.monto
-            
-            if self.monto > saldo + Decimal('0.01'):  # Margen de 1 centavo
-                raise ValidationError({
-                    'monto': f'El monto del pago (${self.monto}) excede el saldo pendiente (${saldo}).'
-                })
+            resultado = PagoService.validar_monto(self.factura, self.monto, self.pk)
+            if not resultado.es_valido:
+                raise ValidationError(resultado.errores)
 
 
 class TipoSiniestro(models.Model):
@@ -1086,55 +980,30 @@ class Siniestro(models.Model):
         return self.poliza
 
     def save(self, *args, **kwargs):
-        """Sincroniza campos legacy con bien_asegurado antes de guardar"""
-        if self.bien_asegurado_id:
-            # Sincronizar campos legacy desde bien_asegurado
-            self.bien_nombre = self.bien_asegurado.nombre
-            self.bien_modelo = self.bien_asegurado.modelo or ''
-            self.bien_serie = self.bien_asegurado.serie or ''
-            self.bien_marca = self.bien_asegurado.marca or ''
-            self.bien_codigo_activo = self.bien_asegurado.codigo_activo or ''
-            # Sincronizar póliza
-            if not self.poliza_id:
-                self.poliza = self.bien_asegurado.poliza
-            # Sincronizar responsable si no está especificado
-            if not self.responsable_custodio_id and self.bien_asegurado.responsable_custodio_id:
-                self.responsable_custodio = self.bien_asegurado.responsable_custodio
+        """
+        Guarda el siniestro sincronizando campos desde bien_asegurado.
+        NOTA: Para nuevos desarrollos, usar SiniestroService.crear_siniestro() o SiniestroService.actualizar_siniestro()
+        """
+        # Delegar sincronización al servicio
+        from app.services.domain_services import SiniestroService
+        SiniestroService.sincronizar_desde_bien_asegurado(self)
         super().save(*args, **kwargs)
 
     def clean(self):
-        """Validaciones del siniestro."""
+        """
+        Validaciones del siniestro.
+        NOTA: Para nuevos desarrollos, usar SiniestroService.validar_siniestro()
+        """
         super().clean()
         
-        # Validar que tenga al menos un bien_asegurado o campos legacy
-        if not self.bien_asegurado_id and not self.bien_nombre:
-            raise ValidationError({
-                'bien_asegurado': 'Debe especificar un bien asegurado o llenar los campos del bien manualmente.'
-            })
+        # Delegar validaciones principales al servicio
+        from app.services.domain_services import SiniestroService
+        resultado = SiniestroService.validar_siniestro(self)
+        if not resultado.es_valido:
+            raise ValidationError(resultado.errores)
         
-        # Validar que la fecha del siniestro no sea futura
-        if self.fecha_siniestro:
-            ahora = timezone.now()
-            if self.fecha_siniestro > ahora:
-                raise ValidationError({
-                    'fecha_siniestro': 'La fecha del siniestro no puede ser futura.'
-                })
-        
-        # Obtener la póliza efectiva (del bien o directa)
-        poliza_efectiva = self.get_poliza()
-        
-        # Validar que el siniestro esté dentro del período de vigencia de la póliza
-        if poliza_efectiva and self.fecha_siniestro:
-            fecha_sin = self.fecha_siniestro.date()
-            if not (poliza_efectiva.fecha_inicio <= fecha_sin <= poliza_efectiva.fecha_fin):
-                raise ValidationError({
-                    'fecha_siniestro': (
-                        f'El siniestro debe ocurrir dentro del período de vigencia de la póliza '
-                        f'({poliza_efectiva.fecha_inicio} - {poliza_efectiva.fecha_fin}).'
-                    )
-                })
-        
-        # Validar coherencia de fechas de gestión
+        # Validaciones adicionales específicas del modelo
+        # (coherencia de fechas de gestión)
         if self.fecha_envio_aseguradora and self.fecha_respuesta_aseguradora:
             if self.fecha_respuesta_aseguradora < self.fecha_envio_aseguradora:
                 raise ValidationError({
@@ -1389,24 +1258,24 @@ class Documento(models.Model):
         return 'N/A'
     
     def clean(self):
-        """Validar que el documento esté asociado al menos a una entidad."""
+        """
+        Valida relaciones del documento.
+        NOTA: Para nuevos desarrollos, usar DocumentoService.validar_relaciones()
+        """
         super().clean()
         
-        if not any([self.poliza_id, self.siniestro_id, self.factura_id]):
-            raise ValidationError(
-                'El documento debe estar asociado al menos a una póliza, siniestro o factura.'
-            )
-        
-        # Validar que el tipo de documento sea coherente con la relación
-        if self.tipo_documento == 'poliza' and not self.poliza_id:
-            raise ValidationError({
-                'tipo_documento': 'Un documento de tipo "Póliza" debe estar asociado a una póliza.'
-            })
-        
-        if self.tipo_documento == 'factura' and not self.factura_id:
-            raise ValidationError({
-                'tipo_documento': 'Un documento de tipo "Factura" debe estar asociado a una factura.'
-            })
+        # Delegar validación al servicio
+        from app.services.domain_services import DocumentoService
+        resultado = DocumentoService.validar_relaciones(
+            self.tipo_documento,
+            self.poliza_id,
+            self.siniestro_id,
+            self.factura_id
+        )
+        if not resultado.es_valido:
+            if '__all__' in resultado.errores:
+                raise ValidationError(resultado.errores['__all__'])
+            raise ValidationError(resultado.errores)
     
     @property
     def entidad_relacionada(self):
@@ -1789,25 +1658,18 @@ class NotaCredito(models.Model):
         return f"NC-{self.numero} - ${self.monto}"
 
     def clean(self):
-        """Validar que el monto no exceda el saldo de la factura"""
+        """
+        Valida que el monto no exceda el saldo de la factura.
+        NOTA: Para nuevos desarrollos, usar NotaCreditoService.validar_monto()
+        """
         super().clean()
+        
+        # Delegar validación al servicio
         if self.factura_id and self.monto:
-            # Calcular total de notas de crédito existentes (excluyendo esta si es update)
-            notas_existentes = NotaCredito.objects.filter(
-                factura=self.factura,
-                estado__in=['emitida', 'aplicada']
-            )
-            if self.pk:
-                notas_existentes = notas_existentes.exclude(pk=self.pk)
-
-            total_notas = notas_existentes.aggregate(
-                total=models.Sum('monto')
-            )['total'] or Decimal('0.00')
-
-            if total_notas + self.monto > self.factura.monto_total:
-                raise ValidationError({
-                    'monto': 'El monto total de notas de crédito no puede exceder el monto de la factura.'
-                })
+            from app.services.domain_services import NotaCreditoService
+            resultado = NotaCreditoService.validar_monto(self.factura, self.monto, self.pk)
+            if not resultado.es_valido:
+                raise ValidationError(resultado.errores)
 
 
 # ==================== NUEVOS MODELOS (Código en inglés, interfaz en español) ====================
@@ -2489,19 +2351,18 @@ class BienAsegurado(models.Model):
         return f"{self.codigo_bien} - {self.nombre}"
 
     def clean(self):
-        """Validaciones del bien asegurado."""
+        """
+        Validaciones del bien asegurado.
+        NOTA: Para nuevos desarrollos, usar BienAseguradoService.validar_subgrupo_poliza()
+        """
         super().clean()
         
-        # Validar que el subgrupo pertenezca al grupo de la póliza (si la póliza tiene grupo)
+        # Delegar validación al servicio
         if self.poliza_id and self.subgrupo_ramo_id:
-            if hasattr(self.poliza, 'grupo_ramo') and self.poliza.grupo_ramo:
-                if self.subgrupo_ramo.grupo_ramo_id != self.poliza.grupo_ramo_id:
-                    raise ValidationError({
-                        'subgrupo_ramo': (
-                            f'El subgrupo "{self.subgrupo_ramo.nombre}" no pertenece al grupo '
-                            f'"{self.poliza.grupo_ramo.nombre}" de la póliza.'
-                        )
-                    })
+            from app.services.domain_services import BienAseguradoService
+            resultado = BienAseguradoService.validar_subgrupo_poliza(self.poliza, self.subgrupo_ramo)
+            if not resultado.es_valido:
+                raise ValidationError(resultado.errores)
 
     @property
     def clasificacion_completa(self):
