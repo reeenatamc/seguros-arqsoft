@@ -11,7 +11,7 @@ from django.db.models import Sum, Count, Avg, F, Q, Case, When, Value, DecimalFi
 from django.db.models.functions import TruncMonth, Coalesce
 from django.utils import timezone
 
-from ..models import (
+from app.models import (
     Siniestro, Poliza, Factura, Pago, TipoSiniestro, TipoPoliza,
     CompaniaAseguradora, ResponsableCustodio, Ramo, DetallePolizaRamo
 )

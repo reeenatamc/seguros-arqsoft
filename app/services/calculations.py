@@ -406,3 +406,57 @@ class PolizaCalculationService:
             return 0
         
         return (fecha_fin - fecha_actual).days
+    
+    @staticmethod
+    def calcular_deducible_aplicable(
+        monto_siniestro: Decimal,
+        deducible_fijo: Decimal = Decimal('0.00'),
+        porcentaje_deducible: Decimal = Decimal('0.00'),
+        deducible_minimo: Decimal = Decimal('0.00')
+    ) -> Decimal:
+        """
+        Calcula el deducible aplicable para un monto de siniestro dado.
+        
+        La lógica es: el mayor entre el deducible fijo y el calculado por porcentaje,
+        respetando el mínimo establecido.
+        
+        Args:
+            monto_siniestro: Monto estimado del siniestro
+            deducible_fijo: Deducible fijo de la póliza
+            porcentaje_deducible: Porcentaje de deducible (0-100)
+            deducible_minimo: Deducible mínimo aplicable
+            
+        Returns:
+            El deducible aplicable
+        """
+        # Calcular deducible por porcentaje si aplica
+        if porcentaje_deducible > 0:
+            deducible_porcentaje = (porcentaje_deducible / 100) * monto_siniestro
+            # Aplicar mínimo al porcentaje si existe
+            if deducible_minimo > 0:
+                deducible_porcentaje = max(deducible_porcentaje, deducible_minimo)
+            # Retornar el mayor entre fijo y porcentaje
+            return max(deducible_fijo, deducible_porcentaje)
+        
+        # Si no hay porcentaje, usar el deducible fijo
+        return deducible_fijo
+    
+    @staticmethod
+    def calcular_monto_indemnizacion(
+        monto_siniestro: Decimal,
+        deducible: Decimal,
+        depreciacion: Decimal = Decimal('0.00')
+    ) -> Decimal:
+        """
+        Calcula el monto a indemnizar después de deducciones.
+        
+        Args:
+            monto_siniestro: Monto estimado del siniestro
+            deducible: Deducible aplicable
+            depreciacion: Depreciación del bien
+            
+        Returns:
+            Monto a indemnizar (mínimo 0)
+        """
+        resultado = monto_siniestro - deducible - depreciacion
+        return max(resultado, Decimal('0.00'))

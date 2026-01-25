@@ -231,13 +231,22 @@
                     <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Administración</span>
                 </a>
                 
-                <a href="/admin/app/configuracionsistema/" 
-                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group"
-                   title="Configuración">
+                <a href="{% url 'configuracion_lista' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'configuracion' in request.path %}active{% endif %}"
+                   title="Configuración del Sistema">
                     <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
                         <i class="fas fa-sliders"></i>
                     </div>
                     <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Configuración</span>
+                </a>
+                
+                <a href="{% url 'backups_lista' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'backups' in request.path %}active{% endif %}"
+                   title="Respaldos del Sistema">
+                    <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Respaldos</span>
                 </a>
             </div>
         </div>

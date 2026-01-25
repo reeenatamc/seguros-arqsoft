@@ -24,7 +24,7 @@ from .models import (
     Ramo, SubtipoRamo,  # Alias de compatibilidad
     DetallePolizaRamo, GrupoBienes, ResponsableCustodio,
     ChecklistSiniestro, ChecklistSiniestroConfig, AdjuntoSiniestro,
-    NotificacionEmail, NotaCredito
+    NotificacionEmail, NotaCredito, ConfiguracionSistema
 )
 from .forms import (
     PolizaForm, DetallePolizaRamoFormSet, 
@@ -44,7 +44,7 @@ from .services import (
     AdvancedAnalyticsService, NotificacionesService, DocumentosService,
     ReportesAvanzadosService
 )
-from .services.pdf_reportes import PDFReportesService
+from .services.reportes import PDFReportesService
 
 
 @login_required
@@ -3001,20 +3001,21 @@ def siniestro_email_procesar_auto(request, pk):
         with transaction.atomic():
             # Crear el siniestro usando datos del bien
             siniestro = Siniestro.objects.create(
-                poliza=bien.policy,
+                poliza=bien.poliza,
+                bien_asegurado=bien,
                 numero_siniestro=numero_siniestro,
                 tipo_siniestro=tipo_siniestro,
                 fecha_siniestro=fecha_siniestro,
-                bien_nombre=bien.name,
-                bien_modelo=bien.model,
-                bien_serie=bien.serial_number,
-                bien_marca=bien.brand,
-                bien_codigo_activo=bien.asset_code,
-                responsable_custodio=bien.custodian,
-                ubicacion=bien.location,
+                bien_nombre=bien.nombre,
+                bien_modelo=bien.modelo or '',
+                bien_serie=bien.serie or '',
+                bien_marca=bien.marca or '',
+                bien_codigo_activo=bien.codigo_activo or '',
+                responsable_custodio=bien.responsable_custodio,
+                ubicacion=bien.ubicacion or '',
                 causa=siniestro_email.causa,
                 descripcion_detallada=siniestro_email.problema,
-                monto_estimado=bien.current_value or bien.purchase_value,
+                monto_estimado=bien.valor_actual or bien.valor_asegurado,
                 estado='registrado',
             )
             
@@ -3033,20 +3034,20 @@ def siniestro_email_procesar_auto(request, pk):
             # Actualizar el registro de email
             siniestro_email.activo_encontrado = bien
             siniestro_email.siniestro_creado = siniestro
-            siniestro_email.responsable_encontrado = bien.custodian
+            siniestro_email.responsable_encontrado = bien.responsable_custodio
             siniestro_email.estado_procesamiento = 'procesado'
             siniestro_email.fecha_procesamiento = timezone.now()
             siniestro_email.procesado_por = request.user
             siniestro_email.mensaje_procesamiento = (
                 f"Siniestro {numero_siniestro} creado automáticamente. "
-                f"Bien: {bien.asset_code} - {bien.name}"
+                f"Bien: {bien.codigo_activo} - {bien.nombre}"
             )
             siniestro_email.save()
         
         messages.success(
             request, 
             f'✅ Siniestro {numero_siniestro} creado automáticamente. '
-            f'Bien: {bien.name} | Póliza: {bien.policy.numero_poliza}'
+            f'Bien: {bien.nombre} | Póliza: {bien.poliza.numero_poliza}'
         )
         return redirect('siniestro_detalle', pk=siniestro.pk)
         
@@ -3060,89 +3061,62 @@ def siniestro_email_procesar_auto(request, pk):
 def siniestro_email_completar(request, pk):
     """
     Completa la información de un siniestro recibido por email manualmente.
-    Se usa cuando no se encuentra el bien automáticamente.
+    
+    La vista solo:
+    1. Extrae datos del request
+    2. Delega al servicio
+    3. Maneja la respuesta HTTP
+    
+    Toda la lógica de negocio está en SiniestroService.crear_desde_email()
     """
-    from datetime import datetime
+    from app.services.siniestro import SiniestroService
     
     siniestro_email = get_object_or_404(SiniestroEmail, pk=pk)
     
-    # Verificar que esté pendiente
+    # Verificar estado (validación de flujo HTTP, no de negocio)
     if siniestro_email.estado_procesamiento != 'pendiente':
         messages.error(request, 'Este registro ya fue procesado anteriormente.')
         return redirect('siniestros_email_pendientes')
     
-    # Obtener datos del formulario
+    # Extraer datos del request (responsabilidad de la vista)
     poliza_id = request.POST.get('poliza')
     tipo_siniestro_id = request.POST.get('tipo_siniestro')
     ubicacion = request.POST.get('ubicacion', '').strip()
     monto_estimado = request.POST.get('monto_estimado')
     responsable_id = request.POST.get('responsable_custodio')
     
-    # Validaciones
+    # Validación básica de campos requeridos (nivel HTTP)
     if not all([poliza_id, tipo_siniestro_id, ubicacion, monto_estimado]):
         messages.error(request, 'Por favor complete todos los campos obligatorios.')
         return redirect('siniestros_email_pendientes')
     
     try:
+        # Obtener entidades relacionadas
         poliza = Poliza.objects.get(pk=poliza_id)
         tipo_siniestro = TipoSiniestro.objects.get(pk=tipo_siniestro_id)
         monto = Decimal(monto_estimado)
+        responsable = ResponsableCustodio.objects.get(pk=responsable_id) if responsable_id else None
         
-        # Obtener o crear responsable
-        if responsable_id:
-            responsable = ResponsableCustodio.objects.get(pk=responsable_id)
+        # Delegar TODA la lógica de negocio al servicio
+        resultado = SiniestroService.crear_desde_email(
+            siniestro_email=siniestro_email,
+            poliza=poliza,
+            tipo_siniestro=tipo_siniestro,
+            ubicacion=ubicacion,
+            monto_estimado=monto,
+            responsable=responsable,
+            fecha_reporte_str=siniestro_email.fecha_reporte,
+            usuario=request.user
+        )
+        
+        # Manejar resultado
+        if resultado.exitoso:
+            messages.success(request, resultado.mensaje)
+            return redirect('siniestro_detalle', pk=resultado.objeto.pk)
         else:
-            # Crear responsable con el nombre del correo
-            responsable, created = ResponsableCustodio.objects.get_or_create(
-                nombre=siniestro_email.responsable_nombre,
-                defaults={'activo': True}
-            )
-        
-        # Parsear fecha del reporte
-        fecha_siniestro = timezone.now()
-        if siniestro_email.fecha_reporte:
-            try:
-                fecha_siniestro = timezone.make_aware(
-                    datetime.strptime(siniestro_email.fecha_reporte.strip(), '%d/%m/%Y')
-                )
-            except ValueError:
-                pass
-        
-        # Generar número de siniestro
-        from django.db.models import Max
-        ultimo = Siniestro.objects.aggregate(Max('id'))['id__max'] or 0
-        numero_siniestro = f"SIN-EMAIL-{timezone.now().year}-{str(ultimo + 1).zfill(5)}"
-        
-        # Crear el siniestro
-        with transaction.atomic():
-            siniestro = Siniestro.objects.create(
-                poliza=poliza,
-                numero_siniestro=numero_siniestro,
-                tipo_siniestro=tipo_siniestro,
-                fecha_siniestro=fecha_siniestro,
-                bien_nombre=f"{siniestro_email.periferico} {siniestro_email.marca}".strip(),
-                bien_modelo=siniestro_email.modelo,
-                bien_serie=siniestro_email.serie,
-                bien_marca=siniestro_email.marca,
-                responsable_custodio=responsable,
-                ubicacion=ubicacion,
-                causa=siniestro_email.causa,
-                descripcion_detallada=siniestro_email.problema,
-                monto_estimado=monto,
-                estado='registrado',
-            )
-            
-            # Actualizar el registro de email
-            siniestro_email.siniestro_creado = siniestro
-            siniestro_email.responsable_encontrado = responsable
-            siniestro_email.estado_procesamiento = 'procesado'
-            siniestro_email.fecha_procesamiento = timezone.now()
-            siniestro_email.procesado_por = request.user
-            siniestro_email.mensaje_procesamiento = f"Siniestro {numero_siniestro} creado manualmente por {request.user.username}"
-            siniestro_email.save()
-        
-        messages.success(request, f'Siniestro {numero_siniestro} creado exitosamente.')
-        return redirect('siniestro_detalle', pk=siniestro.pk)
+            for campo, error in resultado.errores.items():
+                messages.error(request, f'{campo}: {error}')
+            return redirect('siniestros_email_pendientes')
         
     except Poliza.DoesNotExist:
         messages.error(request, 'La póliza seleccionada no existe.')
@@ -3159,3 +3133,430 @@ def siniestros_email_count(request):
     """API para obtener el conteo de siniestros email pendientes."""
     count = SiniestroEmail.objects.filter(estado_procesamiento='pendiente').count()
     return JsonResponse({'count': count})
+
+
+# ==============================================================================
+# VISTAS DE CONFIGURACIÓN DEL SISTEMA
+# ==============================================================================
+
+from .forms import ConfiguracionSistemaForm, ConfiguracionBulkForm
+
+
+@login_required
+def configuracion_lista(request):
+    """
+    Lista todas las configuraciones del sistema agrupadas por categoría.
+    Solo accesible para usuarios staff.
+    """
+    if not request.user.is_staff:
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Inicializar valores default si no existen
+    ConfiguracionSistema.inicializar_valores_default()
+    
+    # Agrupar configuraciones por categoría
+    categorias = {}
+    categoria_labels = dict(ConfiguracionSistema._meta.get_field('categoria').choices)
+    
+    for config in ConfiguracionSistema.objects.all():
+        cat = config.categoria
+        if cat not in categorias:
+            categorias[cat] = {
+                'nombre': categoria_labels.get(cat, cat),
+                'items': []
+            }
+        categorias[cat]['items'].append(config)
+    
+    # Ordenar categorías
+    categorias_ordenadas = dict(sorted(categorias.items()))
+    
+    context = {
+        'categorias': categorias_ordenadas,
+        'titulo': 'Configuración del Sistema',
+    }
+    
+    return render(request, 'app/configuracion/lista.html', context)
+
+
+@login_required
+def configuracion_editar(request, pk):
+    """
+    Edita una configuración individual del sistema.
+    Solo accesible para usuarios staff.
+    """
+    if not request.user.is_staff:
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    config = get_object_or_404(ConfiguracionSistema, pk=pk)
+    
+    if request.method == 'POST':
+        form = ConfiguracionSistemaForm(request.POST, instance=config)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, f'Configuración "{config.clave}" actualizada correctamente.')
+                return redirect('configuracion_lista')
+            except Exception as e:
+                messages.error(request, f'Error al guardar: {str(e)}')
+    else:
+        form = ConfiguracionSistemaForm(instance=config)
+    
+    context = {
+        'form': form,
+        'config': config,
+        'titulo': f'Editar: {config.clave}',
+    }
+    
+    return render(request, 'app/configuracion/editar.html', context)
+
+
+@login_required
+def configuracion_categoria(request, categoria):
+    """
+    Edita todas las configuraciones de una categoría en un solo formulario.
+    Solo accesible para usuarios staff.
+    """
+    if not request.user.is_staff:
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    categoria_labels = dict(ConfiguracionSistema._meta.get_field('categoria').choices)
+    categoria_nombre = categoria_labels.get(categoria, categoria)
+    
+    if request.method == 'POST':
+        form = ConfiguracionBulkForm(request.POST, categoria=categoria)
+        if form.is_valid():
+            try:
+                saved = form.save()
+                if saved:
+                    messages.success(
+                        request, 
+                        f'Se actualizaron {len(saved)} configuraciones: {", ".join(saved)}'
+                    )
+                else:
+                    messages.info(request, 'No hubo cambios en las configuraciones.')
+                return redirect('configuracion_lista')
+            except Exception as e:
+                messages.error(request, f'Error al guardar: {str(e)}')
+    else:
+        form = ConfiguracionBulkForm(categoria=categoria)
+    
+    context = {
+        'form': form,
+        'categoria': categoria,
+        'categoria_nombre': categoria_nombre,
+        'titulo': f'Configuración: {categoria_nombre}',
+    }
+    
+    return render(request, 'app/configuracion/categoria.html', context)
+
+
+@login_required
+def configuracion_restablecer(request):
+    """
+    Restablece todas las configuraciones a sus valores predeterminados.
+    Solo accesible para superusuarios.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, 'Solo los superusuarios pueden restablecer la configuración.')
+        return redirect('configuracion_lista')
+    
+    if request.method == 'POST':
+        # Eliminar todas las configuraciones actuales
+        ConfiguracionSistema.objects.all().delete()
+        # Reinicializar con valores default
+        ConfiguracionSistema.inicializar_valores_default()
+        messages.success(request, 'Todas las configuraciones han sido restablecidas a sus valores predeterminados.')
+        return redirect('configuracion_lista')
+    
+    return render(request, 'app/configuracion/restablecer.html', {
+        'titulo': 'Restablecer Configuración',
+    })
+
+
+# ==============================================================================
+# VISTAS DE RESPALDO Y RECUPERACIÓN
+# ==============================================================================
+
+from .models import BackupRegistro, ConfiguracionBackup
+
+
+@login_required
+def backups_lista(request):
+    """
+    Lista todos los backups del sistema con estadísticas.
+    Solo accesible para usuarios staff.
+    """
+    if not request.user.is_staff:
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Obtener backups
+    backups = BackupRegistro.objects.all()[:50]
+    
+    # Filtros
+    tipo_filtro = request.GET.get('tipo', '')
+    estado_filtro = request.GET.get('estado', '')
+    
+    if tipo_filtro:
+        backups = backups.filter(tipo=tipo_filtro)
+    if estado_filtro:
+        backups = backups.filter(estado=estado_filtro)
+    
+    # Estadísticas
+    stats = BackupRegistro.obtener_estadisticas()
+    config = ConfiguracionBackup.get_config()
+    
+    context = {
+        'backups': backups,
+        'stats': stats,
+        'config': config,
+        'tipo_filtro': tipo_filtro,
+        'estado_filtro': estado_filtro,
+        'tipos': BackupRegistro.TIPO_CHOICES,
+        'estados': BackupRegistro.ESTADO_CHOICES,
+        'titulo': 'Respaldos del Sistema',
+    }
+    
+    return render(request, 'app/backups/lista.html', context)
+
+
+@login_required
+def backup_crear(request):
+    """
+    Crea un nuevo backup manual del sistema.
+    Solo accesible para usuarios superusuarios.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, 'Solo los superusuarios pueden crear backups.')
+        return redirect('backups_lista')
+    
+    if request.method == 'POST':
+        from django.core.management import call_command
+        import time
+        
+        incluir_media = request.POST.get('incluir_media') == 'on'
+        comprimir = request.POST.get('comprimir', 'on') == 'on'
+        notas = request.POST.get('notas', '')
+        
+        # Crear registro
+        backup = BackupRegistro.objects.create(
+            nombre=f'backup_manual_{timezone.now().strftime("%Y%m%d_%H%M%S")}',
+            ruta='',
+            tipo='completo' if incluir_media else 'base_datos',
+            estado='en_progreso',
+            frecuencia='manual',
+            comprimido=comprimir,
+            creado_por=request.user,
+            notas=notas
+        )
+        
+        try:
+            inicio = time.time()
+            
+            # Ejecutar backup usando StringIO para capturar salida
+            from io import StringIO
+            out = StringIO()
+            
+            # Construir argumentos
+            args = ['backup_database']
+            kwargs = {
+                'stdout': out,
+                'verbosity': 0,
+            }
+            if comprimir:
+                kwargs['compress'] = True
+            if incluir_media:
+                kwargs['include_media'] = True
+            
+            call_command(*args, **kwargs)
+            resultado = out.getvalue().strip()
+            
+            # Actualizar registro
+            from pathlib import Path
+            duracion = int(time.time() - inicio)
+            backup_path = Path(resultado) if resultado else None
+            
+            backup.estado = 'completado'
+            backup.duracion_segundos = duracion
+            if backup_path and backup_path.exists():
+                backup.ruta = str(backup_path)
+                backup.tamaño = backup_path.stat().st_size
+                backup.nombre = backup_path.name
+            backup.save()
+            
+            messages.success(
+                request, 
+                f'Backup creado exitosamente: {backup.nombre} ({backup.tamaño_legible})'
+            )
+            
+        except Exception as e:
+            backup.estado = 'fallido'
+            backup.error_mensaje = str(e)
+            backup.save()
+            messages.error(request, f'Error al crear backup: {str(e)}')
+        
+        return redirect('backups_lista')
+    
+    context = {
+        'titulo': 'Crear Nuevo Backup',
+    }
+    
+    return render(request, 'app/backups/crear.html', context)
+
+
+@login_required
+def backup_descargar(request, pk):
+    """
+    Descarga un archivo de backup.
+    Solo accesible para usuarios superusuarios.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, 'Solo los superusuarios pueden descargar backups.')
+        return redirect('backups_lista')
+    
+    from pathlib import Path
+    from django.http import FileResponse
+    
+    backup = get_object_or_404(BackupRegistro, pk=pk)
+    
+    archivo = Path(backup.ruta)
+    if not archivo.exists():
+        messages.error(request, 'El archivo de backup no existe.')
+        return redirect('backups_lista')
+    
+    response = FileResponse(
+        open(archivo, 'rb'),
+        as_attachment=True,
+        filename=backup.nombre
+    )
+    
+    return response
+
+
+@login_required
+def backup_eliminar(request, pk):
+    """
+    Elimina un backup del sistema.
+    Solo accesible para usuarios superusuarios.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, 'Solo los superusuarios pueden eliminar backups.')
+        return redirect('backups_lista')
+    
+    backup = get_object_or_404(BackupRegistro, pk=pk)
+    
+    if request.method == 'POST':
+        from pathlib import Path
+        
+        # Eliminar archivo físico
+        archivo = Path(backup.ruta)
+        if archivo.exists():
+            archivo.unlink()
+        
+        # Marcar como eliminado
+        backup.estado = 'eliminado'
+        backup.save()
+        
+        messages.success(request, f'Backup "{backup.nombre}" eliminado correctamente.')
+        return redirect('backups_lista')
+    
+    return render(request, 'app/backups/eliminar.html', {
+        'backup': backup,
+        'titulo': f'Eliminar Backup: {backup.nombre}',
+    })
+
+
+@login_required
+def backup_restaurar(request, pk):
+    """
+    Restaura el sistema desde un backup.
+    Solo accesible para usuarios superusuarios.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, 'Solo los superusuarios pueden restaurar backups.')
+        return redirect('backups_lista')
+    
+    backup = get_object_or_404(BackupRegistro, pk=pk)
+    
+    if not backup.archivo_existe:
+        messages.error(request, 'El archivo de backup no existe.')
+        return redirect('backups_lista')
+    
+    if request.method == 'POST':
+        from django.core.management import call_command
+        
+        confirmacion = request.POST.get('confirmacion', '')
+        if confirmacion != 'RESTAURAR':
+            messages.error(request, 'Debe escribir RESTAURAR para confirmar.')
+            return redirect('backup_restaurar', pk=pk)
+        
+        try:
+            # Ejecutar restauración
+            call_command(
+                'restore_database',
+                backup.ruta,
+                compressed=backup.comprimido,
+                no_confirm=True,
+                backup_first=True
+            )
+            
+            # Registrar restauración
+            BackupRegistro.objects.create(
+                nombre=f'restauracion_desde_{backup.nombre}',
+                ruta=backup.ruta,
+                tipo='restauracion',
+                estado='completado',
+                creado_por=request.user,
+                notas=f'Restauración desde backup {backup.nombre}'
+            )
+            
+            messages.success(request, 'Sistema restaurado exitosamente.')
+            return redirect('backups_lista')
+            
+        except Exception as e:
+            messages.error(request, f'Error al restaurar: {str(e)}')
+            return redirect('backup_restaurar', pk=pk)
+    
+    context = {
+        'backup': backup,
+        'titulo': f'Restaurar desde: {backup.nombre}',
+    }
+    
+    return render(request, 'app/backups/restaurar.html', context)
+
+
+@login_required
+def backup_configuracion(request):
+    """
+    Configura los backups automáticos del sistema.
+    Solo accesible para usuarios superusuarios.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, 'Solo los superusuarios pueden configurar backups.')
+        return redirect('backups_lista')
+    
+    config = ConfiguracionBackup.get_config()
+    
+    if request.method == 'POST':
+        config.activo = request.POST.get('activo') == 'on'
+        config.frecuencia = request.POST.get('frecuencia', 'diario')
+        config.hora_ejecucion = request.POST.get('hora_ejecucion', '02:00')
+        config.dias_retener = int(request.POST.get('dias_retener', 30))
+        config.incluir_media = request.POST.get('incluir_media') == 'on'
+        config.comprimir = request.POST.get('comprimir', 'on') == 'on'
+        config.notificar_email = request.POST.get('notificar_email', '')
+        config.save()
+        
+        messages.success(request, 'Configuración de backups actualizada.')
+        return redirect('backups_lista')
+    
+    context = {
+        'config': config,
+        'frecuencias': BackupRegistro.FRECUENCIA_CHOICES,
+        'titulo': 'Configuración de Backups Automáticos',
+    }
+    
+    return render(request, 'app/backups/configuracion.html', context)

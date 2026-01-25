@@ -16,7 +16,7 @@ from .models import (
     Siniestro, AdjuntoSiniestro, ChecklistSiniestro, ChecklistSiniestroConfig,
     GrupoBienes, Factura, Documento, Pago,
     CompaniaAseguradora, CorredorSeguros, TipoPoliza, TipoSiniestro,
-    ResponsableCustodio, NotaCredito
+    ResponsableCustodio, NotaCredito, ConfiguracionSistema
 )
 
 
@@ -440,7 +440,7 @@ class PolizaForm(forms.ModelForm):
 
 
 class DetallePolizaRamoForm(forms.ModelForm):
-    """Formulario para detalle de póliza por ramo"""
+    """Formulario para detalle de póliza por ramo con cálculos en vivo"""
 
     class Meta:
         model = DetallePolizaRamo
@@ -463,16 +463,20 @@ class DetallePolizaRamoForm(forms.ModelForm):
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0',
+                'data-calc': 'suma_asegurada',
             }),
             'total_prima': forms.NumberInput(attrs={
                 'class': 'form-control prima-input',
                 'step': '0.01',
                 'min': '0',
+                'data-calc': 'total_prima',
             }),
             'emision': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': 'form-control bg-slate-50',
                 'step': '0.01',
                 'min': '0',
+                'data-calc': 'emision',
+                'readonly': 'readonly',
             }),
             'observaciones': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -1020,7 +1024,7 @@ class BienAseguradoForm(forms.ModelForm):
 # ==============================================================================
 
 class FacturaForm(forms.ModelForm):
-    """Formulario para crear/editar facturas"""
+    """Formulario para crear/editar facturas con cálculos en vivo"""
 
     class Meta:
         model = Factura
@@ -1042,36 +1046,47 @@ class FacturaForm(forms.ModelForm):
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0',
+                'data-calc': 'subtotal',
             }),
             'iva': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': 'form-control bg-slate-50',
                 'step': '0.01',
                 'min': '0',
+                'data-calc': 'iva',
+                'readonly': 'readonly',
             }),
             'contribucion_superintendencia': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': 'form-control bg-slate-50',
                 'step': '0.01',
                 'min': '0',
+                'data-calc': 'contribucion_superintendencia',
+                'readonly': 'readonly',
             }),
             'contribucion_seguro_campesino': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': 'form-control bg-slate-50',
                 'step': '0.01',
                 'min': '0',
+                'data-calc': 'contribucion_seguro_campesino',
+                'readonly': 'readonly',
             }),
             'retenciones': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0',
+                'data-calc': 'retenciones',
             }),
             'descuento_pronto_pago': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0',
+                'data-calc': 'descuento_pronto_pago',
             }),
             'monto_total': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': 'form-control bg-emerald-50 font-semibold',
                 'step': '0.01',
                 'min': '0',
+                'data-calc': 'monto_total',
+                'readonly': 'readonly',
             }),
             'estado': forms.Select(attrs={'class': 'form-select'}),
         }
@@ -1128,7 +1143,7 @@ class DocumentoForm(forms.ModelForm):
 # ==============================================================================
 
 class PagoForm(forms.ModelForm):
-    """Formulario para crear/editar pagos"""
+    """Formulario para crear/editar pagos con validación de saldo en vivo"""
 
     class Meta:
         model = Pago
@@ -1137,11 +1152,15 @@ class PagoForm(forms.ModelForm):
             'referencia', 'observaciones',
         ]
         widgets = {
-            'factura': forms.Select(attrs={'class': 'form-select'}),
+            'factura': forms.Select(attrs={
+                'class': 'form-select',
+                'data-calc': 'factura',
+            }),
             'monto': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0.01',
+                'data-calc': 'monto',
             }),
             'fecha_pago': DateInput(attrs={'class': 'form-control'}),
             'forma_pago': forms.Select(attrs={'class': 'form-select'}),
@@ -1158,9 +1177,22 @@ class PagoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['factura'].queryset = Factura.objects.filter(
+        import json
+        
+        facturas = Factura.objects.filter(
             estado__in=['pendiente', 'parcial', 'vencida']
         )
+        self.fields['factura'].queryset = facturas
+        
+        # Crear diccionario de saldos para JavaScript
+        saldos = {str(f.pk): float(f.saldo_pendiente) for f in facturas}
+        self.fields['factura'].widget.attrs['data-saldos'] = json.dumps(saldos)
+        
+        # Mejorar labels con saldo visible
+        choices = [('', '-- Seleccionar factura --')]
+        for f in facturas:
+            choices.append((f.pk, f'{f.numero_factura} (Saldo: ${f.saldo_pendiente:,.2f})'))
+        self.fields['factura'].choices = choices
 
 
 # ==============================================================================
@@ -1168,13 +1200,16 @@ class PagoForm(forms.ModelForm):
 # ==============================================================================
 
 class NotaCreditoForm(forms.ModelForm):
-    """Formulario para crear/editar notas de crédito"""
+    """Formulario para crear/editar notas de crédito con validación de saldo"""
 
     class Meta:
         model = NotaCredito
         fields = ['factura', 'numero', 'fecha_emision', 'monto', 'motivo', 'documento']
         widgets = {
-            'factura': forms.Select(attrs={'class': 'form-select'}),
+            'factura': forms.Select(attrs={
+                'class': 'form-select',
+                'data-calc': 'factura',
+            }),
             'numero': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Número de nota de crédito',
@@ -1184,6 +1219,7 @@ class NotaCreditoForm(forms.ModelForm):
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0.01',
+                'data-calc': 'monto',
             }),
             'motivo': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -1194,6 +1230,15 @@ class NotaCreditoForm(forms.ModelForm):
                 'class': 'form-control',
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        import json
+        
+        # Incluir saldo de factura para validación JS
+        facturas = Factura.objects.all()
+        saldos = {str(f.pk): float(f.monto_total or 0) for f in facturas}
+        self.fields['factura'].widget.attrs['data-saldos'] = json.dumps(saldos)
 
 
 # ==============================================================================
@@ -1312,3 +1357,176 @@ class FiltroReportesForm(forms.Form):
         empty_label='Todos los tipos',
         widget=forms.Select(attrs={'class': 'form-select'}),
     )
+
+
+# ==============================================================================
+# FORMULARIOS DE CONFIGURACIÓN DEL SISTEMA
+# ==============================================================================
+
+class ConfiguracionSistemaForm(forms.ModelForm):
+    """
+    Formulario para editar configuraciones del sistema.
+    Valida según el tipo de dato configurado.
+    """
+    
+    class Meta:
+        model = ConfiguracionSistema
+        fields = ['valor', 'descripcion']
+        widgets = {
+            'valor': forms.Textarea(attrs={
+                'class': 'form-control font-mono text-sm',
+                'rows': 3,
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Ajustar widget según el tipo
+        if self.instance and self.instance.pk:
+            tipo = self.instance.tipo
+            
+            if tipo == 'decimal':
+                self.fields['valor'].widget = forms.NumberInput(attrs={
+                    'class': 'form-control',
+                    'step': '0.001',
+                })
+                self.fields['valor'].help_text = 'Ingrese un valor decimal (ej: 0.035 para 3.5%)'
+            
+            elif tipo == 'entero':
+                self.fields['valor'].widget = forms.NumberInput(attrs={
+                    'class': 'form-control',
+                    'step': '1',
+                })
+                self.fields['valor'].help_text = 'Ingrese un número entero'
+            
+            elif tipo == 'texto':
+                self.fields['valor'].widget = forms.TextInput(attrs={
+                    'class': 'form-control',
+                })
+                self.fields['valor'].help_text = 'Ingrese el texto'
+            
+            elif tipo == 'json':
+                self.fields['valor'].widget = forms.Textarea(attrs={
+                    'class': 'form-control font-mono text-sm',
+                    'rows': 6,
+                })
+                self.fields['valor'].help_text = 'Ingrese JSON válido'
+    
+    def clean_valor(self):
+        """Valida el valor según el tipo de configuración."""
+        valor = self.cleaned_data.get('valor', '')
+        
+        if not self.instance or not self.instance.pk:
+            return valor
+        
+        tipo = self.instance.tipo
+        
+        if tipo == 'decimal':
+            try:
+                Decimal(valor)
+            except:
+                raise ValidationError('Debe ser un valor decimal válido (ej: 0.035)')
+        
+        elif tipo == 'entero':
+            try:
+                int(valor)
+            except:
+                raise ValidationError('Debe ser un número entero válido')
+        
+        elif tipo == 'json':
+            import json
+            try:
+                json.loads(valor)
+            except json.JSONDecodeError as e:
+                raise ValidationError(f'JSON inválido: {str(e)}')
+        
+        return valor
+
+
+class ConfiguracionBulkForm(forms.Form):
+    """
+    Formulario para edición masiva de configuraciones por categoría.
+    Se genera dinámicamente según las configuraciones existentes.
+    """
+    
+    def __init__(self, *args, categoria=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar configuraciones por categoría
+        qs = ConfiguracionSistema.objects.all()
+        if categoria:
+            qs = qs.filter(categoria=categoria)
+        
+        # Crear un campo por cada configuración
+        for config in qs:
+            field_name = f'config_{config.pk}'
+            
+            if config.tipo == 'decimal':
+                self.fields[field_name] = forms.DecimalField(
+                    label=config.clave.replace('_', ' ').title(),
+                    initial=config.valor,
+                    required=True,
+                    decimal_places=4,
+                    help_text=config.descripcion,
+                    widget=forms.NumberInput(attrs={
+                        'class': 'form-control',
+                        'step': '0.0001',
+                    })
+                )
+            
+            elif config.tipo == 'entero':
+                self.fields[field_name] = forms.IntegerField(
+                    label=config.clave.replace('_', ' ').title(),
+                    initial=config.valor,
+                    required=True,
+                    help_text=config.descripcion,
+                    widget=forms.NumberInput(attrs={
+                        'class': 'form-control',
+                        'step': '1',
+                    })
+                )
+            
+            elif config.tipo == 'json':
+                self.fields[field_name] = forms.CharField(
+                    label=config.clave.replace('_', ' ').title(),
+                    initial=config.valor,
+                    required=True,
+                    help_text=config.descripcion,
+                    widget=forms.Textarea(attrs={
+                        'class': 'form-control font-mono text-sm',
+                        'rows': 4,
+                    })
+                )
+            
+            else:  # texto
+                self.fields[field_name] = forms.CharField(
+                    label=config.clave.replace('_', ' ').title(),
+                    initial=config.valor,
+                    required=True,
+                    help_text=config.descripcion,
+                    widget=forms.TextInput(attrs={
+                        'class': 'form-control',
+                    })
+                )
+            
+            # Guardar referencia al objeto config
+            self.fields[field_name].config_instance = config
+    
+    def save(self):
+        """Guarda todas las configuraciones modificadas."""
+        saved = []
+        for field_name, field in self.fields.items():
+            if hasattr(field, 'config_instance'):
+                config = field.config_instance
+                nuevo_valor = str(self.cleaned_data[field_name])
+                if config.valor != nuevo_valor:
+                    config.valor = nuevo_valor
+                    config.full_clean()
+                    config.save()
+                    saved.append(config.clave)
+        return saved

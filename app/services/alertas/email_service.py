@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
 
-from ..models import (
+from app.models import (
     Siniestro, Poliza, Factura, NotificacionEmail,
     ConfiguracionSistema
 )

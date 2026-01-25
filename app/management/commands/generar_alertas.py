@@ -37,14 +37,9 @@ class Command(BaseCommand):
         self.stdout.write('Generando alertas de pólizas...')
         
         hoy = timezone.now().date()
-        fecha_limite = hoy + timedelta(days=30)
         
-        # Buscar pólizas que vencen en los próximos 30 días
-        polizas_por_vencer = Poliza.objects.filter(
-            fecha_fin__gte=hoy,
-            fecha_fin__lte=fecha_limite,
-            estado__in=['vigente', 'por_vencer']
-        )
+        # Usar manager centralizado (DRY)
+        polizas_por_vencer = Poliza.objects.por_vencer(dias=30)
         
         usuarios_admin = User.objects.filter(is_staff=True, is_active=True)
         

@@ -167,4 +167,18 @@ urlpatterns = [
     path('api/corredores-por-compania/', views.api_corredores_por_compania, name='api_corredores_por_compania'),
     path('api/calcular-desglose-ramo/', views.api_calcular_desglose_ramo, name='api_calcular_desglose_ramo'),
     path('api/reporte-siniestralidad/', views.api_reporte_siniestralidad, name='api_reporte_siniestralidad'),
+
+    # Configuración del Sistema
+    path('configuracion/', views.configuracion_lista, name='configuracion_lista'),
+    path('configuracion/<int:pk>/editar/', views.configuracion_editar, name='configuracion_editar'),
+    path('configuracion/categoria/<str:categoria>/', views.configuracion_categoria, name='configuracion_categoria'),
+    path('configuracion/restablecer/', views.configuracion_restablecer, name='configuracion_restablecer'),
+
+    # Respaldos y Recuperación
+    path('backups/', views.backups_lista, name='backups_lista'),
+    path('backups/crear/', views.backup_crear, name='backup_crear'),
+    path('backups/<int:pk>/descargar/', views.backup_descargar, name='backup_descargar'),
+    path('backups/<int:pk>/eliminar/', views.backup_eliminar, name='backup_eliminar'),
+    path('backups/<int:pk>/restaurar/', views.backup_restaurar, name='backup_restaurar'),
+    path('backups/configuracion/', views.backup_configuracion, name='backup_configuracion'),
 ]

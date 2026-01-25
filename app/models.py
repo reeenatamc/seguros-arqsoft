@@ -3,14 +3,262 @@ from django.core.validators import MinValueValidator, MaxValueValidator, RegexVa
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Sum, Count
 from decimal import Decimal
-from datetime import timedelta
+from datetime import timedelta, datetime
 import re
 
 from simple_history.models import HistoricalRecords
 
 from .validators import validate_document
+
+
+# ==================== MANAGERS PERSONALIZADOS (DRY) ====================
+# Centralizan reglas de negocio para evitar duplicación de lógica de filtrado
+
+class PolizaManager(models.Manager):
+    """
+    Manager personalizado para Póliza.
+    Centraliza las reglas de negocio sobre estados y vencimientos.
+    
+    Uso:
+        Poliza.objects.vigentes()
+        Poliza.objects.por_vencer(dias=30)
+        Poliza.objects.activas()
+    """
+    
+    def vigentes(self):
+        """Pólizas en estado vigente."""
+        return self.filter(estado='vigente')
+    
+    def por_vencer(self, dias=None):
+        """
+        Pólizas que vencen en los próximos X días.
+        
+        Args:
+            dias: Días para considerar "por vencer". Si es None, usa configuración del sistema.
+        """
+        if dias is None:
+            # Importación tardía para evitar circular import
+            from django.apps import apps
+            ConfiguracionSistema = apps.get_model('app', 'ConfiguracionSistema')
+            dias = ConfiguracionSistema.get_config('DIAS_ALERTA_VENCIMIENTO_POLIZA', 30)
+        
+        hoy = timezone.now().date()
+        fecha_limite = hoy + timedelta(days=dias)
+        
+        return self.filter(
+            estado__in=['vigente', 'por_vencer'],
+            fecha_fin__gte=hoy,
+            fecha_fin__lte=fecha_limite
+        )
+    
+    def vencidas(self):
+        """Pólizas vencidas (fecha_fin < hoy)."""
+        hoy = timezone.now().date()
+        return self.filter(fecha_fin__lt=hoy)
+    
+    def activas(self):
+        """Pólizas vigentes o por vencer (pueden recibir siniestros)."""
+        return self.filter(estado__in=['vigente', 'por_vencer'])
+    
+    def canceladas(self):
+        """Pólizas canceladas."""
+        return self.filter(estado='cancelada')
+    
+    def vencen_en_rango(self, dias_inicio=0, dias_fin=30):
+        """Pólizas que vencen entre X y Y días desde hoy."""
+        hoy = timezone.now().date()
+        fecha_inicio = hoy + timedelta(days=dias_inicio)
+        fecha_limite = hoy + timedelta(days=dias_fin)
+        
+        return self.filter(
+            estado__in=['vigente', 'por_vencer'],
+            fecha_fin__gte=fecha_inicio,
+            fecha_fin__lte=fecha_limite
+        )
+    
+    def requieren_renovacion(self, dias=60):
+        """Pólizas que requieren iniciar proceso de renovación."""
+        return self.por_vencer(dias=dias)
+    
+    def con_estadisticas(self):
+        """Pólizas con estadísticas agregadas (siniestros, facturas)."""
+        return self.annotate(
+            total_siniestros=Count('siniestros'),
+            total_facturas=Count('facturas'),
+            total_facturado=Sum('facturas__monto_total')
+        )
+
+
+class FacturaManager(models.Manager):
+    """
+    Manager personalizado para Factura.
+    Centraliza las reglas de negocio sobre estados de pago.
+    """
+    
+    def pendientes(self):
+        """Facturas pendientes de pago (parcial o total)."""
+        return self.filter(estado__in=['pendiente', 'parcial'])
+    
+    def por_vencer(self, dias=None):
+        """Facturas que vencen en los próximos X días."""
+        if dias is None:
+            dias = 30
+        
+        hoy = timezone.now().date()
+        fecha_limite = hoy + timedelta(days=dias)
+        
+        return self.filter(
+            estado__in=['pendiente', 'parcial'],
+            fecha_vencimiento__gte=hoy,
+            fecha_vencimiento__lte=fecha_limite
+        )
+    
+    def vencidas(self):
+        """Facturas vencidas (no pagadas y fecha_vencimiento < hoy)."""
+        hoy = timezone.now().date()
+        return self.filter(
+            estado__in=['pendiente', 'parcial', 'vencida'],
+            fecha_vencimiento__lt=hoy
+        )
+    
+    def pagadas(self):
+        """Facturas completamente pagadas."""
+        return self.filter(estado='pagada')
+    
+    def de_polizas_activas(self):
+        """Facturas de pólizas vigentes o por vencer."""
+        return self.filter(poliza__estado__in=['vigente', 'por_vencer'])
+    
+    def con_saldo_pendiente(self):
+        """Facturas que tienen saldo por pagar."""
+        return self.filter(estado__in=['pendiente', 'parcial', 'vencida'])
+
+
+class SiniestroManager(models.Manager):
+    """
+    Manager personalizado para Siniestro.
+    Centraliza las reglas de negocio sobre estados y gestión.
+    """
+    
+    def pendientes_documentacion(self, dias_alerta=None):
+        """
+        Siniestros con documentación pendiente que requieren atención.
+        
+        Args:
+            dias_alerta: Días después de los cuales se considera urgente.
+        """
+        if dias_alerta is None:
+            from django.apps import apps
+            ConfiguracionSistema = apps.get_model('app', 'ConfiguracionSistema')
+            dias_alerta = ConfiguracionSistema.get_config('DIAS_ALERTA_DOCUMENTACION_SINIESTRO', 30)
+        
+        fecha_limite = timezone.now() - timedelta(days=dias_alerta)
+        
+        return self.filter(
+            estado='documentacion_pendiente',
+            fecha_registro__lt=fecha_limite
+        )
+    
+    def esperando_respuesta(self, dias_alerta=None):
+        """
+        Siniestros enviados a aseguradora esperando respuesta.
+        
+        Args:
+            dias_alerta: Días después de los cuales se considera demorado.
+        """
+        if dias_alerta is None:
+            from django.apps import apps
+            ConfiguracionSistema = apps.get_model('app', 'ConfiguracionSistema')
+            dias_alerta = ConfiguracionSistema.get_config('DIAS_ALERTA_RESPUESTA_ASEGURADORA', 8)
+        
+        fecha_limite = timezone.now().date() - timedelta(days=dias_alerta)
+        
+        return self.filter(
+            estado='enviado_aseguradora',
+            fecha_envio_aseguradora__lt=fecha_limite,
+            fecha_respuesta_aseguradora__isnull=True
+        )
+    
+    def abiertos(self):
+        """Siniestros que no están cerrados ni rechazados."""
+        return self.exclude(estado__in=['cerrado', 'rechazado'])
+    
+    def en_proceso(self):
+        """Siniestros en alguna etapa de procesamiento."""
+        return self.filter(estado__in=[
+            'registrado', 
+            'documentacion_pendiente', 
+            'enviado_aseguradora', 
+            'en_evaluacion'
+        ])
+    
+    def resueltos(self):
+        """Siniestros aprobados, liquidados o cerrados."""
+        return self.filter(estado__in=['aprobado', 'liquidado', 'cerrado'])
+    
+    def de_polizas_activas(self):
+        """Siniestros de pólizas vigentes o por vencer."""
+        return self.filter(poliza__estado__in=['vigente', 'por_vencer'])
+    
+    def requieren_atencion(self):
+        """
+        Siniestros que requieren atención urgente:
+        - Documentación pendiente por más de X días
+        - Esperando respuesta por más de X días
+        """
+        from django.apps import apps
+        ConfiguracionSistema = apps.get_model('app', 'ConfiguracionSistema')
+        dias_doc = ConfiguracionSistema.get_config('DIAS_ALERTA_DOCUMENTACION_SINIESTRO', 30)
+        dias_resp = ConfiguracionSistema.get_config('DIAS_ALERTA_RESPUESTA_ASEGURADORA', 8)
+        
+        ahora = timezone.now()
+        fecha_doc = ahora - timedelta(days=dias_doc)
+        fecha_resp = ahora.date() - timedelta(days=dias_resp)
+        
+        return self.filter(
+            Q(estado='documentacion_pendiente', fecha_registro__lt=fecha_doc) |
+            Q(estado='enviado_aseguradora', 
+              fecha_envio_aseguradora__lt=fecha_resp,
+              fecha_respuesta_aseguradora__isnull=True)
+        )
+    
+    def con_estadisticas_gestion(self):
+        """Siniestros con días de gestión calculados."""
+        ahora = timezone.now()
+        return self.annotate(
+            dias_gestion=models.ExpressionWrapper(
+                ahora - models.F('fecha_registro'),
+                output_field=models.DurationField()
+            )
+        )
+
+
+class BienAseguradoManager(models.Manager):
+    """
+    Manager personalizado para BienAsegurado.
+    """
+    
+    def activos(self):
+        """Bienes en estado activo."""
+        return self.filter(estado='activo')
+    
+    def de_polizas_activas(self):
+        """Bienes de pólizas vigentes o por vencer."""
+        return self.filter(poliza__estado__in=['vigente', 'por_vencer'])
+    
+    def sin_siniestros(self):
+        """Bienes que nunca han tenido siniestros."""
+        return self.filter(siniestros__isnull=True)
+    
+    def con_siniestros(self):
+        """Bienes que han tenido al menos un siniestro."""
+        return self.filter(siniestros__isnull=False).distinct()
+    
+    def por_responsable(self, responsable):
+        """Bienes asignados a un responsable específico."""
+        return self.filter(responsable_custodio=responsable)
 
 
 # ==================== CONSTANTES Y VALIDADORES ====================
@@ -54,16 +302,16 @@ class ConfiguracionSistema(models.Model):
         Validaciones usando el registro de validadores extensible.
         
         Para agregar nuevas validaciones, registrar en:
-        app/services/config_validators.py
+        app/services/configuracion/validators.py
         
         Ejemplo:
-            from app.services.config_validators import registro_validadores, RangoNumericoValidator
+            from app.services.configuracion import registro_validadores, RangoNumericoValidator
             registro_validadores.registrar('MI_CONFIG', RangoNumericoValidator(min_valor=1, max_valor=100))
         """
         super().clean()
         
         # Usar el registro de validadores extensible
-        from app.services.config_validators import validar_configuracion
+        from app.services.configuracion import validar_configuracion
         
         errores = validar_configuracion(self.clave, self.valor, self.tipo)
         if errores:
@@ -381,6 +629,9 @@ class Poliza(models.Model):
         verbose_name_plural="Historial de cambios"
     )
 
+    # Manager personalizado (centraliza reglas de negocio)
+    objects = PolizaManager()
+
     class Meta:
         verbose_name = "Póliza"
         verbose_name_plural = "Pólizas"
@@ -392,44 +643,6 @@ class Poliza(models.Model):
 
     def __str__(self):
         return f"{self.numero_poliza} - {self.compania_aseguradora}"
-
-    def clean(self):
-        """
-        Validación básica. La lógica de negocio completa está en PolizaService.
-        NOTA: Para nuevos desarrollos, usar PolizaService.crear_poliza() o PolizaService.actualizar_poliza()
-        """
-        super().clean()
-        # Delegar validación al servicio para mantener compatibilidad con admin/forms
-        from app.services.domain_services import PolizaService
-        
-        if self.fecha_inicio and self.fecha_fin:
-            resultado = PolizaService.validar_fechas(
-                self.fecha_inicio, self.fecha_fin, self.numero_poliza, self.pk
-            )
-            if not resultado.es_valido:
-                raise ValidationError(resultado.errores)
-            
-            resultado = PolizaService.validar_corredor_compania(
-                self.compania_aseguradora, getattr(self, 'corredor_seguros', None)
-            )
-            if not resultado.es_valido:
-                raise ValidationError(resultado.errores)
-
-    def save(self, *args, **kwargs):
-        """
-        Guarda la póliza. Actualiza estado automáticamente.
-        NOTA: Para nuevos desarrollos, usar PolizaService.crear_poliza() o PolizaService.actualizar_poliza()
-        """
-        # Delegar actualización de estado al servicio
-        from app.services.domain_services import PolizaService
-        if self.fecha_inicio and self.fecha_fin:
-            PolizaService.actualizar_estado(self)
-        super().save(*args, **kwargs)
-
-    def actualizar_estado(self):
-        """DEPRECATED: Usar PolizaService.actualizar_estado() en su lugar."""
-        from app.services.domain_services import PolizaService
-        PolizaService.actualizar_estado(self)
 
     @property
     def dias_para_vencer(self):
@@ -505,15 +718,17 @@ class Poliza(models.Model):
 
     def calcular_deducible_aplicable(self, monto_siniestro):
         """
-        Calcula el deducible aplicable para un monto de siniestro dado.
-        Retorna el mayor entre: deducible fijo, o (porcentaje * monto) con mínimo.
+        Calcula el deducible aplicable para un monto de siniestro.
+        Cálculo puro sin dependencias de servicios.
         """
         deducible_fijo = self.deducible or Decimal('0.00')
+        porcentaje = self.porcentaje_deducible or Decimal('0.00')
+        minimo = self.deducible_minimo or Decimal('0.00')
         
-        if self.porcentaje_deducible > 0:
-            deducible_porcentaje = (self.porcentaje_deducible / 100) * monto_siniestro
-            deducible_minimo = self.deducible_minimo or Decimal('0.00')
-            deducible_porcentaje = max(deducible_porcentaje, deducible_minimo)
+        if porcentaje > 0:
+            deducible_porcentaje = (porcentaje / 100) * monto_siniestro
+            if minimo > 0:
+                deducible_porcentaje = max(deducible_porcentaje, minimo)
             return max(deducible_fijo, deducible_porcentaje)
         
         return deducible_fijo
@@ -572,6 +787,9 @@ class Factura(models.Model):
         verbose_name_plural="Historial de cambios"
     )
 
+    # Manager personalizado (centraliza reglas de negocio)
+    objects = FacturaManager()
+
     class Meta:
         verbose_name = "Factura"
         verbose_name_plural = "Facturas"
@@ -584,66 +802,8 @@ class Factura(models.Model):
     def __str__(self):
         return f"Factura {self.numero_factura} - {self.poliza.numero_poliza}"
 
-    def save(self, *args, **kwargs):
-        """
-        Guarda la factura con cálculos automáticos.
-        NOTA: Para nuevos desarrollos, usar FacturaService.crear_factura() o FacturaService.actualizar_factura()
-        """
-        from app.services.domain_services import FacturaService
-        
-        # Obtener fecha del primer pago si existe
-        fecha_primer_pago = None
-        if self.pk:
-            pago = self.pagos.filter(estado='aprobado').order_by('fecha_pago').first()
-            fecha_primer_pago = pago.fecha_pago if pago else None
-        
-        # Delegar cálculos al servicio
-        FacturaService.aplicar_calculos(self, fecha_primer_pago)
-        
-        # Guardar
-        es_nuevo = self.pk is None
-        super().save(*args, **kwargs)
-        
-        # Actualizar estado si no es nuevo
-        if not es_nuevo:
-            FacturaService.actualizar_estado(self)
-            if self.estado != Factura.objects.get(pk=self.pk).estado:
-                Factura.objects.filter(pk=self.pk).update(estado=self.estado)
-
-    def calcular_contribuciones(self):
-        """DEPRECATED: Usar FacturaService.calcular_contribuciones() en su lugar."""
-        from app.services.domain_services import FacturaService
-        contrib_super, contrib_campesino = FacturaService.calcular_contribuciones(self.subtotal)
-        self.contribucion_superintendencia = contrib_super
-        self.contribucion_seguro_campesino = contrib_campesino
-
-    def calcular_descuento_pronto_pago(self):
-        """DEPRECATED: Usar FacturaService.calcular_descuento_pronto_pago() en su lugar."""
-        from app.services.domain_services import FacturaService
-        
-        fecha_primer_pago = None
-        if self.pk:
-            pago = self.pagos.filter(estado='aprobado').order_by('fecha_pago').first()
-            fecha_primer_pago = pago.fecha_pago if pago else None
-        
-        self.descuento_pronto_pago = FacturaService.calcular_descuento_pronto_pago(
-            self.subtotal, self.fecha_emision, fecha_primer_pago
-        )
-
-    def calcular_monto_total(self):
-        """DEPRECATED: Usar FacturaService.calcular_monto_total() en su lugar."""
-        from app.services.domain_services import FacturaService
-        self.monto_total = FacturaService.calcular_monto_total(
-            subtotal=self.subtotal,
-            iva=self.iva,
-            contribucion_super=self.contribucion_superintendencia,
-            contribucion_campesino=self.contribucion_seguro_campesino,
-            retenciones=self.retenciones or Decimal('0.00'),
-            descuento=self.descuento_pronto_pago or Decimal('0.00')
-        )
-
     def _calcular_total_pagado(self):
-        """Calcula el total de pagos aprobados."""
+        """Calcula el total de pagos aprobados (método auxiliar de datos)."""
         if not self.pk:
             return Decimal('0.00')
         
@@ -652,12 +812,6 @@ class Factura(models.Model):
         )['total']
         
         return total if total is not None else Decimal('0.00')
-
-    def actualizar_estado(self):
-        """DEPRECATED: Usar FacturaService.actualizar_estado() en su lugar."""
-        from app.services.domain_services import FacturaService
-        if self.pk:
-            FacturaService.actualizar_estado(self)
 
     @property
     def saldo_pendiente(self):
@@ -760,58 +914,6 @@ class Pago(models.Model):
     def __str__(self):
         return f"Pago {self.referencia} - ${self.monto} ({self.fecha_pago})"
 
-    def save(self, *args, **kwargs):
-        """
-        Guarda el pago y actualiza la factura si está aprobado.
-        NOTA: Para nuevos desarrollos, usar PagoService.crear_pago() o PagoService.aprobar_pago()
-        """
-        super().save(*args, **kwargs)
-        
-        # Delegar actualización de factura al servicio
-        if self.estado == 'aprobado' and self.factura_id:
-            from app.services.domain_services import PagoService
-            PagoService._actualizar_factura_por_pago(self.factura, self.fecha_pago)
-
-    def delete(self, *args, **kwargs):
-        """
-        Al borrar un pago, recalcula la factura asociada.
-        NOTA: Para nuevos desarrollos, usar PagoService.eliminar_pago()
-        """
-        factura = self.factura if self.factura_id else None
-        era_aprobado = self.estado == 'aprobado'
-        super().delete(*args, **kwargs)
-
-        if factura and era_aprobado:
-            from app.services.domain_services import FacturaService
-            
-            # Obtener fecha del primer pago restante
-            primer_pago = factura.pagos.filter(estado='aprobado').order_by('fecha_pago').first()
-            fecha_primer_pago = primer_pago.fecha_pago if primer_pago else None
-            
-            FacturaService.aplicar_calculos(factura, fecha_primer_pago)
-            FacturaService.actualizar_estado(factura)
-            factura.save(update_fields=[
-                'contribucion_superintendencia',
-                'contribucion_seguro_campesino',
-                'descuento_pronto_pago',
-                'monto_total',
-                'estado',
-            ])
-    
-    def clean(self):
-        """
-        Validaciones del pago.
-        NOTA: Para nuevos desarrollos, usar PagoService.validar_monto()
-        """
-        super().clean()
-        
-        # Delegar validación al servicio
-        from app.services.domain_services import PagoService
-        
-        if self.factura_id and self.monto:
-            resultado = PagoService.validar_monto(self.factura, self.monto, self.pk)
-            if not resultado.es_valido:
-                raise ValidationError(resultado.errores)
 
 
 class TipoSiniestro(models.Model):
@@ -953,6 +1055,9 @@ class Siniestro(models.Model):
         verbose_name_plural="Historial de cambios"
     )
 
+    # Manager personalizado (centraliza reglas de negocio)
+    objects = SiniestroManager()
+
     class Meta:
         verbose_name = "Siniestro"
         verbose_name_plural = "Siniestros"
@@ -979,45 +1084,6 @@ class Siniestro(models.Model):
             return self.bien_asegurado.poliza
         return self.poliza
 
-    def save(self, *args, **kwargs):
-        """
-        Guarda el siniestro sincronizando campos desde bien_asegurado.
-        NOTA: Para nuevos desarrollos, usar SiniestroService.crear_siniestro() o SiniestroService.actualizar_siniestro()
-        """
-        # Delegar sincronización al servicio
-        from app.services.domain_services import SiniestroService
-        SiniestroService.sincronizar_desde_bien_asegurado(self)
-        super().save(*args, **kwargs)
-
-    def clean(self):
-        """
-        Validaciones del siniestro.
-        NOTA: Para nuevos desarrollos, usar SiniestroService.validar_siniestro()
-        """
-        super().clean()
-        
-        # Delegar validaciones principales al servicio
-        from app.services.domain_services import SiniestroService
-        resultado = SiniestroService.validar_siniestro(self)
-        if not resultado.es_valido:
-            raise ValidationError(resultado.errores)
-        
-        # Validaciones adicionales específicas del modelo
-        # (coherencia de fechas de gestión)
-        if self.fecha_envio_aseguradora and self.fecha_respuesta_aseguradora:
-            if self.fecha_respuesta_aseguradora < self.fecha_envio_aseguradora:
-                raise ValidationError({
-                    'fecha_respuesta_aseguradora': (
-                        'La fecha de respuesta no puede ser anterior a la fecha de envío.'
-                    )
-                })
-        
-        # Validar que si está liquidado, tenga monto indemnizado
-        if self.estado == 'liquidado' and not self.monto_indemnizado:
-            raise ValidationError({
-                'monto_indemnizado': 'Un siniestro liquidado debe tener un monto indemnizado.'
-            })
-
     @property
     def poliza_efectiva(self):
         """Propiedad para obtener la póliza efectiva"""
@@ -1041,8 +1107,8 @@ class Siniestro(models.Model):
     @property
     def monto_a_indemnizar(self):
         """
-        Calcula el monto estimado a indemnizar:
-        Monto estimado - Deducible - Depreciación
+        Calcula el monto estimado a indemnizar.
+        Cálculo puro: monto - deducible - depreciación
         """
         monto = self.monto_estimado or Decimal('0.00')
         deducible = self.deducible_aplicado or self.deducible_calculado
@@ -1256,26 +1322,6 @@ class Documento(models.Model):
             except (OSError, ValueError):
                 return 'N/A'
         return 'N/A'
-    
-    def clean(self):
-        """
-        Valida relaciones del documento.
-        NOTA: Para nuevos desarrollos, usar DocumentoService.validar_relaciones()
-        """
-        super().clean()
-        
-        # Delegar validación al servicio
-        from app.services.domain_services import DocumentoService
-        resultado = DocumentoService.validar_relaciones(
-            self.tipo_documento,
-            self.poliza_id,
-            self.siniestro_id,
-            self.factura_id
-        )
-        if not resultado.es_valido:
-            if '__all__' in resultado.errores:
-                raise ValidationError(resultado.errores['__all__'])
-            raise ValidationError(resultado.errores)
     
     @property
     def entidad_relacionada(self):
@@ -1657,19 +1703,6 @@ class NotaCredito(models.Model):
     def __str__(self):
         return f"NC-{self.numero} - ${self.monto}"
 
-    def clean(self):
-        """
-        Valida que el monto no exceda el saldo de la factura.
-        NOTA: Para nuevos desarrollos, usar NotaCreditoService.validar_monto()
-        """
-        super().clean()
-        
-        # Delegar validación al servicio
-        if self.factura_id and self.monto:
-            from app.services.domain_services import NotaCreditoService
-            resultado = NotaCreditoService.validar_monto(self.factura, self.monto, self.pk)
-            if not resultado.es_valido:
-                raise ValidationError(resultado.errores)
 
 
 # ==================== NUEVOS MODELOS (Código en inglés, interfaz en español) ====================
@@ -2336,6 +2369,9 @@ class BienAsegurado(models.Model):
         verbose_name_plural="Historial de cambios"
     )
 
+    # Manager personalizado (centraliza reglas de negocio)
+    objects = BienAseguradoManager()
+
     class Meta:
         verbose_name = "Bien Asegurado"
         verbose_name_plural = "Bienes Asegurados"
@@ -2349,20 +2385,6 @@ class BienAsegurado(models.Model):
 
     def __str__(self):
         return f"{self.codigo_bien} - {self.nombre}"
-
-    def clean(self):
-        """
-        Validaciones del bien asegurado.
-        NOTA: Para nuevos desarrollos, usar BienAseguradoService.validar_subgrupo_poliza()
-        """
-        super().clean()
-        
-        # Delegar validación al servicio
-        if self.poliza_id and self.subgrupo_ramo_id:
-            from app.services.domain_services import BienAseguradoService
-            resultado = BienAseguradoService.validar_subgrupo_poliza(self.poliza, self.subgrupo_ramo)
-            if not resultado.es_valido:
-                raise ValidationError(resultado.errores)
 
     @property
     def clasificacion_completa(self):
@@ -2474,10 +2496,11 @@ class DetallePolizaRamo(models.Model):
     @staticmethod
     def calcular_derechos_emision(valor_prima: Decimal) -> Decimal:
         """
-        Calcula los derechos de emisión según tabla escalonada configurable.
-        La tabla se obtiene de ConfiguracionSistema (TABLA_TASAS_EMISION).
+        Calcula los derechos de emisión según tabla escalonada.
+        Cálculo puro sin dependencias de servicios.
         
-        Valores por defecto:
+        La tabla se obtiene de ConfiguracionSistema (TABLA_TASAS_EMISION).
+        Valores por defecto si no hay configuración:
           0 - 250      -> 0.50
           251 - 500    -> 1.00
           501 - 1000   -> 3.00
@@ -2485,8 +2508,31 @@ class DetallePolizaRamo(models.Model):
           2001 - 4000  -> 7.00
           > 4001       -> 9.00
         """
-        from app.services.calculations import DetalleRamoCalculationService
-        return DetalleRamoCalculationService.calcular_derechos_emision(valor_prima)
+        # Intentar obtener tabla de configuración
+        tabla_config = ConfiguracionSistema.get_config('TABLA_TASAS_EMISION', None)
+        
+        if tabla_config and isinstance(tabla_config, list):
+            tabla = tabla_config
+        else:
+            # Valores por defecto
+            tabla = [
+                {'limite': 250, 'tasa': '0.50'},
+                {'limite': 500, 'tasa': '1.00'},
+                {'limite': 1000, 'tasa': '3.00'},
+                {'limite': 2000, 'tasa': '5.00'},
+                {'limite': 4000, 'tasa': '7.00'},
+                {'limite': None, 'tasa': '9.00'},
+            ]
+        
+        for rango in tabla:
+            limite = rango.get('limite')
+            tasa = Decimal(str(rango.get('tasa', '0')))
+            
+            if limite is None or valor_prima <= Decimal(str(limite)):
+                return tasa
+        
+        # Fallback al último valor
+        return Decimal(str(tabla[-1].get('tasa', '9.00')))
 
     def calcular_valores(self):
         """Calcula todos los valores financieros derivados"""
@@ -2848,17 +2894,17 @@ class SiniestroEmail(models.Model):
             return None, self.mensaje_procesamiento
         
         # Verificar que el activo tenga póliza
-        if not activo.policy:
+        if not activo.poliza:
             self.estado_procesamiento = 'pendiente'
             self.mensaje_procesamiento = (
-                f"Activo encontrado ({activo.asset_code}) pero no tiene póliza asignada. "
+                f"Activo encontrado ({activo.codigo_activo}) pero no tiene póliza asignada. "
                 "Requiere revisión manual."
             )
             self.save()
             return None, self.mensaje_procesamiento
         
         # Buscar o usar el custodio del activo
-        responsable = self.buscar_responsable() or activo.custodian
+        responsable = self.buscar_responsable() or activo.responsable_custodio
         self.responsable_encontrado = responsable
         
         # Buscar tipo de siniestro "daño" por defecto
@@ -2890,7 +2936,8 @@ class SiniestroEmail(models.Model):
         try:
             # Crear el siniestro
             siniestro = Siniestro.objects.create(
-                poliza=activo.policy,
+                poliza=activo.poliza,
+                bien_asegurado=activo,
                 numero_siniestro=numero_siniestro,
                 tipo_siniestro=tipo_siniestro,
                 fecha_siniestro=fecha_siniestro,
@@ -2898,12 +2945,12 @@ class SiniestroEmail(models.Model):
                 bien_modelo=self.modelo,
                 bien_serie=self.serie,
                 bien_marca=self.marca,
-                bien_codigo_activo=activo.asset_code,
+                bien_codigo_activo=activo.codigo_activo or '',
                 responsable_custodio=responsable,
-                ubicacion=activo.location or "Ver correo original",
+                ubicacion=activo.ubicacion or "Ver correo original",
                 causa=self.causa,
                 descripcion_detallada=self.problema,
-                monto_estimado=activo.current_value or activo.purchase_value,
+                monto_estimado=activo.valor_actual or activo.valor_asegurado,
                 estado='registrado',
             )
             
@@ -2912,7 +2959,7 @@ class SiniestroEmail(models.Model):
             self.fecha_procesamiento = timezone.now()
             self.mensaje_procesamiento = (
                 f"Siniestro {numero_siniestro} creado exitosamente. "
-                f"Póliza: {activo.policy.numero_poliza}"
+                f"Póliza: {activo.poliza.numero_poliza}"
             )
             self.save()
             
@@ -2923,3 +2970,198 @@ class SiniestroEmail(models.Model):
             self.mensaje_procesamiento = f"Error al crear siniestro: {str(e)}"
             self.save()
             return None, self.mensaje_procesamiento
+
+
+# ==================== SISTEMA DE RESPALDOS ====================
+
+class BackupRegistro(models.Model):
+    """
+    Modelo para registrar y gestionar los backups del sistema.
+    Permite rastrear el historial de respaldos y restauraciones.
+    """
+    TIPO_CHOICES = [
+        ('base_datos', 'Base de Datos'),
+        ('completo', 'Completo (BD + Media)'),
+        ('media', 'Solo Media'),
+        ('restauracion', 'Restauración'),
+        ('automatico', 'Automático Programado'),
+    ]
+    
+    ESTADO_CHOICES = [
+        ('en_progreso', 'En Progreso'),
+        ('completado', 'Completado'),
+        ('fallido', 'Fallido'),
+        ('eliminado', 'Eliminado'),
+    ]
+    
+    FRECUENCIA_CHOICES = [
+        ('manual', 'Manual'),
+        ('diario', 'Diario'),
+        ('semanal', 'Semanal'),
+        ('mensual', 'Mensual'),
+    ]
+    
+    nombre = models.CharField(max_length=255, verbose_name="Nombre del Archivo")
+    ruta = models.TextField(verbose_name="Ruta del Archivo")
+    tamaño = models.BigIntegerField(default=0, verbose_name="Tamaño (bytes)")
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='base_datos', verbose_name="Tipo")
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='en_progreso', verbose_name="Estado")
+    comprimido = models.BooleanField(default=False, verbose_name="Comprimido")
+    formato = models.CharField(max_length=10, default='json', verbose_name="Formato")
+    frecuencia = models.CharField(max_length=20, choices=FRECUENCIA_CHOICES, default='manual', verbose_name="Frecuencia")
+    
+    # Metadatos
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    fecha_expiracion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Expiración")
+    creado_por = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='backups_creados', verbose_name="Creado Por"
+    )
+    
+    # Información adicional
+    notas = models.TextField(blank=True, verbose_name="Notas")
+    error_mensaje = models.TextField(blank=True, verbose_name="Mensaje de Error")
+    
+    # Estadísticas
+    duracion_segundos = models.IntegerField(default=0, verbose_name="Duración (segundos)")
+    registros_respaldados = models.IntegerField(default=0, verbose_name="Registros Respaldados")
+    
+    class Meta:
+        verbose_name = "Registro de Backup"
+        verbose_name_plural = "Registros de Backups"
+        ordering = ['-fecha_creacion']
+        indexes = [
+            models.Index(fields=['tipo', 'estado']),
+            models.Index(fields=['fecha_creacion']),
+        ]
+    
+    def __str__(self):
+        return f"{self.nombre} ({self.get_tipo_display()}) - {self.fecha_creacion.strftime('%Y-%m-%d %H:%M')}"
+    
+    @property
+    def tamaño_legible(self):
+        """Retorna el tamaño en formato legible."""
+        size = self.tamaño
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024:
+                return f'{size:.2f} {unit}'
+            size /= 1024
+        return f'{size:.2f} TB'
+    
+    @property
+    def archivo_existe(self):
+        """Verifica si el archivo de backup existe."""
+        from pathlib import Path
+        return Path(self.ruta).exists()
+    
+    @classmethod
+    def limpiar_antiguos(cls, dias_retener=30):
+        """
+        Elimina backups más antiguos que los días especificados.
+        Mantiene al menos los últimos 5 backups.
+        """
+        from datetime import timedelta
+        from pathlib import Path
+        
+        fecha_limite = timezone.now() - timedelta(days=dias_retener)
+        
+        # Obtener backups antiguos (excepto los últimos 5)
+        backups_antiguos = cls.objects.filter(
+            fecha_creacion__lt=fecha_limite,
+            estado='completado'
+        ).exclude(
+            pk__in=cls.objects.filter(estado='completado').order_by('-fecha_creacion')[:5].values_list('pk', flat=True)
+        )
+        
+        eliminados = 0
+        for backup in backups_antiguos:
+            try:
+                # Eliminar archivo físico
+                archivo = Path(backup.ruta)
+                if archivo.exists():
+                    archivo.unlink()
+                
+                # Marcar como eliminado
+                backup.estado = 'eliminado'
+                backup.save()
+                eliminados += 1
+            except Exception:
+                pass
+        
+        return eliminados
+    
+    @classmethod
+    def obtener_estadisticas(cls):
+        """Obtiene estadísticas de backups."""
+        from django.db.models import Sum, Avg, Count
+        
+        return {
+            'total': cls.objects.count(),
+            'completados': cls.objects.filter(estado='completado').count(),
+            'fallidos': cls.objects.filter(estado='fallido').count(),
+            'tamaño_total': cls.objects.filter(estado='completado').aggregate(
+                total=Sum('tamaño')
+            )['total'] or 0,
+            'ultimo_backup': cls.objects.filter(
+                estado='completado', 
+                tipo__in=['base_datos', 'completo', 'automatico']
+            ).first(),
+            'duracion_promedio': cls.objects.filter(
+                estado='completado'
+            ).aggregate(
+                promedio=Avg('duracion_segundos')
+            )['promedio'] or 0,
+        }
+
+
+class ConfiguracionBackup(models.Model):
+    """
+    Configuración para backups automáticos del sistema.
+    """
+    activo = models.BooleanField(default=True, verbose_name="Backup Automático Activo")
+    frecuencia = models.CharField(
+        max_length=20,
+        choices=BackupRegistro.FRECUENCIA_CHOICES,
+        default='diario',
+        verbose_name="Frecuencia"
+    )
+    hora_ejecucion = models.TimeField(
+        default='02:00',
+        verbose_name="Hora de Ejecución",
+        help_text="Hora del día para ejecutar el backup automático"
+    )
+    dias_retener = models.IntegerField(
+        default=30,
+        verbose_name="Días de Retención",
+        help_text="Número de días para mantener los backups antiguos"
+    )
+    incluir_media = models.BooleanField(
+        default=False,
+        verbose_name="Incluir Archivos Media"
+    )
+    comprimir = models.BooleanField(
+        default=True,
+        verbose_name="Comprimir Backup"
+    )
+    notificar_email = models.EmailField(
+        blank=True,
+        verbose_name="Email de Notificación",
+        help_text="Email para notificar sobre el estado de los backups"
+    )
+    ultimo_backup = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name="Último Backup Exitoso"
+    )
+    
+    class Meta:
+        verbose_name = "Configuración de Backup"
+        verbose_name_plural = "Configuraciones de Backup"
+    
+    def __str__(self):
+        return f"Configuración de Backup ({'Activo' if self.activo else 'Inactivo'})"
+    
+    @classmethod
+    def get_config(cls):
+        """Obtiene o crea la configuración de backup."""
+        config, _ = cls.objects.get_or_create(pk=1)
+        return config

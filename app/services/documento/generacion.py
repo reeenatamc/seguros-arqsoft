@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.contrib.staticfiles import finders
 
-from ..models import Siniestro, AdjuntoSiniestro, ConfiguracionSistema
+from app.models import Siniestro, AdjuntoSiniestro, ConfiguracionSistema
 
 
 try:

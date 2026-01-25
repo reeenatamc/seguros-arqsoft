@@ -4,7 +4,7 @@ from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 
 from .models import Siniestro, ConfiguracionSistema
-from .services.notificaciones import NotificacionesService
+from .services.alertas import NotificacionesService
 
 
 @receiver(pre_save, sender=Siniestro)

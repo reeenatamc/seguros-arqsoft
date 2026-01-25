@@ -1,28 +1,78 @@
-from .reportes import ReportesService
-from .estadisticas import EstadisticasService
-from .exportacion import ExportacionService
-from .dashboard_analytics import DashboardAnalyticsService
-from .dashboard_filters import DashboardFiltersService, DateRangePresets
-from .advanced_analytics import AdvancedAnalyticsService
-from .notificaciones import NotificacionesService
-from .documentos import DocumentosService
-from .reportes_avanzados import ReportesAvanzadosService
+"""
+Servicios de la Aplicación - Arquitectura por Dominios.
 
-# Domain Services (lógica de negocio para entidades)
-from .domain_services import (
-    FacturaService,
-    PagoService,
-    PolizaService,
-    SiniestroService,
-    DocumentoService,
-    NotaCreditoService,
-    BienAseguradoService,
+Estructura:
+    services/
+    ├── base.py                 # Clases base compartidas
+    ├── calculations.py         # Cálculos puros
+    │
+    ├── factura/               # Dominio Factura
+    ├── pago/                  # Dominio Pago  
+    ├── poliza/                # Dominio Póliza
+    ├── siniestro/             # Dominio Siniestro
+    ├── documento/             # Dominio Documento
+    ├── nota_credito/          # Dominio Nota de Crédito
+    ├── bien_asegurado/        # Dominio Bien Asegurado
+    │
+    ├── reportes/              # Generación de reportes y exportación
+    ├── analytics/             # Estadísticas y dashboard
+    ├── alertas/               # Notificaciones y alertas
+    ├── email/                 # Lectura de emails
+    └── configuracion/         # Validadores de configuración
+"""
+
+# ==============================================================================
+# BASE Y TIPOS COMPARTIDOS
+# ==============================================================================
+from .base import (
+    BaseService,
     ResultadoValidacion,
     ResultadoOperacion,
 )
 
-# Sistema de notificaciones extensible (Strategy Pattern)
-from .notificadores import (
+# ==============================================================================
+# SERVICIOS DE DOMINIO (Entidades de Negocio)
+# ==============================================================================
+from .factura import FacturaService
+from .pago import PagoService
+from .poliza import PolizaService
+from .siniestro import SiniestroService
+from .documento import DocumentoService, DocumentosService
+from .nota_credito import NotaCreditoService
+from .bien_asegurado import BienAseguradoService
+
+# ==============================================================================
+# REPORTES Y EXPORTACIÓN
+# ==============================================================================
+from .reportes import (
+    ReportesService,
+    ReportesAvanzadosService,
+    PDFReportesService,
+    ExportacionService,
+)
+
+# ==============================================================================
+# ANALYTICS Y ESTADÍSTICAS
+# ==============================================================================
+from .analytics import (
+    EstadisticasService,
+    DashboardAnalyticsService,
+    DashboardFiltersService,
+    DateRangePresets,
+    AdvancedAnalyticsService,
+)
+
+# ==============================================================================
+# ALERTAS Y NOTIFICACIONES
+# ==============================================================================
+from .alertas import (
+    BrokerNotifier,
+    UserNotifier,
+    ResponsableNotifier,
+    PolizaNotifier,
+    AlertasService,
+    NotificacionesFacade,
+    NotificacionesService,
     Notificador,
     EmailNotifier,
     SMSNotifier,
@@ -37,8 +87,15 @@ from .notificadores import (
     crear_dispatcher_desde_config,
 )
 
-# Validadores de configuración extensibles (Registry Pattern)
-from .config_validators import (
+# ==============================================================================
+# EMAIL
+# ==============================================================================
+from .email import EmailReaderService
+
+# ==============================================================================
+# CONFIGURACIÓN
+# ==============================================================================
+from .configuracion import (
     ValidadorConfig,
     PorcentajeValidator,
     RangoNumericoValidator,
@@ -51,31 +108,46 @@ from .config_validators import (
     validar_configuracion,
 )
 
+# ==============================================================================
+# EXPORTS
+# ==============================================================================
 __all__ = [
-    # Servicios de reportes y análisis
-    'ReportesService',
-    'EstadisticasService',
-    'ExportacionService',
-    'DashboardAnalyticsService',
-    'DashboardFiltersService',
-    'DateRangePresets',
-    'AdvancedAnalyticsService',
-    'NotificacionesService',
-    'DocumentosService',
-    'ReportesAvanzadosService',
+    # Base
+    'BaseService',
+    'ResultadoValidacion',
+    'ResultadoOperacion',
     
-    # Domain Services
+    # Dominio
     'FacturaService',
     'PagoService',
     'PolizaService',
     'SiniestroService',
     'DocumentoService',
+    'DocumentosService',
     'NotaCreditoService',
     'BienAseguradoService',
-    'ResultadoValidacion',
-    'ResultadoOperacion',
     
-    # Notificadores (Strategy Pattern)
+    # Reportes
+    'ReportesService',
+    'ReportesAvanzadosService',
+    'PDFReportesService',
+    'ExportacionService',
+    
+    # Analytics
+    'EstadisticasService',
+    'DashboardAnalyticsService',
+    'DashboardFiltersService',
+    'DateRangePresets',
+    'AdvancedAnalyticsService',
+    
+    # Alertas
+    'BrokerNotifier',
+    'UserNotifier',
+    'ResponsableNotifier',
+    'PolizaNotifier',
+    'AlertasService',
+    'NotificacionesFacade',
+    'NotificacionesService',
     'Notificador',
     'EmailNotifier',
     'SMSNotifier',
@@ -89,7 +161,10 @@ __all__ = [
     'get_dispatcher',
     'crear_dispatcher_desde_config',
     
-    # Validadores de configuración (Registry Pattern)
+    # Email
+    'EmailReaderService',
+    
+    # Configuración
     'ValidadorConfig',
     'PorcentajeValidator',
     'RangoNumericoValidator',
@@ -101,4 +176,3 @@ __all__ = [
     'registro_validadores',
     'validar_configuracion',
 ]
-

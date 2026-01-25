@@ -11,7 +11,8 @@ from import_export.widgets import ForeignKeyWidget, DateWidget, DateTimeWidget
 from .models import (
     ConfiguracionSistema, CompaniaAseguradora, CorredorSeguros, TipoPoliza, 
     ResponsableCustodio, Poliza, Factura, Pago, TipoSiniestro, Siniestro, Documento, Alerta,
-    Quote, QuoteOption, PolicyRenewal, PaymentApproval, CalendarEvent
+    Quote, QuoteOption, PolicyRenewal, PaymentApproval, CalendarEvent,
+    BackupRegistro, ConfiguracionBackup
 )
 
 
@@ -1032,7 +1033,8 @@ class BienAseguradoAdmin(HistoryModelAdmin):
 
     @display(description='Valor Asegurado')
     def valor_asegurado_formatted(self, obj):
-        return format_html('${:,.2f}', obj.valor_asegurado)
+        valor = obj.valor_asegurado or 0
+        return f"${valor:,.2f}"
 
     @display(description='Estado')
     def estado_badge(self, obj):
@@ -1761,3 +1763,36 @@ class CalendarEventAdmin(ModelAdmin):
     def send_reminders(self, request, queryset):
         count = queryset.filter(reminder_sent=False).update(reminder_sent=True)
         self.message_user(request, f"Recordatorios enviados para {count} eventos.")
+
+
+# ==============================================================================
+# ADMINISTRACIÓN DE RESPALDOS
+# ==============================================================================
+
+@admin.register(BackupRegistro)
+class BackupRegistroAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'tipo', 'estado', 'tamaño_display', 'fecha_creacion', 'creado_por']
+    list_filter = ['tipo', 'estado', 'frecuencia', 'comprimido']
+    search_fields = ['nombre', 'notas']
+    readonly_fields = ['fecha_creacion', 'tamaño', 'duracion_segundos', 'registros_respaldados']
+    date_hierarchy = 'fecha_creacion'
+    ordering = ['-fecha_creacion']
+    
+    @display(description='Tamaño')
+    def tamaño_display(self, obj):
+        return obj.tamaño_legible
+    
+    def has_add_permission(self, request):
+        return False  # Los backups se crean solo desde comandos/vistas
+
+
+@admin.register(ConfiguracionBackup)
+class ConfiguracionBackupAdmin(admin.ModelAdmin):
+    list_display = ['activo', 'frecuencia', 'hora_ejecucion', 'dias_retener', 'ultimo_backup']
+    
+    def has_add_permission(self, request):
+        # Solo permitir un registro
+        return not ConfiguracionBackup.objects.exists()
+    
+    def has_delete_permission(self, request, obj=None):
+        return False
