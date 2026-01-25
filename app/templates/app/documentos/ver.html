@@ -1,0 +1,359 @@
+{% extends 'app/layouts/base.html' %}
+{% load static %}
+
+{% block title %}{{ documento.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pdf-viewer {
+        width: 100%;
+        height: calc(100vh - 300px);
+        min-height: 600px;
+        border: none;
+        border-radius: 12px;
+    }
+    
+    .image-viewer {
+        max-width: 100%;
+        max-height: calc(100vh - 300px);
+        border-radius: 12px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    
+    .image-container {
+        background: repeating-conic-gradient(#f1f5f9 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+        border-radius: 12px;
+        padding: 20px;
+    }
+    
+    .text-viewer {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 24px;
+        border-radius: 12px;
+        max-height: calc(100vh - 300px);
+        overflow: auto;
+    }
+    
+    /* Zoom controls for images */
+    .zoom-controls {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        display: flex;
+        gap: 8px;
+        z-index: 50;
+    }
+    
+    .zoom-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .zoom-btn:hover {
+        background: #f8fafc;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-fade-in">
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'documentos_lista' %}" 
+               class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-200 transition">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">{{ documento.nombre }}</h1>
+                <p class="text-slate-500 mt-1 flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">
+                        {{ documento.get_tipo_documento_display }}
+                    </span>
+                    <span>•</span>
+                    <span>{{ documento.tamanio_formateado }}</span>
+                    <span>•</span>
+                    <span>{{ documento.fecha_subida|date:"d/m/Y H:i" }}</span>
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{% url 'documento_descargar' documento.pk %}" 
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-medium text-sm">
+                <i class="fas fa-download"></i>
+                Descargar
+            </a>
+            <a href="{% url 'documento_editar' documento.pk %}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition font-medium text-sm">
+                <i class="fas fa-pen"></i>
+                Editar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Info del documento -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Visor principal -->
+        <div class="lg:col-span-3">
+            <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-sm text-slate-600">
+                        {% if file_type == 'pdf' %}
+                            <i class="fas fa-file-pdf text-red-500"></i>
+                        {% elif file_type == 'image' %}
+                            <i class="fas fa-image text-purple-500"></i>
+                        {% elif file_type == 'word' %}
+                            <i class="fas fa-file-word text-blue-600"></i>
+                        {% elif file_type == 'excel' %}
+                            <i class="fas fa-file-excel text-emerald-600"></i>
+                        {% elif file_type == 'text' %}
+                            <i class="fas fa-file-alt text-slate-500"></i>
+                        {% else %}
+                            <i class="fas fa-file text-slate-400"></i>
+                        {% endif %}
+                        <span>{{ file_ext|upper }} - {{ documento.tamanio_formateado }}</span>
+                    </div>
+                    {% if file_type == 'pdf' %}
+                        <a href="{{ documento.archivo.url }}" target="_blank" 
+                           class="text-sm text-brand-600 hover:text-brand-700 font-medium">
+                            <i class="fas fa-external-link-alt mr-1"></i>
+                            Abrir en nueva pestaña
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <div class="p-6">
+                    {% if file_type == 'pdf' %}
+                        <!-- Visor de PDF -->
+                        <iframe src="{{ documento.archivo.url }}#toolbar=1&navpanes=1&scrollbar=1" 
+                                class="pdf-viewer" 
+                                title="{{ documento.nombre }}">
+                        </iframe>
+                    
+                    {% elif file_type == 'image' %}
+                        <!-- Visor de imágenes -->
+                        <div class="image-container flex items-center justify-center">
+                            <img id="image-viewer" 
+                                 src="{{ documento.archivo.url }}" 
+                                 alt="{{ documento.nombre }}" 
+                                 class="image-viewer cursor-zoom-in"
+                                 onclick="toggleZoom(this)">
+                        </div>
+                        
+                        <!-- Controles de zoom -->
+                        <div class="zoom-controls">
+                            <button class="zoom-btn" onclick="zoomIn()" title="Acercar">
+                                <i class="fas fa-search-plus text-slate-600"></i>
+                            </button>
+                            <button class="zoom-btn" onclick="zoomOut()" title="Alejar">
+                                <i class="fas fa-search-minus text-slate-600"></i>
+                            </button>
+                            <button class="zoom-btn" onclick="resetZoom()" title="Restablecer">
+                                <i class="fas fa-expand text-slate-600"></i>
+                            </button>
+                        </div>
+                    
+                    {% elif file_type == 'text' %}
+                        <!-- Visor de texto -->
+                        <div class="text-viewer" id="text-content">
+                            Cargando contenido...
+                        </div>
+                        <script>
+                            fetch('{{ documento.archivo.url }}')
+                                .then(response => response.text())
+                                .then(text => {
+                                    document.getElementById('text-content').textContent = text;
+                                })
+                                .catch(err => {
+                                    document.getElementById('text-content').textContent = 'Error al cargar el archivo';
+                                });
+                        </script>
+                    
+                    {% else %}
+                        <!-- Archivo no previsualizable -->
+                        <div class="text-center py-16">
+                            <div class="w-24 h-24 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-6">
+                                {% if file_type == 'word' %}
+                                    <i class="fas fa-file-word text-5xl text-blue-600"></i>
+                                {% elif file_type == 'excel' %}
+                                    <i class="fas fa-file-excel text-5xl text-emerald-600"></i>
+                                {% else %}
+                                    <i class="fas fa-file text-5xl text-slate-400"></i>
+                                {% endif %}
+                            </div>
+                            <h3 class="text-lg font-semibold text-slate-800 mb-2">
+                                Vista previa no disponible
+                            </h3>
+                            <p class="text-slate-500 mb-6">
+                                Este tipo de archivo ({{ file_ext }}) no puede visualizarse en el navegador.
+                            </p>
+                            <a href="{% url 'documento_descargar' documento.pk %}" 
+                               class="inline-flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition font-medium">
+                                <i class="fas fa-download"></i>
+                                Descargar para ver
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar con información -->
+        <div class="lg:col-span-1 space-y-4">
+            <!-- Detalles -->
+            <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+                <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-brand-500"></i>
+                    Detalles
+                </h3>
+                <dl class="space-y-3 text-sm">
+                    <div>
+                        <dt class="text-slate-500">Nombre</dt>
+                        <dd class="font-medium text-slate-800 break-words">{{ documento.nombre }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-500">Tipo</dt>
+                        <dd class="font-medium text-slate-800">{{ documento.get_tipo_documento_display }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-500">Tamaño</dt>
+                        <dd class="font-medium text-slate-800">{{ documento.tamanio_formateado }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-500">Subido el</dt>
+                        <dd class="font-medium text-slate-800">{{ documento.fecha_subida|date:"d/m/Y H:i" }}</dd>
+                    </div>
+                    {% if documento.subido_por %}
+                    <div>
+                        <dt class="text-slate-500">Subido por</dt>
+                        <dd class="font-medium text-slate-800">{{ documento.subido_por.get_full_name|default:documento.subido_por.username }}</dd>
+                    </div>
+                    {% endif %}
+                </dl>
+            </div>
+            
+            <!-- Descripción -->
+            {% if documento.descripcion %}
+            <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+                <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-align-left text-brand-500"></i>
+                    Descripción
+                </h3>
+                <p class="text-sm text-slate-600">{{ documento.descripcion }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- Relaciones -->
+            <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+                <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-link text-brand-500"></i>
+                    Asociado a
+                </h3>
+                <div class="space-y-3">
+                    {% if documento.poliza %}
+                        <a href="{% url 'poliza_detalle' documento.poliza.pk %}"
+                           class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition">
+                            <div class="w-10 h-10 rounded-lg bg-brand-100 flex items-center justify-center">
+                                <i class="fas fa-file-shield text-brand-600"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-medium text-slate-800 text-sm">Póliza</p>
+                                <p class="text-xs text-slate-500 truncate">{{ documento.poliza.numero_poliza }}</p>
+                            </div>
+                        </a>
+                    {% endif %}
+
+                    {% if documento.siniestro %}
+                        <a href="{% url 'siniestro_detalle' documento.siniestro.pk %}"
+                           class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition">
+                            <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                                <i class="fas fa-car-burst text-red-600"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-medium text-slate-800 text-sm">Siniestro</p>
+                                <p class="text-xs text-slate-500 truncate">{{ documento.siniestro.numero_siniestro }}</p>
+                            </div>
+                        </a>
+                    {% endif %}
+
+                    {% if documento.factura %}
+                        <a href="{% url 'factura_detalle' documento.factura.pk %}"
+                           class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition">
+                            <div class="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                                <i class="fas fa-file-invoice-dollar text-amber-600"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-medium text-slate-800 text-sm">Factura</p>
+                                <p class="text-xs text-slate-500 truncate">{{ documento.factura.numero_factura }}</p>
+                            </div>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentZoom = 1;
+const zoomStep = 0.25;
+const maxZoom = 3;
+const minZoom = 0.5;
+
+function zoomIn() {
+    if (currentZoom < maxZoom) {
+        currentZoom += zoomStep;
+        applyZoom();
+    }
+}
+
+function zoomOut() {
+    if (currentZoom > minZoom) {
+        currentZoom -= zoomStep;
+        applyZoom();
+    }
+}
+
+function resetZoom() {
+    currentZoom = 1;
+    applyZoom();
+}
+
+function applyZoom() {
+    const img = document.getElementById('image-viewer');
+    if (img) {
+        img.style.transform = `scale(${currentZoom})`;
+        img.style.cursor = currentZoom > 1 ? 'zoom-out' : 'zoom-in';
+    }
+}
+
+function toggleZoom(img) {
+    if (currentZoom > 1) {
+        resetZoom();
+    } else {
+        currentZoom = 2;
+        applyZoom();
+    }
+}
+</script>
+{% endblock %}
+

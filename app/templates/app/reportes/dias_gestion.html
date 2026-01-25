@@ -1,0 +1,427 @@
+{% extends 'app/layouts/base.html' %}
+{% load static %}
+
+{% block title %}Reporte de Días de Gestión{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-fade-in">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Reporte de Días de Gestión</h1>
+            <p class="text-slate-500 mt-1">Análisis de tiempos de procesamiento de siniestros</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="?{% if fecha_desde %}fecha_desde={{ fecha_desde|date:'Y-m-d' }}&{% endif %}{% if fecha_hasta %}fecha_hasta={{ fecha_hasta|date:'Y-m-d' }}&{% endif %}formato=pdf"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-medium text-sm">
+                <i class="fas fa-file-pdf"></i>
+                Exportar PDF
+            </a>
+            <a href="?{% if fecha_desde %}fecha_desde={{ fecha_desde|date:'Y-m-d' }}&{% endif %}{% if fecha_hasta %}fecha_hasta={{ fecha_hasta|date:'Y-m-d' }}&{% endif %}formato=excel"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-medium text-sm">
+                <i class="fas fa-file-excel"></i>
+                Exportar Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-4">
+        <form method="GET" class="flex flex-wrap gap-4">
+            <div class="date-input-wrapper relative">
+                <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none z-10"></i>
+                <input type="date" name="fecha_desde" value="{{ fecha_desde|date:'Y-m-d' }}"
+                       class="pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all w-48"
+                       placeholder="Desde" title="Fecha desde">
+            </div>
+            <div class="date-input-wrapper relative">
+                <i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none z-10"></i>
+                <input type="date" name="fecha_hasta" value="{{ fecha_hasta|date:'Y-m-d' }}"
+                       class="pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all w-48"
+                       placeholder="Hasta" title="Fecha hasta">
+            </div>
+            <button type="submit" class="px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition text-sm font-medium">
+                <i class="fas fa-filter mr-2"></i>Aplicar
+            </button>
+            {% if fecha_desde or fecha_hasta %}
+                <a href="{% url 'reporte_dias_gestion' %}" class="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition text-sm font-medium">
+                    Limpiar
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- KPIs principales -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-5 text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-clock text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-white/70">Promedio de Días</p>
+                    <p class="text-2xl font-bold">{{ datos.resumen.promedio_dias_gestion|floatformat:1 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl p-5 text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-list-check text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-white/70">Total Siniestros</p>
+                    <p class="text-2xl font-bold">{{ datos.resumen.total_siniestros }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl p-5 text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-check-circle text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-white/70">Cerrados</p>
+                    <p class="text-2xl font-bold">{{ datos.resumen.siniestros_cerrados }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos comparativos -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Por tipo de siniestro -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Promedio por Tipo de Siniestro</h3>
+                <p class="text-sm text-slate-500 mt-1">Días de gestión por categoría</p>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for tipo in datos.por_tipo %}
+                    <div class="p-4 hover:bg-slate-50 transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <p class="font-medium text-slate-800">{{ tipo.tipo }}</p>
+                                <p class="text-sm text-slate-500">{{ tipo.cantidad_siniestros }} casos</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-2xl font-bold text-brand-600">{{ tipo.promedio_dias|floatformat:1 }}</p>
+                                <p class="text-xs text-slate-500">días promedio</p>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div class="bg-brand-600 h-2 rounded-full" style="width: {% widthratio tipo.promedio_dias 100 100 %}%"></div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="p-8 text-center text-slate-500">Sin datos disponibles</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Por estado -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Promedio por Estado</h3>
+                <p class="text-sm text-slate-500 mt-1">Distribución según estado actual</p>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for estado in datos.por_estado %}
+                    <div class="p-4 hover:bg-slate-50 transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <p class="font-medium text-slate-800">{{ estado.estado }}</p>
+                                <p class="text-sm text-slate-500">{{ estado.cantidad_siniestros }} casos</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-2xl font-bold text-purple-600">{{ estado.promedio_dias|floatformat:1 }}</p>
+                                <p class="text-xs text-slate-500">días promedio</p>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div class="bg-purple-600 h-2 rounded-full" style="width: {% widthratio estado.promedio_dias 100 100 %}%"></div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="p-8 text-center text-slate-500">Sin datos disponibles</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de detalle - Top siniestros con más días -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="p-5 border-b border-slate-100">
+            <h3 class="font-semibold text-slate-800">Siniestros con Mayor Tiempo de Gestión</h3>
+            <p class="text-sm text-slate-500 mt-1">Top 50 casos ordenados por días de gestión</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Número</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Tipo</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Estado</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Fecha Registro</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Días Gestión</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Monto Estimado</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Monto Pagado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for siniestro in datos.detalle %}
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="px-4 py-3 font-medium text-slate-800">{{ siniestro.numero_siniestro }}</td>
+                        <td class="px-4 py-3 text-sm text-slate-700">{{ siniestro.tipo }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
+                                {% if siniestro.estado == 'Liquidado' or siniestro.estado == 'Cerrado' %}bg-emerald-100 text-emerald-700
+                                {% elif siniestro.estado == 'Registrado' %}bg-amber-100 text-amber-700
+                                {% elif siniestro.estado == 'En Evaluación' %}bg-blue-100 text-blue-700
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ siniestro.estado }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-center text-sm text-slate-600">{{ siniestro.fecha_registro }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="inline-flex items-center justify-center w-16 px-3 py-1.5 rounded-lg font-semibold text-sm
+                                {% if siniestro.dias_gestion < 15 %}bg-emerald-100 text-emerald-700
+                                {% elif siniestro.dias_gestion < 30 %}bg-blue-100 text-blue-700
+                                {% elif siniestro.dias_gestion < 60 %}bg-amber-100 text-amber-700
+                                {% else %}bg-red-100 text-red-700{% endif %}">
+                                {{ siniestro.dias_gestion }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-right text-slate-700">${{ siniestro.monto_estimado|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-medium text-slate-800">${{ siniestro.monto_pagado|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-12 text-center text-slate-500">No hay datos para mostrar</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Indicadores de rendimiento -->
+    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-100">
+        <h4 class="text-lg font-semibold text-slate-800 mb-4">Indicadores de Rendimiento</h4>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                        <i class="fas fa-bolt text-emerald-600 text-sm"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-700">Muy Rápido</p>
+                </div>
+                <p class="text-xs text-slate-500">Menos de 15 días</p>
+            </div>
+            <div class="bg-white rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-check text-blue-600 text-sm"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-700">Bueno</p>
+                </div>
+                <p class="text-xs text-slate-500">15 - 30 días</p>
+            </div>
+            <div class="bg-white rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                        <i class="fas fa-clock text-amber-600 text-sm"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-700">Moderado</p>
+                </div>
+                <p class="text-xs text-slate-500">30 - 60 días</p>
+            </div>
+            <div class="bg-white rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-sm"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-700">Requiere Atención</p>
+                </div>
+                <p class="text-xs text-slate-500">Más de 60 días</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SECCIÓN CONTADORA: Seguimiento Financiero -->
+    <!-- ========================================== -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden mt-8">
+        <div class="p-5 border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-purple-50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-calculator text-white"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg">Reporte para Contaduría</h3>
+                    <p class="text-sm text-slate-500">Seguimiento de fechas y montos de siniestros</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs Financieros para Contadora -->
+        <div class="p-5 border-b border-slate-100 bg-slate-50">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="bg-white rounded-xl p-4 text-center shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase tracking-wide mb-1">Total Estimado</p>
+                    <p class="text-xl font-bold text-slate-800">${{ datos.resumen_contadora.total_estimado|floatformat:2 }}</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 text-center shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase tracking-wide mb-1">Total Pagado</p>
+                    <p class="text-xl font-bold text-emerald-600">${{ datos.resumen_contadora.total_pagado|floatformat:2 }}</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 text-center shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase tracking-wide mb-1">Total Deducibles</p>
+                    <p class="text-xl font-bold text-amber-600">${{ datos.resumen_contadora.total_deducible|floatformat:2 }}</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 text-center shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase tracking-wide mb-1">Monto Pendiente</p>
+                    <p class="text-xl font-bold text-red-600">${{ datos.resumen_contadora.monto_pendiente|floatformat:2 }}</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 text-center shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase tracking-wide mb-1">Pendientes de Pago</p>
+                    <p class="text-xl font-bold text-purple-600">{{ datos.resumen_contadora.pendientes_pago }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla Centrada de Seguimiento -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-center">
+                <thead>
+                    <tr class="bg-indigo-600 text-white">
+                        <th class="px-3 py-3 text-xs font-semibold uppercase tracking-wider">N° Siniestro</th>
+                        <th class="px-3 py-3 text-xs font-semibold uppercase tracking-wider">Tipo</th>
+                        <th class="px-3 py-3 text-xs font-semibold uppercase tracking-wider">Compañía</th>
+                        <th class="px-3 py-3 text-xs font-semibold uppercase tracking-wider">Estado</th>
+                        <th class="px-3 py-3 text-xs font-semibold uppercase tracking-wider bg-indigo-700" colspan="5">Fechas de Gestión</th>
+                        <th class="px-3 py-3 text-xs font-semibold uppercase tracking-wider bg-indigo-800" colspan="4">Días Entre Hitos</th>
+                        <th class="px-3 py-3 text-xs font-semibold uppercase tracking-wider bg-emerald-600" colspan="3">Montos</th>
+                    </tr>
+                    <tr class="bg-slate-100 border-b border-slate-200">
+                        <th class="px-3 py-2 text-xs text-slate-600"></th>
+                        <th class="px-3 py-2 text-xs text-slate-600"></th>
+                        <th class="px-3 py-2 text-xs text-slate-600"></th>
+                        <th class="px-3 py-2 text-xs text-slate-600"></th>
+                        <!-- Fechas -->
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-indigo-50">Registro</th>
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-indigo-50">Envío</th>
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-indigo-50">Respuesta</th>
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-indigo-50">Liquidación</th>
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-indigo-50">Pago</th>
+                        <!-- Días -->
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-purple-50">→ Envío</th>
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-purple-50">→ Resp.</th>
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-purple-50">→ Pago</th>
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-purple-50 font-bold">Total</th>
+                        <!-- Montos -->
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-emerald-50">Estimado</th>
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-emerald-50">Deducible</th>
+                        <th class="px-2 py-2 text-xs text-slate-600 bg-emerald-50">Pagado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for siniestro in datos.detalle_contadora %}
+                    <tr class="hover:bg-slate-50/50 {% if siniestro.estado_raw == 'liquidado' or siniestro.estado_raw == 'cerrado' %}bg-emerald-50/30{% elif siniestro.estado_raw == 'rechazado' %}bg-red-50/30{% endif %}">
+                        <td class="px-3 py-3 font-medium text-slate-800 text-sm">
+                            <a href="{% url 'siniestro_detalle' siniestro.id %}" class="text-indigo-600 hover:text-indigo-800 hover:underline">
+                                {{ siniestro.numero_siniestro }}
+                            </a>
+                        </td>
+                        <td class="px-3 py-3 text-xs text-slate-600">{{ siniestro.tipo }}</td>
+                        <td class="px-3 py-3 text-xs text-slate-600">{{ siniestro.compania|truncatechars:15 }}</td>
+                        <td class="px-3 py-3">
+                            <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold
+                                {% if siniestro.estado_raw == 'liquidado' or siniestro.estado_raw == 'cerrado' %}bg-emerald-100 text-emerald-700
+                                {% elif siniestro.estado_raw == 'registrado' %}bg-amber-100 text-amber-700
+                                {% elif siniestro.estado_raw == 'enviado_aseguradora' %}bg-blue-100 text-blue-700
+                                {% elif siniestro.estado_raw == 'rechazado' %}bg-red-100 text-red-700
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ siniestro.estado }}
+                            </span>
+                        </td>
+                        <!-- Fechas -->
+                        <td class="px-2 py-3 text-xs text-slate-600 bg-indigo-50/50">{{ siniestro.fecha_registro }}</td>
+                        <td class="px-2 py-3 text-xs text-slate-600 bg-indigo-50/50">{{ siniestro.fecha_envio }}</td>
+                        <td class="px-2 py-3 text-xs text-slate-600 bg-indigo-50/50">{{ siniestro.fecha_respuesta }}</td>
+                        <td class="px-2 py-3 text-xs text-slate-600 bg-indigo-50/50">{{ siniestro.fecha_liquidacion }}</td>
+                        <td class="px-2 py-3 text-xs font-medium {% if siniestro.fecha_pago != '-' %}text-emerald-600{% else %}text-slate-400{% endif %} bg-indigo-50/50">
+                            {{ siniestro.fecha_pago }}
+                        </td>
+                        <!-- Días entre hitos -->
+                        <td class="px-2 py-3 text-xs bg-purple-50/50">
+                            {% if siniestro.dias_hasta_envio is not None %}
+                                <span class="{% if siniestro.dias_hasta_envio <= 3 %}text-emerald-600{% elif siniestro.dias_hasta_envio <= 7 %}text-blue-600{% else %}text-amber-600{% endif %}">
+                                    {{ siniestro.dias_hasta_envio }}d
+                                </span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="px-2 py-3 text-xs bg-purple-50/50">
+                            {% if siniestro.dias_envio_respuesta is not None %}
+                                <span class="{% if siniestro.dias_envio_respuesta <= 5 %}text-emerald-600{% elif siniestro.dias_envio_respuesta <= 15 %}text-blue-600{% else %}text-amber-600{% endif %}">
+                                    {{ siniestro.dias_envio_respuesta }}d
+                                </span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="px-2 py-3 text-xs bg-purple-50/50">
+                            {% if siniestro.dias_respuesta_pago is not None %}
+                                <span class="{% if siniestro.dias_respuesta_pago <= 3 %}text-emerald-600{% elif siniestro.dias_respuesta_pago <= 10 %}text-blue-600{% else %}text-amber-600{% endif %}">
+                                    {{ siniestro.dias_respuesta_pago }}d
+                                </span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="px-2 py-3 text-xs font-bold bg-purple-50/50">
+                            <span class="inline-flex items-center justify-center w-12 px-2 py-1 rounded-lg
+                                {% if siniestro.dias_total < 15 %}bg-emerald-100 text-emerald-700
+                                {% elif siniestro.dias_total < 30 %}bg-blue-100 text-blue-700
+                                {% elif siniestro.dias_total < 60 %}bg-amber-100 text-amber-700
+                                {% else %}bg-red-100 text-red-700{% endif %}">
+                                {{ siniestro.dias_total }}
+                            </span>
+                        </td>
+                        <!-- Montos -->
+                        <td class="px-2 py-3 text-xs text-slate-700 bg-emerald-50/50">${{ siniestro.monto_estimado|floatformat:0 }}</td>
+                        <td class="px-2 py-3 text-xs text-amber-600 bg-emerald-50/50">
+                            {% if siniestro.deducible > 0 %}-${{ siniestro.deducible|floatformat:0 }}{% else %}-{% endif %}
+                        </td>
+                        <td class="px-2 py-3 text-xs font-semibold bg-emerald-50/50 {% if siniestro.valor_pagado > 0 %}text-emerald-600{% else %}text-slate-400{% endif %}">
+                            {% if siniestro.valor_pagado > 0 %}${{ siniestro.valor_pagado|floatformat:0 }}{% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="16" class="px-4 py-12 text-center text-slate-500">No hay datos para mostrar</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Leyenda de la tabla -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50">
+            <div class="flex flex-wrap items-center justify-center gap-6 text-xs text-slate-600">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                    <span>Pagado/Cerrado</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                    <span>En Proceso</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                    <span>Pendiente</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                    <span>Requiere Atención</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

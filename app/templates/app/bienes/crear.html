@@ -1,0 +1,272 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Nuevo Bien Asegurado{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="{% url 'bienes_lista' %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+            <i class="fas fa-arrow-left text-slate-600"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Nuevo Bien Asegurado</h1>
+            <p class="text-slate-500 mt-1">Registra un nuevo bien en el inventario</p>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="bg-white rounded-xl shadow-card p-6">
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Identificación -->
+            <div>
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Identificación del Bien</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Código del Bien <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.codigo_bien }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Nombre del Bien <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.nombre }}
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Descripción
+                        </label>
+                        {{ form.descripcion }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Categoría
+                        </label>
+                        {{ form.categoria }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Grupo de Bienes
+                        </label>
+                        {{ form.grupo_bienes }}
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-slate-200">
+
+            <!-- Relaciones -->
+            <div>
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Póliza y Clasificación</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Póliza <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.poliza }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Subgrupo de Ramo <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.subgrupo_ramo }}
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-slate-200">
+
+            <!-- Detalles Técnicos -->
+            <div>
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Detalles Técnicos</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Marca
+                        </label>
+                        {{ form.marca }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Modelo
+                        </label>
+                        {{ form.modelo }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Número de Serie
+                        </label>
+                        {{ form.serie }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Código Activo Fijo
+                        </label>
+                        {{ form.codigo_activo }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Año de Fabricación
+                        </label>
+                        {{ form.anio_fabricacion }}
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-slate-200">
+
+            <!-- Ubicación -->
+            <div>
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Ubicación</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Ubicación
+                        </label>
+                        {{ form.ubicacion }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Edificio
+                        </label>
+                        {{ form.edificio }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Piso
+                        </label>
+                        {{ form.piso }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Departamento
+                        </label>
+                        {{ form.departamento }}
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-slate-200">
+
+            <!-- Valores Financieros -->
+            <div>
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Valores Financieros</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Valor de Compra
+                        </label>
+                        {{ form.valor_compra }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Valor Actual
+                        </label>
+                        {{ form.valor_actual }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Valor Asegurado <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.valor_asegurado }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Valor Comercial
+                        </label>
+                        {{ form.valor_comercial }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Fecha de Adquisición
+                        </label>
+                        {{ form.fecha_adquisicion }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Vencimiento Garantía
+                        </label>
+                        {{ form.fecha_garantia }}
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-slate-200">
+
+            <!-- Estado y Asignación -->
+            <div>
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Estado y Asignación</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Estado <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.estado }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Condición <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.condicion }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Responsable/Custodio
+                        </label>
+                        {{ form.responsable_custodio }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Imagen del Bien
+                        </label>
+                        {{ form.imagen }}
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Observaciones
+                        </label>
+                        {{ form.observaciones }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                <a href="{% url 'bienes_lista' %}"
+                   class="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                    <i class="fas fa-save mr-2"></i>
+                    Crear Bien
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

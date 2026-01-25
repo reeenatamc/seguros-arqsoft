@@ -1,0 +1,404 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Crear Póliza{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="{% url 'polizas_lista' %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+            <i class="fas fa-arrow-left text-slate-600"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Crear Nueva Póliza</h1>
+            <p class="text-slate-500 mt-1">Registra una nueva póliza con desglose por ramos</p>
+        </div>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Datos Generales -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-file-contract text-brand-500 mr-2"></i>
+                Datos Generales de la Póliza
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Número de Póliza <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.numero_poliza }}
+                    {% if form.numero_poliza.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.numero_poliza.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Compañía Aseguradora <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <div class="flex-1">{{ form.compania_aseguradora }}</div>
+                        <a href="{% url 'aseguradora_crear' %}?next={% url 'poliza_crear' %}" target="_blank"
+                           class="px-3 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition flex items-center"
+                           title="Crear nueva compañía (abre en nueva pestaña)">
+                            <i class="fas fa-plus"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Corredor de Seguros <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <div class="flex-1">{{ form.corredor_seguros }}</div>
+                        <a href="{% url 'corredor_crear' %}?next={% url 'poliza_crear' %}" target="_blank"
+                           class="px-3 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition flex items-center"
+                           title="Crear nuevo corredor (abre en nueva pestaña)" id="btn-crear-corredor">
+                            <i class="fas fa-plus"></i>
+                        </a>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500" id="corredor-hint">Primero seleccione una compañía aseguradora</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Tipo de Póliza
+                    </label>
+                    <div class="px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-700">
+                        <i class="fas fa-tag text-brand-500 mr-2"></i>
+                        Ramos Generales
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">Asignado automáticamente</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Grupo de Ramo <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <div class="flex-1">{{ form.grupo_ramo }}</div>
+                        <a href="{% url 'ramo_crear' %}?next={% url 'poliza_crear' %}" target="_blank"
+                           class="px-3 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition flex items-center"
+                           title="Crear nuevo grupo de ramo (abre en nueva pestaña)">
+                            <i class="fas fa-plus"></i>
+                        </a>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">Categoría de la póliza (Vehículos, Incendio, etc.)</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Suma Asegurada Total <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.suma_asegurada }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Prima Neta
+                    </label>
+                    {{ form.prima_neta }}
+                    <p class="mt-1 text-xs text-slate-500">Costo del seguro sin impuestos</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Prima Total
+                    </label>
+                    {{ form.prima_total }}
+                    <p class="mt-1 text-xs text-slate-500">Prima + IVA + contribuciones</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Estado
+                    </label>
+                    {{ form.estado }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Fecha de Inicio <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.fecha_inicio }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Fecha de Fin <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.fecha_fin }}
+                </div>
+
+                <div class="flex items-center pt-6">
+                    <div class="flex items-center h-5">
+                        {{ form.es_gran_contribuyente }}
+                    </div>
+                    <label class="ml-3 text-sm text-slate-700">
+                        Es Gran Contribuyente
+                        <span class="text-xs text-slate-400 block">Aplica retenciones automáticas</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Deducible -->
+            <div class="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <h3 class="text-sm font-semibold text-amber-800 mb-3">
+                    <i class="fas fa-hand-holding-dollar mr-2"></i>Deducible del Contrato
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-amber-700 mb-1">Deducible Fijo ($)</label>
+                        {{ form.deducible }}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-amber-700 mb-1">O Porcentaje (%)</label>
+                        {{ form.porcentaje_deducible }}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-amber-700 mb-1">Mínimo si usa %</label>
+                        {{ form.deducible_minimo }}
+                    </div>
+                </div>
+                <p class="mt-2 text-xs text-amber-600">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    El deducible es el monto que asume el asegurado en cada siniestro. 
+                    Se aplica el mayor entre: monto fijo o (% del siniestro con mínimo).
+                </p>
+            </div>
+
+            <div class="mt-6">
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Coberturas
+                </label>
+                {{ form.coberturas }}
+            </div>
+
+            <div class="mt-6">
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Observaciones
+                </label>
+                {{ form.observaciones }}
+            </div>
+        </div>
+
+        <!-- Desglose por Ramos -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="fas fa-layer-group text-brand-500 mr-2"></i>
+                    Desglose por Ramos
+                </h2>
+                <button type="button" id="add-ramo-btn"
+                        class="inline-flex items-center px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg text-sm transition">
+                    <i class="fas fa-plus mr-1.5"></i>
+                    Agregar Ramo
+                </button>
+            </div>
+
+            {{ detalles_formset.management_form }}
+
+            <div id="ramos-container" class="space-y-4">
+                {% for form_detalle in detalles_formset %}
+                <div class="ramo-form border border-slate-200 rounded-lg p-4 {% if forloop.first %}{% else %}mt-4{% endif %}">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="font-medium text-slate-700">Ramo #<span class="ramo-number">{{ forloop.counter }}</span></span>
+                        <button type="button" class="remove-ramo-btn text-red-500 hover:text-red-700">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Grupo de Ramo</label>
+                            {{ form_detalle.grupo_ramo }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">N° Factura</label>
+                            {{ form_detalle.numero_factura }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Suma Asegurada</label>
+                            {{ form_detalle.suma_asegurada }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Prima</label>
+                            {{ form_detalle.total_prima }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Emisión</label>
+                            {{ form_detalle.emision }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Doc. Contable</label>
+                            {{ form_detalle.documento_contable }}
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Observaciones</label>
+                            {{ form_detalle.observaciones }}
+                        </div>
+                    </div>
+
+                    {% if form_detalle.instance.pk %}
+                    {{ form_detalle.DELETE }}
+                    {% endif %}
+                    {{ form_detalle.id }}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-4 p-4 bg-slate-50 rounded-lg">
+                <p class="text-sm text-slate-600">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Los valores de contribuciones, IVA y retenciones se calcularán automáticamente al guardar.
+                </p>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex justify-end gap-3">
+            <a href="{% url 'polizas_lista' %}"
+               class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                <i class="fas fa-save mr-2"></i>
+                Crear Póliza
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // =============================================
+        // Dependencia: Compañía -> Corredor
+        // =============================================
+        const companiaSelect = document.getElementById('id_compania_aseguradora');
+        const corredorSelect = document.getElementById('id_corredor_seguros');
+        const corredorHint = document.getElementById('corredor-hint');
+        const btnCrearCorredor = document.getElementById('btn-crear-corredor');
+        
+        // Inicializar estado del corredor
+        function initCorredorState() {
+            if (!companiaSelect.value) {
+                corredorSelect.disabled = true;
+                corredorSelect.innerHTML = '<option value="">-- Seleccione primero una compañía --</option>';
+                if (corredorHint) corredorHint.style.display = 'block';
+            } else {
+                cargarCorredores(companiaSelect.value);
+            }
+        }
+        
+        // Cargar corredores de una compañía
+        function cargarCorredores(companiaId) {
+            if (!companiaId) {
+                corredorSelect.disabled = true;
+                corredorSelect.innerHTML = '<option value="">-- Seleccione primero una compañía --</option>';
+                if (corredorHint) corredorHint.style.display = 'block';
+                return;
+            }
+            
+            corredorSelect.disabled = true;
+            corredorSelect.innerHTML = '<option value="">Cargando corredores...</option>';
+            
+            fetch(`{% url 'api_corredores_por_compania' %}?compania_id=${companiaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    corredorSelect.innerHTML = '<option value="">-- Seleccione un corredor --</option>';
+                    
+                    if (data.corredores.length === 0) {
+                        corredorSelect.innerHTML = '<option value="">-- No hay corredores para esta compañía --</option>';
+                        if (corredorHint) {
+                            corredorHint.textContent = 'No hay corredores registrados para esta compañía. Cree uno nuevo.';
+                            corredorHint.style.display = 'block';
+                        }
+                    } else {
+                        data.corredores.forEach(corredor => {
+                            const option = new Option(corredor.nombre, corredor.id);
+                            corredorSelect.add(option);
+                        });
+                        if (corredorHint) corredorHint.style.display = 'none';
+                    }
+                    
+                    corredorSelect.disabled = false;
+                    
+                    // Actualizar link de crear corredor para que incluya la compañía
+                    if (btnCrearCorredor) {
+                        const baseUrl = '{% url "corredor_crear" %}';
+                        btnCrearCorredor.href = `${baseUrl}?next={% url 'poliza_crear' %}&compania_id=${companiaId}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando corredores:', error);
+                    corredorSelect.innerHTML = '<option value="">Error al cargar</option>';
+                    corredorSelect.disabled = false;
+                });
+        }
+        
+        // Evento de cambio de compañía
+        companiaSelect.addEventListener('change', function() {
+            cargarCorredores(this.value);
+        });
+        
+        // Inicializar
+        initCorredorState();
+        
+        // =============================================
+        // Manejar formset dinámico de ramos
+        // =============================================
+        const container = document.getElementById('ramos-container');
+        const addBtn = document.getElementById('add-ramo-btn');
+        const totalForms = document.getElementById('id_detalles_ramo-TOTAL_FORMS');
+
+        function addRamoForm() {
+            const formCount = parseInt(totalForms.value);
+            const emptyForm = container.querySelector('.ramo-form');
+            if (!emptyForm) return;
+
+            const newForm = emptyForm.cloneNode(true);
+
+            newForm.innerHTML = newForm.innerHTML.replace(/-\d+-/g, `-${formCount}-`);
+            newForm.innerHTML = newForm.innerHTML.replace(/_\d+_/g, `_${formCount}_`);
+
+            newForm.querySelectorAll('input, select, textarea').forEach(el => {
+                if (el.type !== 'hidden') {
+                    el.value = '';
+                }
+            });
+
+            newForm.querySelector('.ramo-number').textContent = formCount + 1;
+
+            container.appendChild(newForm);
+            totalForms.value = formCount + 1;
+
+            attachRemoveHandler(newForm.querySelector('.remove-ramo-btn'));
+        }
+
+        function attachRemoveHandler(btn) {
+            if (!btn) return;
+            btn.addEventListener('click', function() {
+                const form = this.closest('.ramo-form');
+                const deleteInput = form.querySelector('input[name$="-DELETE"]');
+                if (deleteInput) {
+                    deleteInput.checked = true;
+                    form.style.display = 'none';
+                } else {
+                    form.remove();
+                }
+            });
+        }
+
+        addBtn.addEventListener('click', addRamoForm);
+        document.querySelectorAll('.remove-ramo-btn').forEach(attachRemoveHandler);
+    });
+</script>
+{% endblock %}

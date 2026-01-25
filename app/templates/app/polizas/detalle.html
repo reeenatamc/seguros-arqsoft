@@ -1,0 +1,270 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Póliza {{ poliza.numero_poliza }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'polizas_lista' %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+                <i class="fas fa-arrow-left text-slate-600"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Póliza {{ poliza.numero_poliza }}</h1>
+                <p class="text-slate-500 mt-1">{{ poliza.compania_aseguradora.nombre }}</p>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'poliza_editar' poliza.pk %}"
+               class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                <i class="fas fa-edit mr-2"></i>
+                Editar
+            </a>
+        </div>
+    </div>
+
+    <!-- Información General -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Datos Principales -->
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-info-circle text-brand-500 mr-2"></i>
+                Información General
+            </h2>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                    <span class="text-xs text-slate-500 uppercase">Tipo de Póliza</span>
+                    <p class="font-medium text-slate-800">{{ poliza.tipo_poliza.nombre }}</p>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-500 uppercase">Corredor</span>
+                    <p class="font-medium text-slate-800">{{ poliza.corredor_seguros.nombre }}</p>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-500 uppercase">Estado</span>
+                    <p class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                        {% if poliza.estado == 'vigente' %}bg-emerald-100 text-emerald-800
+                        {% elif poliza.estado == 'por_vencer' %}bg-amber-100 text-amber-800
+                        {% elif poliza.estado == 'vencida' %}bg-red-100 text-red-800
+                        {% else %}bg-slate-100 text-slate-600{% endif %}">
+                        {{ poliza.get_estado_display }}
+                    </p>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-500 uppercase">Vigencia</span>
+                    <p class="font-medium text-slate-800">
+                        {{ poliza.fecha_inicio|date:"d/m/Y" }} - {{ poliza.fecha_fin|date:"d/m/Y" }}
+                    </p>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-500 uppercase">Suma Asegurada</span>
+                    <p class="font-bold text-brand-600">${{ poliza.suma_asegurada|floatformat:2 }}</p>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-500 uppercase">Gran Contribuyente</span>
+                    <p class="font-medium text-slate-800">
+                        {% if poliza.es_gran_contribuyente %}
+                        <i class="fas fa-check-circle text-emerald-500"></i> Sí
+                        {% else %}
+                        <i class="fas fa-times-circle text-slate-400"></i> No
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            {% if poliza.coberturas %}
+            <div class="mt-6 pt-4 border-t border-slate-100">
+                <span class="text-xs text-slate-500 uppercase">Coberturas</span>
+                <p class="mt-1 text-slate-700 whitespace-pre-line">{{ poliza.coberturas }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Resumen Financiero -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-calculator text-brand-500 mr-2"></i>
+                Resumen por Ramos
+            </h2>
+
+            <div class="space-y-3">
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-600">Cantidad de Ramos</span>
+                    <span class="font-bold text-slate-800">{{ poliza.cantidad_ramos }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-600">Suma Asegurada Total</span>
+                    <span class="font-bold text-brand-600">${{ poliza.total_suma_asegurada_ramos|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-600">Prima Total</span>
+                    <span class="font-bold text-slate-800">${{ poliza.total_prima_ramos|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-600">Total Facturado</span>
+                    <span class="font-bold text-slate-800">${{ poliza.total_facturado_ramos|floatformat:2 }}</span>
+                </div>
+                {% if poliza.es_gran_contribuyente %}
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-600">Total Retenciones</span>
+                    <span class="font-bold text-red-600">-${{ poliza.total_retenciones_ramos|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                <div class="flex justify-between items-center py-2 bg-brand-50 -mx-2 px-2 rounded">
+                    <span class="font-semibold text-brand-700">Valor a Pagar</span>
+                    <span class="font-bold text-brand-700 text-lg">${{ poliza.total_valor_por_pagar_ramos|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Desglose por Ramos -->
+    <div class="bg-white rounded-xl shadow-card overflow-hidden">
+        <div class="p-6 border-b border-slate-100">
+            <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                <i class="fas fa-layer-group text-brand-500 mr-2"></i>
+                Desglose por Ramos
+            </h2>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-slate-600 whitespace-nowrap">RAMO</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-slate-600 whitespace-nowrap">N° FACTURA</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-slate-600 whitespace-nowrap">DOC. CONTABLE</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-slate-600 whitespace-nowrap">N° PÓLIZA</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-slate-600 whitespace-nowrap">SUMA ASEGURADA</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-slate-600 whitespace-nowrap">TOTAL PRIMA</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-slate-600 whitespace-nowrap">CONT.SUP.BCO</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-slate-600 whitespace-nowrap">EMISIÓN</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-slate-600 whitespace-nowrap">SEG.CAMPESINO</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-slate-600 whitespace-nowrap">BASE IMPONIBLE</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-slate-600 whitespace-nowrap">IVA 15%</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-slate-600 whitespace-nowrap">TOTAL FACTURADO</th>
+                        {% if poliza.es_gran_contribuyente %}
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-slate-600 whitespace-nowrap">RETENCIÓN</th>
+                        {% endif %}
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-slate-600 whitespace-nowrap">VALOR POR PAGAR</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for detalle in detalles_ramo %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-3 py-2.5 whitespace-nowrap">
+                            <span class="font-medium text-slate-800">{{ detalle.ramo.nombre }}</span>
+                        </td>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-slate-600">{{ detalle.numero_factura|default:"-" }}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-slate-600">{{ detalle.documento_contable|default:"-" }}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-slate-600">{{ poliza.numero_poliza }}</td>
+                        <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap">${{ detalle.suma_asegurada|floatformat:2 }}</td>
+                        <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap">${{ detalle.total_prima|floatformat:2 }}</td>
+                        <td class="px-3 py-2.5 text-right font-mono text-slate-500 whitespace-nowrap">${{ detalle.contribucion_superintendencia|floatformat:2 }}</td>
+                        <td class="px-3 py-2.5 text-right font-mono text-slate-500 whitespace-nowrap">${{ detalle.emision|floatformat:2 }}</td>
+                        <td class="px-3 py-2.5 text-right font-mono text-slate-500 whitespace-nowrap">${{ detalle.seguro_campesino|floatformat:2 }}</td>
+                        <td class="px-3 py-2.5 text-right font-mono text-slate-500 whitespace-nowrap">${{ detalle.base_imponible|floatformat:2 }}</td>
+                        <td class="px-3 py-2.5 text-right font-mono text-slate-500 whitespace-nowrap">${{ detalle.iva|floatformat:2 }}</td>
+                        <td class="px-3 py-2.5 text-right font-mono font-semibold whitespace-nowrap">${{ detalle.total_facturado|floatformat:2 }}</td>
+                        {% if poliza.es_gran_contribuyente %}
+                        <td class="px-3 py-2.5 text-right font-mono text-red-600 whitespace-nowrap">-${{ detalle.retencion_iva|floatformat:2 }}</td>
+                        {% endif %}
+                        <td class="px-3 py-2.5 text-right font-mono font-bold text-brand-600 whitespace-nowrap">${{ detalle.valor_por_pagar|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if poliza.es_gran_contribuyente %}14{% else %}13{% endif %}" class="px-3 py-8 text-center text-slate-400">
+                            No hay detalles de ramos registrados
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="bg-slate-100 font-semibold border-t-2 border-slate-200">
+                    <tr>
+                        <td colspan="4" class="px-3 py-3 text-right text-slate-700">TOTALES:</td>
+                        <td class="px-3 py-3 text-right font-mono text-brand-600">${{ poliza.total_suma_asegurada_ramos|floatformat:2 }}</td>
+                        <td class="px-3 py-3 text-right font-mono text-slate-800">${{ poliza.total_prima_ramos|floatformat:2 }}</td>
+                        <td class="px-3 py-3 text-right font-mono text-slate-600">${{ poliza.total_contribucion_superintendencia|floatformat:2|default:"0.00" }}</td>
+                        <td class="px-3 py-3 text-right font-mono text-slate-600">${{ poliza.total_emision|floatformat:2|default:"0.00" }}</td>
+                        <td class="px-3 py-3 text-right font-mono text-slate-600">${{ poliza.total_seguro_campesino|floatformat:2|default:"0.00" }}</td>
+                        <td class="px-3 py-3 text-right font-mono text-slate-600">${{ poliza.total_base_imponible|floatformat:2|default:"0.00" }}</td>
+                        <td class="px-3 py-3 text-right font-mono text-slate-600">${{ poliza.total_iva|floatformat:2|default:"0.00" }}</td>
+                        <td class="px-3 py-3 text-right font-mono font-semibold text-slate-800">${{ poliza.total_facturado_ramos|floatformat:2 }}</td>
+                        {% if poliza.es_gran_contribuyente %}
+                        <td class="px-3 py-3 text-right font-mono text-red-600">-${{ poliza.total_retenciones_ramos|floatformat:2 }}</td>
+                        {% endif %}
+                        <td class="px-3 py-3 text-right font-mono font-bold text-brand-600 text-base">${{ poliza.total_valor_por_pagar_ramos|floatformat:2 }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- Siniestros y Facturas Relacionados -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Siniestros -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>
+                Siniestros Recientes
+            </h2>
+
+            {% if siniestros %}
+            <div class="space-y-3">
+                {% for siniestro in siniestros %}
+                <a href="{% url 'siniestro_detalle' siniestro.pk %}" class="block p-3 rounded-lg hover:bg-slate-50 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-medium text-slate-800">{{ siniestro.numero_siniestro }}</span>
+                            <span class="text-sm text-slate-500 block">{{ siniestro.bien_nombre }}</span>
+                        </div>
+                        <span class="text-xs px-2 py-0.5 rounded-full
+                            {% if siniestro.estado == 'liquidado' %}bg-emerald-100 text-emerald-700
+                            {% elif siniestro.estado == 'registrado' %}bg-blue-100 text-blue-700
+                            {% else %}bg-amber-100 text-amber-700{% endif %}">
+                            {{ siniestro.get_estado_display }}
+                        </span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-slate-400 text-center py-4">No hay siniestros registrados</p>
+            {% endif %}
+        </div>
+
+        <!-- Facturas -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-file-invoice-dollar text-emerald-500 mr-2"></i>
+                Facturas Recientes
+            </h2>
+
+            {% if facturas %}
+            <div class="space-y-3">
+                {% for factura in facturas %}
+                <div class="p-3 rounded-lg hover:bg-slate-50 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-medium text-slate-800">{{ factura.numero_factura }}</span>
+                            <span class="text-sm text-slate-500 block">${{ factura.monto_total|floatformat:2 }}</span>
+                        </div>
+                        <span class="text-xs px-2 py-0.5 rounded-full
+                            {% if factura.estado == 'pagada' %}bg-emerald-100 text-emerald-700
+                            {% elif factura.estado == 'pendiente' %}bg-amber-100 text-amber-700
+                            {% else %}bg-red-100 text-red-700{% endif %}">
+                            {{ factura.get_estado_display }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-slate-400 text-center py-4">No hay facturas registradas</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

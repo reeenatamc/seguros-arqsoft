@@ -1,0 +1,617 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Siniestro {{ siniestro.numero_siniestro }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'siniestros_lista' %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+                <i class="fas fa-arrow-left text-slate-600"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">{{ siniestro.numero_siniestro }}</h1>
+                <p class="text-slate-500 mt-1">{{ siniestro.bien_asegurado.nombre|default:siniestro.bien_nombre|default:"-" }}</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <!-- Acciones principales del flujo de trabajo -->
+            {% if siniestro.estado == 'registrado' %}
+            <form method="post" action="{% url 'siniestro_notificar_broker' siniestro.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-sm">
+                    <i class="fas fa-paper-plane mr-2"></i>
+                    Notificar Broker
+                </button>
+            </form>
+            {% endif %}
+            
+            {% if checklist_completo and siniestro.estado in 'registrado,documentacion_pendiente' %}
+            <form method="post" action="{% url 'siniestro_enviar_aseguradora' siniestro.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shadow-sm">
+                    <i class="fas fa-upload mr-2"></i>
+                    Enviar a Aseguradora
+                </button>
+            </form>
+            {% endif %}
+            
+            <a href="{% url 'siniestro_descargar_carta' siniestro.pk %}"
+               class="inline-flex items-center px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-sm">
+                <i class="fas fa-file-word mr-2"></i>
+                Carta Formal
+            </a>
+            <a href="{% url 'siniestro_descargar_recibo' siniestro.pk %}"
+               class="inline-flex items-center px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-sm">
+                <i class="fas fa-receipt mr-2"></i>
+                Recibo
+            </a>
+            <a href="{% url 'siniestro_editar' siniestro.pk %}"
+               class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                <i class="fas fa-edit mr-2"></i>
+                Editar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Barra de Progreso del Estado -->
+    <div class="bg-white rounded-xl shadow-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-slate-800">Progreso del Siniestro</h2>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                {% if siniestro.estado == 'liquidado' or siniestro.estado == 'cerrado' %}bg-emerald-100 text-emerald-800
+                {% elif siniestro.estado == 'registrado' %}bg-blue-100 text-blue-800
+                {% elif siniestro.estado == 'rechazado' %}bg-red-100 text-red-800
+                {% else %}bg-amber-100 text-amber-800{% endif %}">
+                {{ siniestro.get_estado_display }}
+            </span>
+        </div>
+        
+        <div class="relative">
+            <div class="flex items-center justify-between">
+                <!-- Estado 1: Registrado -->
+                <div class="flex flex-col items-center flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                        {% if estado_index >= 1 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
+                        {% if estado_index == 1 %}ring-4 ring-emerald-100{% endif %}">
+                        {% if estado_index > 1 %}<i class="fas fa-check"></i>{% else %}1{% endif %}
+                    </div>
+                    <span class="text-xs text-slate-600 mt-2 text-center">Registrado</span>
+                </div>
+                <div class="flex-1 h-1 mx-1 rounded {% if estado_index > 1 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
+                
+                <!-- Estado 2: Documentación -->
+                <div class="flex flex-col items-center flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                        {% if estado_index >= 2 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
+                        {% if estado_index == 2 %}ring-4 ring-emerald-100{% endif %}">
+                        {% if estado_index > 2 %}<i class="fas fa-check"></i>{% else %}2{% endif %}
+                    </div>
+                    <span class="text-xs text-slate-600 mt-2 text-center">Documentación</span>
+                </div>
+                <div class="flex-1 h-1 mx-1 rounded {% if estado_index > 2 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
+                
+                <!-- Estado 3: Enviado -->
+                <div class="flex flex-col items-center flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                        {% if estado_index >= 3 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
+                        {% if estado_index == 3 %}ring-4 ring-emerald-100{% endif %}">
+                        {% if estado_index > 3 %}<i class="fas fa-check"></i>{% else %}3{% endif %}
+                    </div>
+                    <span class="text-xs text-slate-600 mt-2 text-center">Enviado</span>
+                </div>
+                <div class="flex-1 h-1 mx-1 rounded {% if estado_index > 3 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
+                
+                <!-- Estado 4: Evaluación -->
+                <div class="flex flex-col items-center flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                        {% if estado_index >= 4 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
+                        {% if estado_index == 4 %}ring-4 ring-emerald-100{% endif %}">
+                        {% if estado_index > 4 %}<i class="fas fa-check"></i>{% else %}4{% endif %}
+                    </div>
+                    <span class="text-xs text-slate-600 mt-2 text-center">Evaluación</span>
+                </div>
+                <div class="flex-1 h-1 mx-1 rounded {% if estado_index > 4 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
+                
+                <!-- Estado 5: Liquidado -->
+                <div class="flex flex-col items-center flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                        {% if estado_index >= 5 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
+                        {% if estado_index == 5 %}ring-4 ring-emerald-100{% endif %}">
+                        {% if estado_index > 5 %}<i class="fas fa-check"></i>{% else %}5{% endif %}
+                    </div>
+                    <span class="text-xs text-slate-600 mt-2 text-center">Liquidado</span>
+                </div>
+                <div class="flex-1 h-1 mx-1 rounded {% if estado_index > 5 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
+                
+                <!-- Estado 6: Cerrado -->
+                <div class="flex flex-col items-center flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                        {% if estado_index >= 6 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
+                        {% if estado_index == 6 %}ring-4 ring-emerald-100{% endif %}">
+                        {% if estado_index > 6 %}<i class="fas fa-check"></i>{% else %}6{% endif %}
+                    </div>
+                    <span class="text-xs text-slate-600 mt-2 text-center">Cerrado</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    {% if alertas.respuesta or alertas.responsable or alertas.deposito %}
+    <div class="space-y-2">
+        {% if alertas.respuesta %}
+        <div class="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800">
+            <i class="fas fa-clock text-amber-500"></i>
+            <span>Han pasado más de 5 días hábiles sin respuesta de la aseguradora</span>
+        </div>
+        {% endif %}
+        {% if alertas.responsable %}
+        <div class="flex items-center gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl text-orange-800">
+            <i class="fas fa-user-clock text-orange-500"></i>
+            <span>Han pasado más de 15 días - Se recomienda notificar al responsable del bien</span>
+            <form method="post" action="{% url 'siniestro_notificar_broker' siniestro.pk %}" class="ml-auto">
+                {% csrf_token %}
+                <button type="submit" class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm">
+                    Notificar
+                </button>
+            </form>
+        </div>
+        {% endif %}
+        {% if alertas.deposito %}
+        <div class="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">
+            <i class="fas fa-exclamation-triangle text-red-500"></i>
+            <span>Han pasado más de 72 horas desde la firma del recibo sin registrar el depósito</span>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Información Principal -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Datos del Siniestro -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>
+                    Información del Siniestro
+                </h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Tipo</span>
+                        <p class="font-medium text-slate-800">{{ siniestro.tipo_siniestro.get_nombre_display|default:"N/A" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Fecha del Siniestro</span>
+                        <p class="font-medium text-slate-800">{{ siniestro.fecha_siniestro|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Estado</span>
+                        <p class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                            {% if siniestro.estado == 'liquidado' %}bg-emerald-100 text-emerald-800
+                            {% elif siniestro.estado == 'registrado' %}bg-blue-100 text-blue-800
+                            {% elif siniestro.estado == 'rechazado' %}bg-red-100 text-red-800
+                            {% else %}bg-amber-100 text-amber-800{% endif %}">
+                            {{ siniestro.get_estado_display }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Ubicación</span>
+                        <p class="font-medium text-slate-800">{{ siniestro.ubicacion }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Días de Gestión</span>
+                        <p class="font-bold text-brand-600">{{ siniestro.dias_gestion }} días</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Póliza</span>
+                        <a href="{% url 'poliza_detalle' siniestro.poliza.pk %}" class="font-medium text-brand-600 hover:underline">
+                            {{ siniestro.poliza.numero_poliza }}
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <span class="text-xs text-slate-500 uppercase">Causa</span>
+                    <p class="mt-1 text-slate-700">{{ siniestro.causa }}</p>
+                </div>
+
+                <div class="mt-4">
+                    <span class="text-xs text-slate-500 uppercase">Descripción Detallada</span>
+                    <p class="mt-1 text-slate-700 whitespace-pre-line">{{ siniestro.descripcion_detallada }}</p>
+                </div>
+            </div>
+
+            <!-- Bien Afectado -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-box text-purple-500 mr-2"></i>
+                    Bien Afectado
+                </h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Nombre</span>
+                        <p class="font-medium text-slate-800">{{ siniestro.bien_asegurado.nombre|default:siniestro.bien_nombre|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Marca</span>
+                        <p class="font-medium text-slate-800">{{ siniestro.bien_asegurado.marca|default:siniestro.bien_marca|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Modelo</span>
+                        <p class="font-medium text-slate-800">{{ siniestro.bien_asegurado.modelo|default:siniestro.bien_modelo|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Serie</span>
+                        <p class="font-medium text-slate-800">{{ siniestro.bien_asegurado.serie|default:siniestro.bien_serie|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Código Activo</span>
+                        <p class="font-medium text-slate-800">{{ siniestro.bien_asegurado.codigo_activo|default:siniestro.bien_codigo_activo|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Responsable</span>
+                        <p class="font-medium text-slate-800">{{ siniestro.responsable_custodio.nombre|default:"-" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-history text-blue-500 mr-2"></i>
+                    Timeline de Gestión
+                </h2>
+
+                <div class="relative">
+                    <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+
+                    <div class="space-y-6">
+                        {% for evento in timeline %}
+                        <div class="relative flex items-start gap-4 pl-10">
+                            <div class="absolute left-0 w-8 h-8 rounded-full flex items-center justify-center
+                                {% if evento.tipo == 'pago' %}bg-emerald-100 text-emerald-600
+                                {% elif evento.tipo == 'registro' %}bg-blue-100 text-blue-600
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                <i class="fas fa-{{ evento.icono }} text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-slate-800">{{ evento.titulo }}</p>
+                                <p class="text-sm text-slate-500">{{ evento.fecha|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-slate-400 text-center py-4">No hay eventos en el timeline</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Valoración Financiera -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-calculator text-emerald-500 mr-2"></i>
+                    Valoración
+                </h2>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Monto Estimado</span>
+                        <span class="font-bold text-slate-800">${{ siniestro.monto_estimado|floatformat:2 }}</span>
+                    </div>
+                    {% if siniestro.valor_reclamo %}
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Valor Reclamo</span>
+                        <span class="font-semibold text-slate-800">${{ siniestro.valor_reclamo|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    {% if siniestro.deducible %}
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Deducible</span>
+                        <span class="text-red-600">-${{ siniestro.deducible|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    {% if siniestro.depreciacion %}
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Depreciación</span>
+                        <span class="text-red-600">-${{ siniestro.depreciacion|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    {% if siniestro.monto_indemnizado %}
+                    <div class="flex justify-between items-center py-2 bg-emerald-50 -mx-2 px-2 rounded">
+                        <span class="font-semibold text-emerald-700">Indemnizado</span>
+                        <span class="font-bold text-emerald-700">${{ siniestro.monto_indemnizado|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    {% if siniestro.valor_pagado %}
+                    <div class="flex justify-between items-center py-2 bg-brand-50 -mx-2 px-2 rounded">
+                        <span class="font-semibold text-brand-700">Pagado</span>
+                        <span class="font-bold text-brand-700">${{ siniestro.valor_pagado|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Checklist de Documentación -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                        <i class="fas fa-clipboard-check text-emerald-500 mr-2"></i>
+                        Checklist de Documentación
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-slate-500">
+                            {{ checklist_completados|default:0 }}/{{ checklist_total|default:0 }}
+                        </span>
+                        <div class="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-emerald-500 rounded-full transition-all" 
+                                 style="width: {{ checklist_porcentaje|default:0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if checklist %}
+                <div class="space-y-2">
+                    {% for item in checklist %}
+                    <div class="border border-slate-200 rounded-lg {% if item.completado %}bg-emerald-50 border-emerald-200{% endif %} overflow-hidden">
+                        <!-- Header compacto y clickeable -->
+                        <div class="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition" onclick="toggleChecklist({{ item.pk }})">
+                            {% if item.completado %}
+                            <div class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-check text-white text-xs"></i>
+                            </div>
+                            {% else %}
+                            <div class="w-5 h-5 rounded-full border-2 {% if item.config_item.es_obligatorio %}border-red-400{% else %}border-slate-300{% endif %} flex-shrink-0"></div>
+                            {% endif %}
+                            
+                            <span class="font-medium text-sm {% if item.completado %}text-emerald-800{% else %}text-slate-800{% endif %} flex-1">
+                                {{ item.config_item.nombre }}
+                            </span>
+                            
+                            {% if item.config_item.es_obligatorio %}
+                            <span class="text-xs px-1.5 py-0.5 bg-red-100 text-red-700 rounded">Requerido</span>
+                            {% endif %}
+                            
+                            <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform" id="chevron-{{ item.pk }}"></i>
+                        </div>
+                        
+                        <!-- Contenido colapsable -->
+                        <div id="checklist-content-{{ item.pk }}" class="hidden border-t border-slate-100 p-3 pt-2 bg-slate-50/50">
+                            <p class="text-sm text-slate-500 mb-3">{{ item.config_item.descripcion }}</p>
+                            
+                            {% if not item.completado %}
+                            <div class="flex items-center gap-2 mb-2">
+                                <button onclick="event.stopPropagation(); openUploadModal({{ item.pk }}, '{{ item.config_item.nombre|escapejs }}')"
+                                        class="inline-flex items-center px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded text-sm transition">
+                                    <i class="fas fa-upload mr-1.5"></i>
+                                    Subir documento
+                                </button>
+                                <form method="post" action="{% url 'siniestro_marcar_checklist' siniestro.pk item.pk %}" class="inline" onclick="event.stopPropagation()">
+                                    {% csrf_token %}
+                                    <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-sm transition">
+                                        <i class="fas fa-check mr-1.5"></i>
+                                        Marcar completado
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                            
+                            {% if item.completado and item.fecha_completado %}
+                            <p class="text-xs text-emerald-600">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Completado el {{ item.fecha_completado|date:"d/m/Y H:i" }}
+                                {% if item.completado_por %}por {{ item.completado_por.get_full_name|default:item.completado_por.username }}{% endif %}
+                            </p>
+                            {% endif %}
+                            
+                            {% if item.adjuntos_del_item %}
+                            <div class="mt-2 space-y-1">
+                                {% for adjunto in item.adjuntos_del_item %}
+                                <div class="flex items-center gap-2 p-2 bg-white rounded border border-slate-200 text-sm">
+                                    <i class="fas fa-file-{% if '.pdf' in adjunto.archivo.name %}pdf text-red-500{% else %}alt text-slate-400{% endif %}"></i>
+                                    <span class="text-slate-700 truncate flex-1">{{ adjunto.nombre }}</span>
+                                    <a href="{{ adjunto.archivo.url }}" target="_blank" class="text-brand-600 hover:underline" onclick="event.stopPropagation()">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if checklist_completo %}
+                <div class="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-check-circle text-emerald-500 text-xl"></i>
+                        <div>
+                            <p class="font-medium text-emerald-800">¡Documentación completa!</p>
+                            <p class="text-sm text-emerald-600">Todos los documentos obligatorios están listos. Puedes enviar a la aseguradora.</p>
+                        </div>
+                    </div>
+                </div>
+                {% elif checklist_obligatorios_pendientes %}
+                <div class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-exclamation-circle text-amber-500 text-xl"></i>
+                        <div>
+                            <p class="font-medium text-amber-800">Documentación pendiente</p>
+                            <p class="text-sm text-amber-600">Faltan {{ checklist_obligatorios_pendientes }} documento(s) obligatorio(s).</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% else %}
+                <p class="text-slate-400 text-center py-8">No hay checklist configurado para este tipo de siniestro</p>
+                {% endif %}
+            </div>
+
+            <!-- Adjuntos -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                        <i class="fas fa-paperclip text-blue-500 mr-2"></i>
+                        Documentos ({{ adjuntos|length }})
+                    </h2>
+                    <button onclick="openUploadModal(null, 'Documento General')"
+                            class="text-sm text-brand-600 hover:text-brand-700">
+                        <i class="fas fa-plus"></i> Agregar
+                    </button>
+                </div>
+
+                {% if adjuntos %}
+                <div class="space-y-2 max-h-64 overflow-y-auto">
+                    {% for adjunto in adjuntos %}
+                    <div class="flex items-center justify-between p-2 rounded hover:bg-slate-50 border border-slate-100">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <i class="fas fa-file-{% if '.pdf' in adjunto.archivo.name %}pdf text-red-500{% elif '.jpg' in adjunto.archivo.name or '.png' in adjunto.archivo.name or '.jpeg' in adjunto.archivo.name %}image text-blue-500{% else %}alt text-slate-400{% endif %} flex-shrink-0"></i>
+                            <div class="min-w-0">
+                                <span class="text-sm font-medium text-slate-800 truncate block">{{ adjunto.nombre }}</span>
+                                <span class="text-xs text-slate-500">{{ adjunto.get_tipo_adjunto_display }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            {% if adjunto.firmado %}
+                            <span class="text-xs text-emerald-600" title="Firmado"><i class="fas fa-signature"></i></span>
+                            {% elif adjunto.requiere_firma %}
+                            <form method="post" action="{% url 'adjunto_firmar' adjunto.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="text-xs text-amber-600 hover:underline">Firmar</button>
+                            </form>
+                            {% endif %}
+                            <a href="{{ adjunto.archivo.url }}" target="_blank" class="text-slate-400 hover:text-brand-600">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-slate-400 text-center py-4">No hay documentos adjuntos</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para subir archivo -->
+<div id="uploadModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-slate-800">Subir Documento</h3>
+            <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="post" action="{% url 'siniestro_subir_adjunto' siniestro.pk %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="checklist_item_id" id="checklist_item_id">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Documento para:</label>
+                    <p id="upload_item_name" class="text-brand-600 font-medium"></p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Tipo de Documento</label>
+                    <select name="tipo_adjunto" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                        <option value="carta_formal">Carta Formal</option>
+                        <option value="informe">Informe Técnico</option>
+                        <option value="proforma">Proforma</option>
+                        <option value="preexistencia">Documento de Preexistencia</option>
+                        <option value="salvamento">Acta de Salvamento</option>
+                        <option value="policia">Denuncia Policial</option>
+                        <option value="fotos">Fotografías</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre del Documento</label>
+                    <input type="text" name="nombre" required
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Archivo</label>
+                    <input type="file" name="archivo" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-brand-100 file:text-brand-700 hover:file:bg-brand-200">
+                    <p class="text-xs text-slate-500 mt-1">PDF, Word o imágenes. Máximo 10MB.</p>
+                </div>
+                
+                <div class="flex items-center gap-2" id="marcar_completado_container">
+                    <input type="checkbox" name="marcar_completado" id="marcar_completado" checked
+                           class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                    <label for="marcar_completado" class="text-sm text-slate-700">Marcar item del checklist como completado</label>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="closeUploadModal()"
+                        class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition">
+                    <i class="fas fa-upload mr-2"></i>Subir
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Toggle checklist item expand/collapse
+function toggleChecklist(itemId) {
+    const content = document.getElementById('checklist-content-' + itemId);
+    const chevron = document.getElementById('chevron-' + itemId);
+    
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        chevron.classList.add('rotate-180');
+    } else {
+        content.classList.add('hidden');
+        chevron.classList.remove('rotate-180');
+    }
+}
+
+function openUploadModal(checklistItemId, itemName) {
+    document.getElementById('checklist_item_id').value = checklistItemId || '';
+    document.getElementById('upload_item_name').textContent = itemName;
+    document.getElementById('uploadModal').classList.remove('hidden');
+    document.getElementById('uploadModal').classList.add('flex');
+    
+    // Mostrar/ocultar checkbox de marcar completado
+    const container = document.getElementById('marcar_completado_container');
+    if (checklistItemId) {
+        container.style.display = 'flex';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+function closeUploadModal() {
+    document.getElementById('uploadModal').classList.add('hidden');
+    document.getElementById('uploadModal').classList.remove('flex');
+}
+
+// Cerrar modal con Escape o clic fuera
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeUploadModal();
+});
+
+document.getElementById('uploadModal').addEventListener('click', function(e) {
+    if (e.target === this) closeUploadModal();
+});
+</script>
+{% endblock %}

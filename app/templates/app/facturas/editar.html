@@ -1,0 +1,134 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Editar Factura {{ object.numero_factura }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="{% url 'factura_detalle' object.pk %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+            <i class="fas fa-arrow-left text-slate-600"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Editar Factura</h1>
+            <p class="text-slate-500 mt-1">{{ object.numero_factura }}</p>
+        </div>
+    </div>
+
+    <!-- Formulario con cálculos en vivo -->
+    <div class="bg-white rounded-xl shadow-card p-6">
+        <form method="post" class="space-y-6" data-calc-form="factura">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Póliza <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.poliza }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Número de Factura <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.numero_factura }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Fecha de Emisión <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.fecha_emision }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Fecha de Vencimiento <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.fecha_vencimiento }}
+                </div>
+            </div>
+
+            <hr class="border-slate-200">
+
+            <div class="flex items-center gap-2 mb-2">
+                <h3 class="text-lg font-semibold text-slate-800">Montos</h3>
+                <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                    <i class="fas fa-calculator mr-1"></i>Cálculo automático
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Subtotal <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.subtotal }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        <i class="fas fa-lock text-slate-400 mr-1"></i>IVA (15%)
+                    </label>
+                    {{ form.iva }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-emerald-700 mb-2">
+                        <i class="fas fa-calculator mr-1"></i>Monto Total
+                    </label>
+                    {{ form.monto_total }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        <i class="fas fa-lock text-slate-400 mr-1"></i>Contrib. Superintendencia (3.5%)
+                    </label>
+                    {{ form.contribucion_superintendencia }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        <i class="fas fa-lock text-slate-400 mr-1"></i>Seguro Campesino (0.5%)
+                    </label>
+                    {{ form.contribucion_seguro_campesino }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Retenciones
+                    </label>
+                    {{ form.retenciones }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Descuento Pronto Pago
+                    </label>
+                    {{ form.descuento_pronto_pago }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Estado
+                    </label>
+                    {{ form.estado }}
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                <a href="{% url 'factura_detalle' object.pk %}"
+                   class="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                    <i class="fas fa-save mr-2"></i>
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

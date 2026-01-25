@@ -1,0 +1,285 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Desglose por Ramos{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-fade-in">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Desglose por Ramos</h1>
+            <p class="text-slate-500 mt-1">{{ total_resultados }} registros encontrados</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="relative">
+                <button onclick="toggleExportMenu()" data-dropdown="export" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition font-medium text-sm">
+                    <i class="fas fa-download"></i>
+                    Exportar
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div id="export-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-10">
+                    <a href="{% url 'desglose_ramos_exportar' %}?formato=excel{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition text-sm">
+                        <i class="fas fa-file-excel text-emerald-600"></i>
+                        <span>Excel (.xlsx)</span>
+                    </a>
+                    <a href="{% url 'desglose_ramos_exportar' %}?formato=csv{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition text-sm border-t border-slate-100">
+                        <i class="fas fa-file-csv text-blue-600"></i>
+                        <span>CSV (.csv)</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cards de Totales -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-shield-halved text-blue-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500">Suma Asegurada</p>
+                    <p class="text-xl font-bold text-slate-800">${{ totales.suma_asegurada|floatformat:0|default:"0" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <i class="fas fa-dollar-sign text-emerald-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500">Total Prima</p>
+                    <p class="text-xl font-bold text-slate-800">${{ totales.prima|floatformat:2|default:"0.00" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <i class="fas fa-file-invoice text-amber-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500">Total Facturado</p>
+                    <p class="text-xl font-bold text-slate-800">${{ totales.facturado|floatformat:2|default:"0.00" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-brand-100 flex items-center justify-center">
+                    <i class="fas fa-hand-holding-dollar text-brand-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500">Valor por Pagar</p>
+                    <p class="text-xl font-bold text-brand-600">${{ totales.por_pagar|floatformat:2|default:"0.00" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-4">
+        <form method="GET" class="space-y-4">
+            <!-- Primera fila de filtros -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Buscar</label>
+                    <div class="relative">
+                        <input type="text" name="q" value="{{ query }}" placeholder="N° factura, doc. contable, póliza..." 
+                               class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition">
+                        <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Compañía</label>
+                    <select name="compania" 
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                        <option value="">Todas las compañías</option>
+                        {% for c in companias %}
+                            <option value="{{ c.id }}" {% if compania_filtro == c.id|stringformat:"s" %}selected{% endif %}>{{ c.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Ramo</label>
+                    <select name="ramo" 
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                        <option value="">Todos los ramos</option>
+                        {% for r in ramos %}
+                            <option value="{{ r.id }}" {% if ramo_filtro == r.id|stringformat:"s" %}selected{% endif %}>{{ r.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Póliza</label>
+                    <select name="poliza" 
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                        <option value="">Todas las pólizas</option>
+                        {% for p in polizas_lista %}
+                            <option value="{{ p.id }}" {% if poliza_filtro == p.id|stringformat:"s" %}selected{% endif %}>{{ p.numero_poliza }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Segunda fila: Fechas -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Fecha Inicio (desde)</label>
+                    <input type="date" name="fecha_desde" value="{{ fecha_desde }}"
+                           class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Fecha Inicio (hasta)</label>
+                    <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}"
+                           class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Estado Póliza</label>
+                    <select name="estado" 
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                        <option value="">Todos los estados</option>
+                        <option value="vigente" {% if estado_filtro == 'vigente' %}selected{% endif %}>Vigentes</option>
+                        <option value="por_vencer" {% if estado_filtro == 'por_vencer' %}selected{% endif %}>Por Vencer</option>
+                        <option value="vencida" {% if estado_filtro == 'vencida' %}selected{% endif %}>Vencidas</option>
+                        <option value="cancelada" {% if estado_filtro == 'cancelada' %}selected{% endif %}>Canceladas</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition text-sm font-medium">
+                        <i class="fas fa-filter mr-2"></i>Filtrar
+                    </button>
+                    {% if query or compania_filtro or ramo_filtro or poliza_filtro or fecha_desde or fecha_hasta or estado_filtro %}
+                        <a href="{% url 'desglose_ramos_lista' %}" class="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition text-sm font-medium">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Tabla -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider min-w-[200px]">Ramo</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">N° Factura</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Doc. Contable</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">N° Póliza</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Suma Asegurada</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Total Prima</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Cont.Sup.Bco</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Emisión</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Seg.Campesino</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Base Imponible</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">IVA 15%</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Total Facturado</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Retención</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Valor por Pagar</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for detalle in detalles %}
+                    <tr class="hover:bg-slate-50/50 transition">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-2.5 min-w-[200px]">
+                                <span class="flex-shrink-0 px-1.5 py-0.5 rounded bg-brand-100 text-brand-600 font-semibold text-[10px] leading-none whitespace-nowrap">
+                                    {{ detalle.grupo_ramo.codigo|default:"---"|slice:":6" }}
+                                </span>
+                                <span class="font-medium text-slate-800 truncate">{{ detalle.grupo_ramo.nombre|default:"-" }}</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-slate-600">{{ detalle.numero_factura|default:"-" }}</td>
+                        <td class="px-4 py-3 text-slate-600">{{ detalle.documento_contable|default:"-" }}</td>
+                        <td class="px-4 py-3">
+                            <a href="{% url 'poliza_detalle' detalle.poliza.pk %}" class="text-brand-600 hover:text-brand-700 font-medium">
+                                {{ detalle.poliza.numero_poliza }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-3 text-right font-mono">${{ detalle.suma_asegurada|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono font-semibold">${{ detalle.total_prima|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-500">${{ detalle.contribucion_superintendencia|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-500">${{ detalle.emision|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-500">${{ detalle.seguro_campesino|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-500">${{ detalle.base_imponible|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-500">${{ detalle.iva|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono font-semibold">${{ detalle.total_facturado|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-red-600">
+                            {% if detalle.retencion_prima or detalle.retencion_iva %}
+                                -${{ detalle.total_retenciones|floatformat:2 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-right font-mono font-bold text-brand-600">${{ detalle.valor_por_pagar|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="14" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                                    <i class="fas fa-layer-group text-3xl text-slate-400"></i>
+                                </div>
+                                <p class="text-slate-600 font-medium">No se encontraron registros</p>
+                                <p class="text-slate-400 text-sm mt-1">Intenta ajustar los filtros de búsqueda</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% if detalles %}
+                <tfoot class="bg-slate-100 font-semibold border-t-2 border-slate-200">
+                    <tr>
+                        <td colspan="4" class="px-4 py-3 text-right text-slate-700">TOTALES:</td>
+                        <td class="px-4 py-3 text-right font-mono text-brand-600">${{ totales.suma_asegurada|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-800">${{ totales.prima|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-600">${{ totales.contribucion_super|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-600">${{ totales.emision|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-600">${{ totales.seguro_campesino|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-600">${{ totales.base_imponible|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-600">${{ totales.iva|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono font-semibold text-slate-800">${{ totales.facturado|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-red-600">-${{ totales.retenciones|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right font-mono font-bold text-brand-600 text-base">${{ totales.por_pagar|floatformat:2 }}</td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+        
+        {% include 'app/components/pagination.html' with page_obj=detalles %}
+    </div>
+</div>
+
+<script>
+function toggleExportMenu() {
+    const menu = document.getElementById('export-menu');
+    menu.classList.toggle('hidden');
+}
+
+// Cerrar menú al hacer clic fuera
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('export-menu');
+    const btn = document.querySelector('[data-dropdown="export"]');
+    if (!btn.contains(e.target) && !menu.contains(e.target)) {
+        menu.classList.add('hidden');
+    }
+});
+</script>
+{% endblock %}

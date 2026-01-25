@@ -1,0 +1,70 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center gap-4 mb-6">
+        <a href="{{ volver_url|default:'/' }}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+            <i class="fas fa-arrow-left text-slate-600"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800 flex items-center">
+                <i class="{{ icono }} text-brand-500 mr-3"></i>
+                {{ titulo }}
+            </h1>
+            {% if subtitulo %}
+            <p class="text-brand-600 font-medium mt-1">{{ subtitulo }}</p>
+            {% endif %}
+            <p class="text-slate-500 mt-1">Complete los campos requeridos</p>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="bg-white rounded-xl shadow-card p-6">
+        <form method="post" id="quickCreateForm">
+            {% csrf_token %}
+            
+            <div class="space-y-4">
+                {% for field in form %}
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        {{ field.label }}
+                        {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ field.errors.0 }}</p>
+                    {% endif %}
+                    {% if field.help_text %}
+                    <p class="mt-1 text-xs text-slate-500">{{ field.help_text }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-200">
+                <a href="{{ volver_url|default:'/' }}"
+                   class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition">
+                    <i class="fas fa-save mr-2"></i>
+                    Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Nota informativa -->
+    <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <p class="text-sm text-blue-700">
+            <i class="fas fa-info-circle mr-2"></i>
+            Después de guardar, serás redirigido automáticamente al formulario anterior. 
+            Recuerda <strong>recargar la página</strong> (F5) si el nuevo registro no aparece en el desplegable.
+        </p>
+    </div>
+</div>
+{% endblock %}

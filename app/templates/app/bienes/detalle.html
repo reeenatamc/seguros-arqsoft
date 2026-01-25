@@ -1,0 +1,273 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}{{ bien.nombre }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'bienes_lista' %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+                <i class="fas fa-arrow-left text-slate-600"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">{{ bien.nombre }}</h1>
+                <p class="text-slate-500 mt-1">{{ bien.codigo_bien }}</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'bien_editar' bien.pk %}"
+               class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+                <i class="fas fa-edit mr-2"></i>
+                Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Información Principal -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Datos Básicos -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-box text-blue-500 mr-2"></i>
+                    Información del Bien
+                </h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Código del Bien</span>
+                        <p class="font-medium text-slate-800">{{ bien.codigo_bien }}</p>
+                    </div>
+                    {% if bien.codigo_activo %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Código Activo Fijo</span>
+                        <p class="font-medium text-slate-800">{{ bien.codigo_activo }}</p>
+                    </div>
+                    {% endif %}
+                    {% if bien.categoria %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Categoría</span>
+                        <p class="font-medium text-slate-800">{{ bien.categoria }}</p>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Estado</span>
+                        <p class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                            {% if bien.estado == 'activo' %}bg-emerald-100 text-emerald-800
+                            {% elif bien.estado == 'inactivo' %}bg-amber-100 text-amber-800
+                            {% elif bien.estado == 'dado_de_baja' %}bg-red-100 text-red-800
+                            {% elif bien.estado == 'siniestrado' %}bg-orange-100 text-orange-800
+                            {% else %}bg-blue-100 text-blue-800{% endif %}">
+                            {{ bien.get_estado_display }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Condición</span>
+                        <p class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                            {% if bien.condicion == 'excelente' %}bg-emerald-100 text-emerald-800
+                            {% elif bien.condicion == 'bueno' %}bg-blue-100 text-blue-800
+                            {% elif bien.condicion == 'regular' %}bg-amber-100 text-amber-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ bien.get_condicion_display }}
+                        </p>
+                    </div>
+                    {% if bien.grupo %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Grupo</span>
+                        <a href="{% url 'grupo_bienes_detalle' bien.grupo.pk %}" class="font-medium text-brand-600 hover:underline">
+                            {{ bien.grupo.nombre }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% if bien.poliza %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Póliza</span>
+                        <a href="{% url 'poliza_detalle' bien.poliza.pk %}" class="font-medium text-brand-600 hover:underline">
+                            {{ bien.poliza.numero_poliza }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% if bien.subgrupo_ramo %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Clasificación</span>
+                        <p class="font-medium text-slate-800">{{ bien.subgrupo_ramo.nombre_completo }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if bien.descripcion %}
+                <div class="mt-4 pt-4 border-t border-slate-200">
+                    <span class="text-xs text-slate-500 uppercase">Descripción</span>
+                    <p class="text-slate-700 mt-1">{{ bien.descripcion }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Detalles Técnicos -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-cog text-slate-500 mr-2"></i>
+                    Detalles Técnicos
+                </h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {% if bien.marca %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Marca</span>
+                        <p class="font-medium text-slate-800">{{ bien.marca }}</p>
+                    </div>
+                    {% endif %}
+                    {% if bien.modelo %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Modelo</span>
+                        <p class="font-medium text-slate-800">{{ bien.modelo }}</p>
+                    </div>
+                    {% endif %}
+                    {% if bien.serie %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Serie</span>
+                        <p class="font-medium text-slate-800">{{ bien.serie }}</p>
+                    </div>
+                    {% endif %}
+                    {% if bien.anio_fabricacion %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Año Fabricación</span>
+                        <p class="font-medium text-slate-800">{{ bien.anio_fabricacion }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if not bien.marca and not bien.modelo and not bien.serie %}
+                <p class="text-slate-400 text-center py-4">No hay detalles técnicos registrados</p>
+                {% endif %}
+            </div>
+
+            <!-- Ubicación -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>
+                    Ubicación
+                </h2>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Ubicación</span>
+                        <p class="font-medium text-slate-800">{{ bien.ubicacion|default:"No especificada" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Responsable -->
+            {% if bien.responsable_custodio %}
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-user-tie text-purple-500 mr-2"></i>
+                    Responsable/Custodio
+                </h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Nombre</span>
+                        <p class="font-medium text-slate-800">{{ bien.responsable_custodio.nombre }}</p>
+                    </div>
+                    {% if bien.responsable_custodio.cargo %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Cargo</span>
+                        <p class="font-medium text-slate-800">{{ bien.responsable_custodio.cargo }}</p>
+                    </div>
+                    {% endif %}
+                    {% if bien.responsable_custodio.email %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Email</span>
+                        <p class="font-medium text-slate-800">{{ bien.responsable_custodio.email }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Valores Financieros -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-dollar-sign text-emerald-500 mr-2"></i>
+                    Valores Financieros
+                </h2>
+
+                <div class="space-y-3">
+                    {% if bien.valor_asegurado %}
+                    <div class="flex justify-between items-center py-2 bg-brand-50 -mx-2 px-2 rounded">
+                        <span class="font-semibold text-brand-700">Valor Asegurado</span>
+                        <span class="font-bold text-brand-700">${{ bien.valor_asegurado|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    {% if bien.valor_actual %}
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Valor Actual</span>
+                        <span class="font-semibold text-slate-800">${{ bien.valor_actual|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Fechas Importantes -->
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-calendar text-blue-500 mr-2"></i>
+                    Fechas Importantes
+                </h2>
+
+                <div class="space-y-3">
+                    {% if bien.fecha_adquisicion %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Fecha de Adquisición</span>
+                        <p class="font-medium text-slate-800">{{ bien.fecha_adquisicion|date:"d/m/Y" }}</p>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Fecha de Registro</span>
+                        <p class="font-medium text-slate-800">{{ bien.fecha_creacion|date:"d/m/Y" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Última Actualización</span>
+                        <p class="font-medium text-slate-800">{{ bien.fecha_actualizacion|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Siniestros -->
+            {% if bien.siniestros.exists %}
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>
+                    Siniestros ({{ bien.siniestros.count }})
+                </h2>
+                <div class="space-y-2">
+                    {% for siniestro in bien.siniestros.all|slice:":5" %}
+                    <a href="{% url 'siniestro_detalle' siniestro.pk %}" 
+                       class="block p-2 bg-slate-50 rounded hover:bg-slate-100 transition">
+                        <span class="font-medium text-slate-800">{{ siniestro.numero_siniestro }}</span>
+                        <span class="text-xs text-slate-500 ml-2">{{ siniestro.get_estado_display }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Observaciones -->
+            {% if bien.observaciones %}
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-sticky-note text-amber-500 mr-2"></i>
+                    Observaciones
+                </h2>
+                <p class="text-slate-700">{{ bien.observaciones }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
