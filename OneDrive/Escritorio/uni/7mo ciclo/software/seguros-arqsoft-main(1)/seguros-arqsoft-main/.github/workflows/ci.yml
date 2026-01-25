@@ -2,7 +2,7 @@ name: CI/CD Pipeline - Sistema de Gestión de Seguros
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, rama-samuel ]
   pull_request:
     branches: [ main, master, develop ]
 
