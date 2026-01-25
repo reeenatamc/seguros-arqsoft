@@ -1,0 +1,141 @@
+# ============================================
+# Configuración de Pre-commit Hooks
+# ============================================
+# Pre-commit ejecuta checks antes de cada commit
+# Instalación: pre-commit install
+# Ejecución manual: pre-commit run --all-files
+
+repos:
+  # ============================================
+  # Pre-commit hooks básicos
+  # ============================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # Previene commits en ramas protegidas
+      - id: no-commit-to-branch
+        args: ['--branch', 'main', '--branch', 'master']
+      
+      # Verifica archivos grandes
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      
+      # Verifica que archivos de configuración sean válidos
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-xml
+      
+      # Verifica merge conflicts
+      - id: check-merge-conflict
+      
+      # Verifica que scripts tengan shebang
+      - id: check-shebang-scripts-are-executable
+      
+      # Elimina espacios en blanco al final
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      
+      # Asegura nueva línea al final del archivo
+      - id: end-of-file-fixer
+      
+      # Previene commits de archivos privados
+      - id: detect-private-key
+      
+      # Verifica que no haya archivos con nombres en conflicto
+      - id: check-case-conflict
+      
+      # Verifica docstrings válidos
+      - id: check-docstring-first
+      
+      # Previene commits directos a main/master
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # ============================================
+  # Black - Formateador de código
+  # ============================================
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        language_version: python3.11
+        args: ['--line-length=120']
+
+  # ============================================
+  # isort - Ordenar imports
+  # ============================================
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ['--profile', 'black', '--line-length', '120']
+
+  # ============================================
+  # Flake8 - Linter
+  # ============================================
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        args: ['--max-line-length=120', '--extend-ignore=E203,W503']
+        additional_dependencies:
+          - flake8-docstrings
+          - flake8-bugbear
+          - flake8-comprehensions
+          - flake8-simplify
+
+  # ============================================
+  # Bandit - Security linter
+  # ============================================
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.6
+    hooks:
+      - id: bandit
+        args: ['-ll', '--recursive', 'app', 'seguros']
+        exclude: ^tests/
+
+  # ============================================
+  # Django específico
+  # ============================================
+  - repo: https://github.com/adamchainz/django-upgrade
+    rev: 1.16.0
+    hooks:
+      - id: django-upgrade
+        args: ['--target-version', '4.2']
+
+  # ============================================
+  # Seguridad - Check de dependencias
+  # ============================================
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.3.3
+    hooks:
+      - id: python-safety-dependencies-check
+        files: requirements.txt
+
+  # ============================================
+  # Documentación - Markdown
+  # ============================================
+  - repo: https://github.com/markdownlint/markdownlint
+    rev: v0.12.0
+    hooks:
+      - id: markdownlint
+        args: ['--fix']
+
+# ============================================
+# Configuración global
+# ============================================
+default_language_version:
+  python: python3.11
+
+# Ejecutar todos los hooks en todos los archivos
+# Útil para CI/CD
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false
