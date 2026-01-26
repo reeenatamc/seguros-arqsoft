@@ -14,15 +14,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 """
 
+import os
 from pathlib import Path
 
-import os
+from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
 
 from dotenv import load_dotenv
-
-from django.urls import reverse_lazy
-
-from django.utils.translation import gettext_lazy as _
 
 # Load environment variables from .env file
 
@@ -40,13 +38,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECRET_KEY is loaded from .env file
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production')
+SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-change-this-in-production")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
 # DEBUG is loaded from .env file (defaults to False for security)
 
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 # ALLOWED_HOSTS can be set in .env as a comma-separated list
 
@@ -56,138 +54,89 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 # If DEBUG is False, you MUST set ALLOWED_HOSTS in .env
 
-allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '')
+allowed_hosts_env = os.getenv("ALLOWED_HOSTS", "")
 
 if allowed_hosts_env:
 
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',')]
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",")]
 
 elif DEBUG:
 
     # For local development with DEBUG=True, allow all hosts
 
-    ALLOWED_HOSTS = ['*']
+    ALLOWED_HOSTS = ["*"]
 
 else:
 
     # If DEBUG=False and no ALLOWED_HOSTS is set, raise an error
 
     raise ValueError(
-
         "ALLOWED_HOSTS must be set in .env when DEBUG=False. "
-
         "Add ALLOWED_HOSTS=localhost,127.0.0.1,yourdomain.com to your .env file"
-
     )
 
 # Application definition
 
 INSTALLED_APPS = [
-
     # Third-party apps (add external packages here)
-
-    'unfold',
-
+    "unfold",
     # Django built-in apps
-
-    'django.contrib.admin',
-
-    'django.contrib.auth',
-
-    'django.contrib.contenttypes',
-
-    'django.contrib.sessions',
-
-    'django.contrib.messages',
-
-    'django.contrib.staticfiles',
-
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     # Third-party packages
-
-    'import_export',
-
-    'django_celery_beat',
-
-    'django_celery_results',
-
-    'simple_history',  # Auditoría de cambios
-
+    "import_export",
+    "django_celery_beat",
+    "django_celery_results",
+    "simple_history",  # Auditoría de cambios
     # Your custom apps go here (add your project-specific apps below this line)
-
-    'app',
-
+    "app",
 ]
 
 MIDDLEWARE = [
-
-    'django.middleware.security.SecurityMiddleware',
-
-    'django.contrib.sessions.middleware.SessionMiddleware',
-
-    'django.middleware.common.CommonMiddleware',
-
-    'django.middleware.csrf.CsrfViewMiddleware',
-
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-
-    'django.contrib.messages.middleware.MessageMiddleware',
-
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
-    'simple_history.middleware.HistoryRequestMiddleware',  # Para auditoría de cambios
-
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",  # Para auditoría de cambios
 ]
 
-ROOT_URLCONF = 'seguros.urls'
+ROOT_URLCONF = "seguros.urls"
 
 TEMPLATES = [
-
     {
-
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-
-        'DIRS': [],
-
-        'APP_DIRS': True,
-
-        'OPTIONS': {
-
-            'context_processors': [
-
-                'django.template.context_processors.debug',
-
-                'django.template.context_processors.request',
-
-                'django.contrib.auth.context_processors.auth',
-
-                'django.contrib.messages.context_processors.messages',
-
-                'app.context_processors.alertas_context',
-
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "app.context_processors.alertas_context",
             ],
-
         },
-
     },
-
 ]
 
-WSGI_APPLICATION = 'seguros.wsgi.application'
+WSGI_APPLICATION = "seguros.wsgi.application"
 
 # Database
 
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-
-    'default': {
-
-        'ENGINE': 'django.db.backends.sqlite3',
-
-        'NAME': BASE_DIR / 'db.sqlite3',
-
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
-
 }
 
 # Password validation
@@ -195,38 +144,25 @@ DATABASES = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-
     {
-
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
-
     {
-
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
-
     {
-
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
-
     {
-
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
-
 ]
 
 # Internationalization
 
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'es'  # Spanish
+LANGUAGE_CODE = "es"  # Spanish
 
 # TIME_ZONE is set to Ecuador (America/Guayaquil)
 
@@ -234,7 +170,7 @@ LANGUAGE_CODE = 'es'  # Spanish
 
 # See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a full list
 
-TIME_ZONE = 'America/Guayaquil'  # Ecuador timezone
+TIME_ZONE = "America/Guayaquil"  # Ecuador timezone
 
 USE_I18N = True
 
@@ -244,31 +180,29 @@ USE_TZ = True
 
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
-STATIC_ROOT = BASE_DIR / 'staticfiles'  # Directory where collectstatic will collect static files for deployment
+STATIC_ROOT = BASE_DIR / "staticfiles"  # Directory where collectstatic will collect static files for deployment
 
 # Additional locations of static files (if you have static files outside of apps)
 
 STATICFILES_DIRS = [
-
-    BASE_DIR / 'static',  # You can create this directory if needed
-
+    BASE_DIR / "static",  # You can create this directory if needed
 ]
 
 # Media files (User uploaded files)
 
 # https://docs.djangoproject.com/en/5.2/topics/files/
 
-MEDIA_URL = '/media/'  # URL prefix for media files
+MEDIA_URL = "/media/"  # URL prefix for media files
 
-MEDIA_ROOT = BASE_DIR / 'media'  # Directory where uploaded files will be stored
+MEDIA_ROOT = BASE_DIR / "media"  # Directory where uploaded files will be stored
 
 # Default primary key field type
 
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ==============================================================================
 
@@ -278,19 +212,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Redis as message broker and result backend
 
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
 
-CELERY_RESULT_BACKEND = 'django-db'
+CELERY_RESULT_BACKEND = "django-db"
 
-CELERY_CACHE_BACKEND = 'django-cache'
+CELERY_CACHE_BACKEND = "django-cache"
 
 # Celery configuration
 
-CELERY_ACCEPT_CONTENT = ['json']
+CELERY_ACCEPT_CONTENT = ["json"]
 
-CELERY_TASK_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = "json"
 
-CELERY_RESULT_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = "json"
 
 CELERY_TIMEZONE = TIME_ZONE
 
@@ -298,7 +232,7 @@ CELERY_ENABLE_UTC = False
 
 # Celery Beat configuration
 
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 # Task time limits (in seconds)
 
@@ -319,42 +253,38 @@ CELERY_TASK_SOFT_TIME_LIMIT = 20 * 60  # 20 minutes
 # For production, configure SMTP or AWS SES
 
 EMAIL_BACKEND = os.getenv(
-
-    'EMAIL_BACKEND',
-
-    'django.core.mail.backends.console.EmailBackend'  # Default to console for development
-
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"  # Default to console for development
 )
 
 # SMTP Configuration (if using SMTP backend)
 
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"
 
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 
 # Default email addresses
 
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'seguros@utpl.edu.ec')
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "seguros@utpl.edu.ec")
 
-SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
+SERVER_EMAIL = os.getenv("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
 
 # Site URL for links in emails
 
-SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
+SITE_URL = os.getenv("SITE_URL", "http://localhost:8000")
 
 # Login settings
 
-LOGIN_URL = '/admin/login/'
+LOGIN_URL = "/admin/login/"
 
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = "/"
 
-LOGOUT_REDIRECT_URL = '/admin/login/'
+LOGOUT_REDIRECT_URL = "/admin/login/"
 
 # ==============================================================================
 
@@ -363,104 +293,57 @@ LOGOUT_REDIRECT_URL = '/admin/login/'
 # ==============================================================================
 
 LOGGING = {
-
-    'version': 1,
-
-    'disable_existing_loggers': False,
-
-    'formatters': {
-
-        'verbose': {
-
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-
-            'style': '{',
-
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
         },
-
-        'simple': {
-
-            'format': '{levelname} {message}',
-
-            'style': '{',
-
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
         },
-
     },
-
-    'handlers': {
-
-        'console': {
-
-            'class': 'logging.StreamHandler',
-
-            'formatter': 'simple',
-
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
         },
-
-        'file': {
-
-            'class': 'logging.handlers.RotatingFileHandler',
-
-            'filename': BASE_DIR / 'logs' / 'django.log',
-
-            'maxBytes': 1024 * 1024 * 10,  # 10 MB
-
-            'backupCount': 5,
-
-            'formatter': 'verbose',
-
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": BASE_DIR / "logs" / "django.log",
+            "maxBytes": 1024 * 1024 * 10,  # 10 MB
+            "backupCount": 5,
+            "formatter": "verbose",
         },
-
     },
-
-    'loggers': {
-
-        'django': {
-
-            'handlers': ['console', 'file'],
-
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
-
-            'propagate': False,
-
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "propagate": False,
         },
-
-        'app': {
-
-            'handlers': ['console', 'file'],
-
-            'level': 'INFO',
-
-            'propagate': False,
-
+        "app": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
         },
-
-        'celery': {
-
-            'handlers': ['console', 'file'],
-
-            'level': 'INFO',
-
-            'propagate': False,
-
+        "celery": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
         },
-
     },
-
-    'root': {
-
-        'handlers': ['console'],
-
-        'level': 'INFO',
-
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
     },
-
 }
 
 # Create logs directory if it doesn't exist
 
-logs_dir = BASE_DIR / 'logs'
+logs_dir = BASE_DIR / "logs"
 
 if not os.path.exists(logs_dir):
 
@@ -474,15 +357,15 @@ if not os.path.exists(logs_dir):
 
 # URL donde redirigir después de un login exitoso
 
-LOGIN_REDIRECT_URL = '/'  # Redirige al dashboard
+LOGIN_REDIRECT_URL = "/"  # Redirige al dashboard
 
 # URL del login (usado por @login_required y otras vistas)
 
-LOGIN_URL = '/login/'
+LOGIN_URL = "/login/"
 
 # URL donde redirigir después de un logout
 
-LOGOUT_REDIRECT_URL = '/login/'
+LOGOUT_REDIRECT_URL = "/login/"
 
 # Tiempo de sesión (opcional, en segundos)
 
@@ -497,385 +380,195 @@ LOGOUT_REDIRECT_URL = '/login/'
 # ==============================================================================
 
 UNFOLD = {
-
     "SITE_TITLE": "Sistema de Seguros UTPL",
-
     "SITE_HEADER": "Seguros UTPL",
-
     "SITE_SUBHEADER": "Gestión Integral de Pólizas y Siniestros",
-
     "SITE_URL": "/",
-
     "SITE_SYMBOL": "security",  # Icono principal
-
     "SHOW_HISTORY": True,
-
     "SHOW_VIEW_ON_SITE": True,
-
     "SHOW_BACK_BUTTON": False,
-
     "BORDER_RADIUS": "8px",
-
     "THEME": None,  # Permite cambio de tema (light/dark)
-
     # Colores basados en la paleta del proyecto
-
     "COLORS": {
-
         "primary": {
-
-            "50": "#f0f7ff",   # brand-50
-
-            "100": "#e0effe",   # brand-100
-
+            "50": "#f0f7ff",  # brand-50
+            "100": "#e0effe",  # brand-100
             "200": "#b3d9fc",
-
             "300": "#80c2fa",
-
             "400": "#4dabf7",
-
-            "500": "#0c8de6",   # brand-500 (principal)
-
-            "600": "#0070c4",   # brand-600
-
-            "700": "#01599f",   # brand-700
-
-            "800": "#064b83",   # brand-800
-
-            "900": "#0a3f6d",   # brand-900
-
+            "500": "#0c8de6",  # brand-500 (principal)
+            "600": "#0070c4",  # brand-600
+            "700": "#01599f",  # brand-700
+            "800": "#064b83",  # brand-800
+            "900": "#0a3f6d",  # brand-900
             "950": "#052d4d",
-
         },
-
         "base": {
-
             "50": "#f8fafc",
-
             "100": "#f1f5f9",
-
             "200": "#e2e8f0",
-
             "300": "#cbd5e1",
-
             "400": "#94a3b8",
-
             "500": "#64748b",
-
             "600": "#475569",
-
             "700": "#334155",
-
             "800": "#1e293b",
-
             "900": "#0f172a",
-
             "950": "#020617",
-
         },
-
         "font": {
-
             "subtle-light": "#64748b",
-
             "subtle-dark": "#94a3b8",
-
             "default-light": "#334155",
-
             "default-dark": "#cbd5e1",
-
             "important-light": "#0f172a",
-
             "important-dark": "#f8fafc",
-
         },
-
     },
-
     # Navegación personalizada
-
     "SIDEBAR": {
-
         "show_search": True,
-
         "show_all_applications": True,
-
         "navigation": [
-
             {
-
                 "title": _("Gestión Principal"),
-
                 "separator": True,
-
                 "collapsible": True,
-
                 "items": [
-
                     {
-
                         "title": _("Dashboard"),
-
                         "icon": "dashboard",
-
                         "link": reverse_lazy("admin:index"),
-
                     },
-
                     {
-
                         "title": _("Pólizas"),
-
                         "icon": "verified",
-
                         "link": reverse_lazy("admin:app_poliza_changelist"),
-
                     },
-
                     {
-
                         "title": _("Siniestros"),
-
                         "icon": "warning",
-
                         "link": reverse_lazy("admin:app_siniestro_changelist"),
-
                     },
-
                     {
-
                         "title": _("Facturas"),
-
                         "icon": "receipt",
-
                         "link": reverse_lazy("admin:app_factura_changelist"),
-
                     },
-
                     {
-
                         "title": _("Pagos"),
-
                         "icon": "payments",
-
                         "link": reverse_lazy("admin:app_pago_changelist"),
-
                     },
-
                 ],
-
             },
-
             {
-
                 "title": _("Gestión Avanzada"),
-
                 "separator": True,
-
                 "collapsible": True,
-
                 "items": [
-
                     {
-
                         "title": _("Renovaciones"),
-
                         "icon": "autorenew",
-
                         "link": reverse_lazy("admin:app_policyrenewal_changelist"),
-
                     },
-
                     {
-
                         "title": _("Cotizaciones"),
-
                         "icon": "request_quote",
-
                         "link": reverse_lazy("admin:app_quote_changelist"),
-
                     },
-
                     {
-
                         "title": _("Bienes Asegurados"),
-
                         "icon": "inventory_2",
-
                         "link": reverse_lazy("admin:app_bienasegurado_changelist"),
-
                     },
-
                     {
-
                         "title": _("Aprobaciones de Pago"),
-
                         "icon": "approval",
-
                         "link": reverse_lazy("admin:app_paymentapproval_changelist"),
-
                     },
-
                     {
-
                         "title": _("Calendario"),
-
                         "icon": "event",
-
                         "link": reverse_lazy("admin:app_calendarevent_changelist"),
-
                     },
-
                 ],
-
             },
-
             {
-
                 "title": _("Catálogos"),
-
                 "separator": True,
-
                 "collapsible": True,
-
                 "items": [
-
                     {
-
                         "title": _("Compañías Aseguradoras"),
-
                         "icon": "business",
-
                         "link": reverse_lazy("admin:app_companiaaseguradora_changelist"),
-
                     },
-
                     {
-
                         "title": _("Corredores de Seguros"),
-
                         "icon": "handshake",
-
                         "link": reverse_lazy("admin:app_corredorseguros_changelist"),
-
                     },
-
                     {
-
                         "title": _("Tipos de Póliza"),
-
                         "icon": "category",
-
                         "link": reverse_lazy("admin:app_tipopoliza_changelist"),
-
                     },
-
                     {
-
                         "title": _("Tipos de Siniestro"),
-
                         "icon": "label",
-
                         "link": reverse_lazy("admin:app_tiposiniestro_changelist"),
-
                     },
-
                     {
-
                         "title": _("Responsables/Custodios"),
-
                         "icon": "person",
-
                         "link": reverse_lazy("admin:app_responsablecustodio_changelist"),
-
                     },
-
                 ],
-
             },
-
             {
-
                 "title": _("Documentos y Alertas"),
-
                 "separator": True,
-
                 "collapsible": True,
-
                 "items": [
-
                     {
-
                         "title": _("Documentos"),
-
                         "icon": "description",
-
                         "link": reverse_lazy("admin:app_documento_changelist"),
-
                     },
-
                     {
-
                         "title": _("Alertas"),
-
                         "icon": "notifications",
-
                         "link": reverse_lazy("admin:app_alerta_changelist"),
-
                     },
-
                 ],
-
             },
-
             {
-
                 "title": _("Configuración"),
-
                 "separator": True,
-
                 "collapsible": True,
-
                 "items": [
-
                     {
-
                         "title": _("Configuración del Sistema"),
-
                         "icon": "settings",
-
                         "link": reverse_lazy("admin:app_configuracionsistema_changelist"),
-
                     },
-
                     {
-
                         "title": _("Usuarios"),
-
                         "icon": "people",
-
                         "link": reverse_lazy("admin:auth_user_changelist"),
-
                     },
-
                     {
-
                         "title": _("Grupos"),
-
                         "icon": "groups",
-
                         "link": reverse_lazy("admin:auth_group_changelist"),
-
                     },
-
                 ],
-
             },
-
         ],
-
     },
-
 }
 
 # ==============================================================================
@@ -898,16 +591,16 @@ UNFOLD = {
 
 # 5. Usa esa contraseña de 16 caracteres en IMAP_PASSWORD
 
-IMAP_HOST = os.getenv('IMAP_HOST', 'imap.gmail.com')
+IMAP_HOST = os.getenv("IMAP_HOST", "imap.gmail.com")
 
-IMAP_PORT = int(os.getenv('IMAP_PORT', '993'))
+IMAP_PORT = int(os.getenv("IMAP_PORT", "993"))
 
-IMAP_EMAIL = os.getenv('IMAP_EMAIL', 'renataaa150505@gmail.com')
+IMAP_EMAIL = os.getenv("IMAP_EMAIL", "renataaa150505@gmail.com")
 
-IMAP_PASSWORD = os.getenv('IMAP_PASSWORD', '')  # App Password de Gmail
+IMAP_PASSWORD = os.getenv("IMAP_PASSWORD", "")  # App Password de Gmail
 
-IMAP_USE_SSL = os.getenv('IMAP_USE_SSL', 'True').lower() == 'true'
+IMAP_USE_SSL = os.getenv("IMAP_USE_SSL", "True").lower() == "true"
 
 # Palabras clave para identificar correos de siniestros
 
-SINIESTRO_EMAIL_SUBJECT_TAG = '[SINIESTRO]'
+SINIESTRO_EMAIL_SUBJECT_TAG = "[SINIESTRO]"

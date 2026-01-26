@@ -68,13 +68,10 @@ USO:
 
 """
 
-from dataclasses import dataclass, field, asdict
-
+from dataclasses import asdict, dataclass, field  # noqa: F401
 from datetime import date, datetime
-
 from decimal import Decimal
-
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 # ==============================================================================
 
@@ -85,11 +82,9 @@ from typing import Optional, List, Dict, Any
 
 @dataclass
 class BaseDTO:
-
     """Clase base para todos los DTOs."""
 
     def to_dict(self) -> Dict[str, Any]:
-
         """Convierte el DTO a diccionario para JSON."""
 
         result = {}
@@ -118,6 +113,7 @@ class BaseDTO:
 
         return result
 
+
 # ==============================================================================
 
 # POLIZA DTOs
@@ -127,7 +123,6 @@ class BaseDTO:
 
 @dataclass
 class PolizaResumen(BaseDTO):
-
     """
 
     DTO mínimo para listas y referencias.
@@ -149,41 +144,26 @@ class PolizaResumen(BaseDTO):
     dias_para_vencer: int = 0
 
     @classmethod
-    def from_model(cls, poliza) -> 'PolizaResumen':
+    def from_model(cls, poliza) -> "PolizaResumen":
 
         return cls(
-
             id=poliza.id,
-
             numero_poliza=poliza.numero_poliza,
-
             compania=poliza.compania_aseguradora.nombre,
-
             estado=poliza.get_estado_display(),
-
             fecha_fin=poliza.fecha_fin,
-
             dias_para_vencer=poliza.dias_para_vencer,
-
         )
 
     @classmethod
-    def from_queryset(cls, queryset) -> List['PolizaResumen']:
-
+    def from_queryset(cls, queryset) -> List["PolizaResumen"]:
         """Optimizado para querysets."""
 
-        return [
-
-            cls.from_model(p)
-
-            for p in queryset.select_related('compania_aseguradora')
-
-        ]
+        return [cls.from_model(p) for p in queryset.select_related("compania_aseguradora")]
 
 
 @dataclass
 class PolizaDetalle(BaseDTO):
-
     """
 
     DTO para vista de detalle de póliza.
@@ -227,50 +207,31 @@ class PolizaDetalle(BaseDTO):
     siniestros_count: int = 0
 
     @classmethod
-    def from_model(cls, poliza) -> 'PolizaDetalle':
+    def from_model(cls, poliza) -> "PolizaDetalle":
 
         return cls(
-
             id=poliza.id,
-
             numero_poliza=poliza.numero_poliza,
-
             compania=poliza.compania_aseguradora.nombre,
-
             compania_id=poliza.compania_aseguradora_id,
-
-            tipo_poliza=poliza.tipo_poliza.nombre if poliza.tipo_poliza else 'N/A',
-
-            grupo_ramo=poliza.grupo_ramo.nombre if poliza.grupo_ramo else 'N/A',
-
+            tipo_poliza=poliza.tipo_poliza.nombre if poliza.tipo_poliza else "N/A",
+            grupo_ramo=poliza.grupo_ramo.nombre if poliza.grupo_ramo else "N/A",
             estado=poliza.get_estado_display(),
-
             fecha_inicio=poliza.fecha_inicio,
-
             fecha_fin=poliza.fecha_fin,
-
             suma_asegurada=poliza.suma_asegurada,
-
-            prima_neta=poliza.prima_neta or Decimal('0'),
-
-            prima_total=poliza.prima_total or Decimal('0'),
-
+            prima_neta=poliza.prima_neta or Decimal("0"),
+            prima_total=poliza.prima_total or Decimal("0"),
             corredor=poliza.corredor_seguros.nombre if poliza.corredor_seguros else None,
-
             corredor_email=poliza.corredor_seguros.email if poliza.corredor_seguros else None,
-
             dias_para_vencer=poliza.dias_para_vencer,
-
             bienes_count=poliza.bienes_asegurados.count(),
-
             siniestros_count=poliza.siniestros.count(),
-
         )
 
 
 @dataclass
 class PolizaCard(BaseDTO):
-
     """
 
     DTO para cards/widgets del dashboard.
@@ -296,43 +257,30 @@ class PolizaCard(BaseDTO):
     suma_asegurada: Decimal
 
     @classmethod
-    def from_model(cls, poliza) -> 'PolizaCard':
+    def from_model(cls, poliza) -> "PolizaCard":
 
         # Determinar clase CSS del badge
 
         estado = poliza.estado
 
         badge_classes = {
-
-            'vigente': 'bg-green-100 text-green-800',
-
-            'por_vencer': 'bg-yellow-100 text-yellow-800',
-
-            'vencida': 'bg-red-100 text-red-800',
-
-            'cancelada': 'bg-gray-100 text-gray-800',
-
+            "vigente": "bg-green-100 text-green-800",
+            "por_vencer": "bg-yellow-100 text-yellow-800",
+            "vencida": "bg-red-100 text-red-800",
+            "cancelada": "bg-gray-100 text-gray-800",
         }
 
         return cls(
-
             id=poliza.id,
-
             numero_poliza=poliza.numero_poliza,
-
             compania=poliza.compania_aseguradora.nombre,
-
             estado=poliza.get_estado_display(),
-
-            estado_badge_class=badge_classes.get(estado, 'bg-gray-100 text-gray-800'),
-
+            estado_badge_class=badge_classes.get(estado, "bg-gray-100 text-gray-800"),
             fecha_fin=poliza.fecha_fin,
-
             dias_para_vencer=poliza.dias_para_vencer,
-
             suma_asegurada=poliza.suma_asegurada,
-
         )
+
 
 # ==============================================================================
 
@@ -343,7 +291,6 @@ class PolizaCard(BaseDTO):
 
 @dataclass
 class SiniestroResumen(BaseDTO):
-
     """
 
     DTO mínimo para listas y referencias.
@@ -365,28 +312,20 @@ class SiniestroResumen(BaseDTO):
     bien_nombre: str
 
     @classmethod
-    def from_model(cls, siniestro) -> 'SiniestroResumen':
+    def from_model(cls, siniestro) -> "SiniestroResumen":
 
         return cls(
-
             id=siniestro.id,
-
             numero_siniestro=siniestro.numero_siniestro,
-
-            tipo=siniestro.tipo_siniestro.get_nombre_display() if siniestro.tipo_siniestro else 'N/A',
-
+            tipo=siniestro.tipo_siniestro.get_nombre_display() if siniestro.tipo_siniestro else "N/A",
             estado=siniestro.get_estado_display(),
-
             fecha_siniestro=siniestro.fecha_siniestro,
-
             bien_nombre=siniestro.bien_nombre,
-
         )
 
 
 @dataclass
 class SiniestroLista(BaseDTO):
-
     """
 
     DTO para listados de siniestros.
@@ -418,71 +357,43 @@ class SiniestroLista(BaseDTO):
     dias_gestion: int
 
     @classmethod
-    def from_model(cls, siniestro) -> 'SiniestroLista':
+    def from_model(cls, siniestro) -> "SiniestroLista":
 
         estado = siniestro.estado
 
         badge_classes = {
-
-            'registrado': 'bg-blue-100 text-blue-800',
-
-            'documentacion_pendiente': 'bg-yellow-100 text-yellow-800',
-
-            'enviado_aseguradora': 'bg-purple-100 text-purple-800',
-
-            'en_evaluacion': 'bg-indigo-100 text-indigo-800',
-
-            'aprobado': 'bg-green-100 text-green-800',
-
-            'rechazado': 'bg-red-100 text-red-800',
-
-            'liquidado': 'bg-teal-100 text-teal-800',
-
-            'cerrado': 'bg-gray-100 text-gray-800',
-
+            "registrado": "bg-blue-100 text-blue-800",
+            "documentacion_pendiente": "bg-yellow-100 text-yellow-800",
+            "enviado_aseguradora": "bg-purple-100 text-purple-800",
+            "en_evaluacion": "bg-indigo-100 text-indigo-800",
+            "aprobado": "bg-green-100 text-green-800",
+            "rechazado": "bg-red-100 text-red-800",
+            "liquidado": "bg-teal-100 text-teal-800",
+            "cerrado": "bg-gray-100 text-gray-800",
         }
 
         return cls(
-
             id=siniestro.id,
-
             numero_siniestro=siniestro.numero_siniestro,
-
-            tipo=siniestro.tipo_siniestro.get_nombre_display() if siniestro.tipo_siniestro else 'N/A',
-
+            tipo=siniestro.tipo_siniestro.get_nombre_display() if siniestro.tipo_siniestro else "N/A",
             estado=siniestro.get_estado_display(),
-
-            estado_badge_class=badge_classes.get(estado, 'bg-gray-100 text-gray-800'),
-
+            estado_badge_class=badge_classes.get(estado, "bg-gray-100 text-gray-800"),
             fecha_siniestro=siniestro.fecha_siniestro.date() if siniestro.fecha_siniestro else None,
-
             fecha_registro=siniestro.fecha_registro.date() if siniestro.fecha_registro else None,
-
             bien_nombre=siniestro.bien_nombre,
-
-            poliza_numero=siniestro.poliza.numero_poliza if siniestro.poliza else 'N/A',
-
-            monto_estimado=siniestro.monto_estimado or Decimal('0'),
-
+            poliza_numero=siniestro.poliza.numero_poliza if siniestro.poliza else "N/A",
+            monto_estimado=siniestro.monto_estimado or Decimal("0"),
             dias_gestion=siniestro.dias_gestion,
-
         )
 
     @classmethod
-    def from_queryset(cls, queryset) -> List['SiniestroLista']:
+    def from_queryset(cls, queryset) -> List["SiniestroLista"]:
 
-        return [
-
-            cls.from_model(s)
-
-            for s in queryset.select_related('tipo_siniestro', 'poliza')
-
-        ]
+        return [cls.from_model(s) for s in queryset.select_related("tipo_siniestro", "poliza")]
 
 
 @dataclass
 class SiniestroDetalle(BaseDTO):
-
     """
 
     DTO completo para vista de detalle.
@@ -550,59 +461,35 @@ class SiniestroDetalle(BaseDTO):
     dias_desde_registro: int
 
     @classmethod
-    def from_model(cls, siniestro) -> 'SiniestroDetalle':
+    def from_model(cls, siniestro) -> "SiniestroDetalle":
 
         return cls(
-
             id=siniestro.id,
-
             numero_siniestro=siniestro.numero_siniestro,
-
-            tipo=siniestro.tipo_siniestro.get_nombre_display() if siniestro.tipo_siniestro else 'N/A',
-
+            tipo=siniestro.tipo_siniestro.get_nombre_display() if siniestro.tipo_siniestro else "N/A",
             estado=siniestro.get_estado_display(),
-
             fecha_siniestro=siniestro.fecha_siniestro,
-
             fecha_registro=siniestro.fecha_registro,
-
             bien_nombre=siniestro.bien_nombre,
-
-            bien_marca=siniestro.bien_marca or '',
-
-            bien_modelo=siniestro.bien_modelo or '',
-
-            bien_serie=siniestro.bien_serie or '',
-
-            bien_codigo_activo=siniestro.bien_codigo_activo or '',
-
+            bien_marca=siniestro.bien_marca or "",
+            bien_modelo=siniestro.bien_modelo or "",
+            bien_serie=siniestro.bien_serie or "",
+            bien_codigo_activo=siniestro.bien_codigo_activo or "",
             poliza_id=siniestro.poliza_id,
-
-            poliza_numero=siniestro.poliza.numero_poliza if siniestro.poliza else 'N/A',
-
-            poliza_compania=siniestro.poliza.compania_aseguradora.nombre if siniestro.poliza else 'N/A',
-
+            poliza_numero=siniestro.poliza.numero_poliza if siniestro.poliza else "N/A",
+            poliza_compania=siniestro.poliza.compania_aseguradora.nombre if siniestro.poliza else "N/A",
             responsable_nombre=siniestro.responsable_custodio.nombre if siniestro.responsable_custodio else None,
-
             responsable_email=siniestro.responsable_custodio.email if siniestro.responsable_custodio else None,
-
             ubicacion=siniestro.ubicacion,
-
             causa=siniestro.causa,
-
             descripcion=siniestro.descripcion_detallada,
-
-            monto_estimado=siniestro.monto_estimado or Decimal('0'),
-
+            monto_estimado=siniestro.monto_estimado or Decimal("0"),
             monto_indemnizado=siniestro.monto_indemnizado,
-
             deducible_aplicado=siniestro.deducible_aplicado,
-
             dias_gestion=siniestro.dias_gestion,
-
             dias_desde_registro=siniestro.dias_desde_registro,
-
         )
+
 
 # ==============================================================================
 
@@ -613,7 +500,6 @@ class SiniestroDetalle(BaseDTO):
 
 @dataclass
 class FacturaResumen(BaseDTO):
-
     """
 
     DTO mínimo para listas y referencias.
@@ -635,30 +521,21 @@ class FacturaResumen(BaseDTO):
     fecha_vencimiento: date
 
     @classmethod
-    def from_model(cls, factura) -> 'FacturaResumen':
+    def from_model(cls, factura) -> "FacturaResumen":
 
         return cls(
-
             id=factura.id,
-
             numero_factura=factura.numero_factura,
-
-            poliza_numero=factura.poliza.numero_poliza if factura.poliza else 'N/A',
-
+            poliza_numero=factura.poliza.numero_poliza if factura.poliza else "N/A",
             estado=factura.get_estado_display(),
-
             monto_total=factura.monto_total,
-
             saldo_pendiente=factura.saldo_pendiente,
-
             fecha_vencimiento=factura.fecha_vencimiento,
-
         )
 
 
 @dataclass
 class FacturaLista(BaseDTO):
-
     """
 
     DTO para listados de facturas.
@@ -694,55 +571,35 @@ class FacturaLista(BaseDTO):
     esta_vencida: bool
 
     @classmethod
-    def from_model(cls, factura) -> 'FacturaLista':
+    def from_model(cls, factura) -> "FacturaLista":
 
         estado = factura.estado
 
         badge_classes = {
-
-            'pendiente': 'bg-yellow-100 text-yellow-800',
-
-            'parcial': 'bg-blue-100 text-blue-800',
-
-            'pagada': 'bg-green-100 text-green-800',
-
-            'vencida': 'bg-red-100 text-red-800',
-
-            'anulada': 'bg-gray-100 text-gray-800',
-
+            "pendiente": "bg-yellow-100 text-yellow-800",
+            "parcial": "bg-blue-100 text-blue-800",
+            "pagada": "bg-green-100 text-green-800",
+            "vencida": "bg-red-100 text-red-800",
+            "anulada": "bg-gray-100 text-gray-800",
         }
 
         return cls(
-
             id=factura.id,
-
             numero_factura=factura.numero_factura,
-
-            poliza_numero=factura.poliza.numero_poliza if factura.poliza else 'N/A',
-
-            compania=factura.poliza.compania_aseguradora.nombre if factura.poliza else 'N/A',
-
+            poliza_numero=factura.poliza.numero_poliza if factura.poliza else "N/A",
+            compania=factura.poliza.compania_aseguradora.nombre if factura.poliza else "N/A",
             estado=factura.get_estado_display(),
-
-            estado_badge_class=badge_classes.get(estado, 'bg-gray-100 text-gray-800'),
-
+            estado_badge_class=badge_classes.get(estado, "bg-gray-100 text-gray-800"),
             subtotal=factura.subtotal,
-
             iva=factura.iva,
-
             monto_total=factura.monto_total,
-
             saldo_pendiente=factura.saldo_pendiente,
-
             fecha_emision=factura.fecha_emision,
-
             fecha_vencimiento=factura.fecha_vencimiento,
-
             dias_para_vencimiento=factura.dias_para_vencimiento,
-
             esta_vencida=factura.esta_vencida,
-
         )
+
 
 # ==============================================================================
 
@@ -753,7 +610,6 @@ class FacturaLista(BaseDTO):
 
 @dataclass
 class BienAseguradoResumen(BaseDTO):
-
     """
 
     DTO mínimo para listas y selects.
@@ -773,28 +629,20 @@ class BienAseguradoResumen(BaseDTO):
     estado: str
 
     @classmethod
-    def from_model(cls, bien) -> 'BienAseguradoResumen':
+    def from_model(cls, bien) -> "BienAseguradoResumen":
 
         return cls(
-
             id=bien.id,
-
             codigo=bien.codigo_bien,
-
             nombre=bien.nombre,
-
-            poliza_numero=bien.poliza.numero_poliza if bien.poliza else 'N/A',
-
+            poliza_numero=bien.poliza.numero_poliza if bien.poliza else "N/A",
             valor_asegurado=bien.valor_asegurado,
-
             estado=bien.get_estado_display(),
-
         )
 
 
 @dataclass
 class BienAseguradoLista(BaseDTO):
-
     """
 
     DTO para tablas de bienes asegurados.
@@ -828,53 +676,34 @@ class BienAseguradoLista(BaseDTO):
     tiene_siniestros: bool
 
     @classmethod
-    def from_model(cls, bien) -> 'BienAseguradoLista':
+    def from_model(cls, bien) -> "BienAseguradoLista":
 
         estado = bien.estado
 
         badge_classes = {
-
-            'activo': 'bg-green-100 text-green-800',
-
-            'inactivo': 'bg-gray-100 text-gray-800',
-
-            'dado_de_baja': 'bg-red-100 text-red-800',
-
-            'siniestrado': 'bg-orange-100 text-orange-800',
-
-            'transferido': 'bg-blue-100 text-blue-800',
-
+            "activo": "bg-green-100 text-green-800",
+            "inactivo": "bg-gray-100 text-gray-800",
+            "dado_de_baja": "bg-red-100 text-red-800",
+            "siniestrado": "bg-orange-100 text-orange-800",
+            "transferido": "bg-blue-100 text-blue-800",
         }
 
         return cls(
-
             id=bien.id,
-
             codigo=bien.codigo_bien,
-
             nombre=bien.nombre,
-
-            categoria=bien.categoria or 'Sin categoría',
-
-            marca=bien.marca or '',
-
-            modelo=bien.modelo or '',
-
-            ubicacion=bien.ubicacion or '',
-
+            categoria=bien.categoria or "Sin categoría",
+            marca=bien.marca or "",
+            modelo=bien.modelo or "",
+            ubicacion=bien.ubicacion or "",
             responsable=bien.responsable_custodio.nombre if bien.responsable_custodio else None,
-
             valor_asegurado=bien.valor_asegurado,
-
             estado=bien.get_estado_display(),
-
-            estado_badge_class=badge_classes.get(estado, 'bg-gray-100 text-gray-800'),
-
-            condicion=bien.get_condicion_display() if bien.condicion else 'N/A',
-
+            estado_badge_class=badge_classes.get(estado, "bg-gray-100 text-gray-800"),
+            condicion=bien.get_condicion_display() if bien.condicion else "N/A",
             tiene_siniestros=bien.tiene_siniestros,
-
         )
+
 
 # ==============================================================================
 
@@ -885,7 +714,6 @@ class BienAseguradoLista(BaseDTO):
 
 @dataclass
 class DashboardStats(BaseDTO):
-
     """
 
     DTO para estadísticas del dashboard.
@@ -922,22 +750,20 @@ class DashboardStats(BaseDTO):
 
     # Indicadores
 
-    tasa_siniestralidad: Decimal = Decimal('0')
+    tasa_siniestralidad: Decimal = Decimal("0")
 
     dias_promedio_gestion: int = 0
 
     @classmethod
-    def calcular(cls) -> 'DashboardStats':
-
+    def calcular(cls) -> "DashboardStats":
         """Calcula todas las estadísticas en queries optimizadas."""
 
-        from app.models import Poliza, Siniestro, Factura
+        from datetime import timedelta
 
-        from django.db.models import Sum, Avg, Count, Q
-
+        from django.db.models import Avg, Count, Q, Sum
         from django.utils import timezone
 
-        from datetime import timedelta
+        from app.models import Factura, Poliza, Siniestro
 
         hoy = timezone.now().date()
 
@@ -946,74 +772,43 @@ class DashboardStats(BaseDTO):
         # Pólizas
 
         polizas = Poliza.objects.aggregate(
-
-            total=Count('id'),
-
-            vigentes=Count('id', filter=Q(estado='vigente')),
-
-            por_vencer=Count('id', filter=Q(estado='por_vencer')),
-
-            vencidas=Count('id', filter=Q(estado='vencida')),
-
+            total=Count("id"),
+            vigentes=Count("id", filter=Q(estado="vigente")),
+            por_vencer=Count("id", filter=Q(estado="por_vencer")),
+            vencidas=Count("id", filter=Q(estado="vencida")),
         )
 
         # Siniestros
 
         siniestros = Siniestro.objects.aggregate(
-
-            total=Count('id'),
-
-            abiertos=Count('id', filter=~Q(estado__in=['cerrado', 'rechazado'])),
-
-            cerrados_mes=Count('id', filter=Q(
-
-                estado='cerrado',
-
-                fecha_registro__gte=inicio_mes
-
-            )),
-
-            dias_promedio=Avg('dias_gestion', filter=Q(estado='cerrado')),
-
+            total=Count("id"),
+            abiertos=Count("id", filter=~Q(estado__in=["cerrado", "rechazado"])),
+            cerrados_mes=Count("id", filter=Q(estado="cerrado", fecha_registro__gte=inicio_mes)),
+            dias_promedio=Avg("dias_gestion", filter=Q(estado="cerrado")),
         )
 
         # Facturas
 
         facturas = Factura.objects.aggregate(
-
-            pendientes=Count('id', filter=Q(estado='pendiente')),
-
-            vencidas=Count('id', filter=Q(estado='vencida')),
-
-            por_cobrar=Sum('monto_total', filter=Q(estado__in=['pendiente', 'parcial', 'vencida'])),
-
+            pendientes=Count("id", filter=Q(estado="pendiente")),
+            vencidas=Count("id", filter=Q(estado="vencida")),
+            por_cobrar=Sum("monto_total", filter=Q(estado__in=["pendiente", "parcial", "vencida"])),
         )
 
         return cls(
-
-            polizas_total=polizas['total'] or 0,
-
-            polizas_vigentes=polizas['vigentes'] or 0,
-
-            polizas_por_vencer=polizas['por_vencer'] or 0,
-
-            polizas_vencidas=polizas['vencidas'] or 0,
-
-            siniestros_total=siniestros['total'] or 0,
-
-            siniestros_abiertos=siniestros['abiertos'] or 0,
-
-            siniestros_cerrados_mes=siniestros['cerrados_mes'] or 0,
-
-            facturas_pendientes=facturas['pendientes'] or 0,
-
-            facturas_vencidas=facturas['vencidas'] or 0,
-
-            total_por_cobrar=facturas['por_cobrar'] or Decimal('0'),
-
-            dias_promedio_gestion=int(siniestros['dias_promedio'] or 0),
-
+            polizas_total=polizas["total"] or 0,
+            polizas_vigentes=polizas["vigentes"] or 0,
+            polizas_por_vencer=polizas["por_vencer"] or 0,
+            polizas_vencidas=polizas["vencidas"] or 0,
+            siniestros_total=siniestros["total"] or 0,
+            siniestros_abiertos=siniestros["abiertos"] or 0,
+            siniestros_cerrados_mes=siniestros["cerrados_mes"] or 0,
+            facturas_pendientes=facturas["pendientes"] or 0,
+            facturas_vencidas=facturas["vencidas"] or 0,
+            total_por_cobrar=facturas["por_cobrar"] or Decimal("0"),
+            dias_promedio_gestion=int(siniestros["dias_promedio"] or 0),
         )
+
 
 # ==============================================================================
 
@@ -1024,7 +819,6 @@ class DashboardStats(BaseDTO):
 
 @dataclass
 class ReporteSiniestroContadora(BaseDTO):
-
     """
 
     DTO específico para el reporte de días de gestión de la contadora.
@@ -1054,30 +848,18 @@ class ReporteSiniestroContadora(BaseDTO):
     monto_indemnizado: Optional[Decimal]
 
     @classmethod
-    def from_model(cls, siniestro) -> 'ReporteSiniestroContadora':
+    def from_model(cls, siniestro) -> "ReporteSiniestroContadora":
 
         return cls(
-
             id=siniestro.id,
-
             numero_siniestro=siniestro.numero_siniestro,
-
-            tipo=siniestro.tipo_siniestro.nombre if siniestro.tipo_siniestro else 'N/A',
-
+            tipo=siniestro.tipo_siniestro.nombre if siniestro.tipo_siniestro else "N/A",
             bien_nombre=siniestro.bien_nombre,
-
-            poliza_numero=siniestro.poliza.numero_poliza if siniestro.poliza else 'N/A',
-
+            poliza_numero=siniestro.poliza.numero_poliza if siniestro.poliza else "N/A",
             fecha_siniestro=siniestro.fecha_siniestro.date() if siniestro.fecha_siniestro else None,
-
             fecha_registro=siniestro.fecha_registro.date() if siniestro.fecha_registro else None,
-
             dias_gestion=siniestro.dias_gestion,
-
             estado=siniestro.get_estado_display(),
-
-            monto_estimado=siniestro.monto_estimado or Decimal('0'),
-
+            monto_estimado=siniestro.monto_estimado or Decimal("0"),
             monto_indemnizado=siniestro.monto_indemnizado,
-
         )

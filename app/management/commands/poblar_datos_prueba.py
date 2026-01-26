@@ -12,34 +12,35 @@ Opciones:
 
 """
 
-from django.core.management.base import BaseCommand
-
-from django.contrib.auth.models import User
-
-from django.utils import timezone
-
-from datetime import timedelta, date
-
+import calendar
+import random
+from datetime import date, timedelta
 from decimal import Decimal
 
-import random
-
-import calendar
-
-
+from django.contrib.auth.models import User
+from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from app.models import (
-
-    ConfiguracionSistema, CompaniaAseguradora, CorredorSeguros, 
-
-    TipoPoliza, ResponsableCustodio, Poliza, Factura, Pago, TipoSiniestro, Siniestro, Alerta,
-
-    BienAsegurado, SubgrupoRamo, Quote, QuoteOption, PolicyRenewal, PaymentApproval, CalendarEvent
-
+    Alerta,
+    BienAsegurado,
+    CalendarEvent,
+    CompaniaAseguradora,
+    ConfiguracionSistema,
+    CorredorSeguros,
+    Factura,
+    Pago,
+    PaymentApproval,
+    PolicyRenewal,
+    Poliza,
+    Quote,
+    QuoteOption,
+    ResponsableCustodio,
+    Siniestro,
+    SubgrupoRamo,
+    TipoPoliza,
+    TipoSiniestro,
 )
-
-
-
 
 
 class Command(BaseCommand):

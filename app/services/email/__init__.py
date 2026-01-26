@@ -8,4 +8,4 @@ Lectura de correos IMAP para reportes de siniestros.
 
 from .reader import EmailReaderService
 
-__all__ = ['EmailReaderService']
+__all__ = ["EmailReaderService"]

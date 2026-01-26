@@ -6,24 +6,15 @@ Dashboard, KPIs, tendencias y análisis de datos.
 
 """
 
-from .estadisticas import EstadisticasService
-
+from .avanzados import AdvancedAnalyticsService
 from .dashboard import DashboardAnalyticsService
-
+from .estadisticas import EstadisticasService
 from .filters import DashboardFiltersService, DateRangePresets
 
-from .avanzados import AdvancedAnalyticsService
-
 __all__ = [
-
-    'EstadisticasService',
-
-    'DashboardAnalyticsService',
-
-    'DashboardFiltersService',
-
-    'DateRangePresets',
-
-    'AdvancedAnalyticsService',
-
+    "EstadisticasService",
+    "DashboardAnalyticsService",
+    "DashboardFiltersService",
+    "DateRangePresets",
+    "AdvancedAnalyticsService",
 ]

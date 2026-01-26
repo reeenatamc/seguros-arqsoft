@@ -14,32 +14,23 @@ import os
 
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'seguros.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "seguros.settings")
 
 django.setup()
 
-from app.models import TipoSiniestro, ChecklistSiniestroConfig  # noqa: E402
+from app.models import ChecklistSiniestroConfig, TipoSiniestro  # noqa: E402
 
 # Primero asegurarnos de que existen los tipos de siniestro
 
 tipos_siniestro = [
-
-    ('daño', 'Daño'),
-
-    ('robo', 'Robo'),
-
-    ('hurto', 'Hurto'),
-
-    ('incendio', 'Incendio'),
-
-    ('inundacion', 'Inundación'),
-
-    ('terremoto', 'Terremoto'),
-
-    ('vandalismo', 'Vandalismo'),
-
-    ('otro', 'Otro'),
-
+    ("daño", "Daño"),
+    ("robo", "Robo"),
+    ("hurto", "Hurto"),
+    ("incendio", "Incendio"),
+    ("inundacion", "Inundación"),
+    ("terremoto", "Terremoto"),
+    ("vandalismo", "Vandalismo"),
+    ("otro", "Otro"),
 ]
 
 print("=" * 60)
@@ -50,13 +41,7 @@ print("=" * 60)
 
 for nombre, _ in tipos_siniestro:
 
-    tipo, created = TipoSiniestro.objects.get_or_create(
-
-        nombre=nombre,
-
-        defaults={'activo': True}
-
-    )
+    tipo, created = TipoSiniestro.objects.get_or_create(nombre=nombre, defaults={"activo": True})
 
     if created:
 
@@ -69,129 +54,69 @@ for nombre, _ in tipos_siniestro:
 # Documentos estándar para TODOS los tipos de siniestro
 
 documentos_comunes = [
-
     {
-
-        'nombre': 'Carta formal de notificación',
-
-        'descripcion': 'Oficio formal dirigido a la aseguradora notificando el siniestro. Incluye datos del equipo afectado y descripción del incidente.',
-
-        'es_obligatorio': True,
-
-        'orden': 1,
-
+        "nombre": "Carta formal de notificación",
+        "descripcion": "Oficio formal dirigido a la aseguradora notificando el siniestro. Incluye datos del equipo afectado y descripción del incidente.",
+        "es_obligatorio": True,
+        "orden": 1,
     },
-
     {
-
-        'nombre': 'Informe técnico de causas y daños',
-
-        'descripcion': 'Reporte del responsable/custodio detallando el problema, causa probable y datos del equipo. En caso de robo, adjuntar denuncia policial.',
-
-        'es_obligatorio': True,
-
-        'orden': 2,
-
+        "nombre": "Informe técnico de causas y daños",
+        "descripcion": "Reporte del responsable/custodio detallando el problema, causa probable y datos del equipo. En caso de robo, adjuntar denuncia policial.",
+        "es_obligatorio": True,
+        "orden": 2,
     },
-
     {
-
-        'nombre': 'Proforma de reparación o reposición',
-
-        'descripcion': 'Cotización de reparación del equipo dañado o proforma de reposición si es pérdida total.',
-
-        'es_obligatorio': True,
-
-        'orden': 3,
-
+        "nombre": "Proforma de reparación o reposición",
+        "descripcion": "Cotización de reparación del equipo dañado o proforma de reposición si es pérdida total.",
+        "es_obligatorio": True,
+        "orden": 3,
     },
-
     {
-
-        'nombre': 'Documento contable de preexistencia',
-
-        'descripcion': 'Documento que certifica la existencia del bien antes del siniestro (registro de inventario, factura de compra, etc.).',
-
-        'es_obligatorio': True,
-
-        'orden': 4,
-
+        "nombre": "Documento contable de preexistencia",
+        "descripcion": "Documento que certifica la existencia del bien antes del siniestro (registro de inventario, factura de compra, etc.).",
+        "es_obligatorio": True,
+        "orden": 4,
     },
-
     {
-
-        'nombre': 'Acta de salvamento',
-
-        'descripcion': 'Acta de entrega del bien dañado a la aseguradora. Solo aplica en caso de pérdida total.',
-
-        'es_obligatorio': False,
-
-        'orden': 5,
-
+        "nombre": "Acta de salvamento",
+        "descripcion": "Acta de entrega del bien dañado a la aseguradora. Solo aplica en caso de pérdida total.",
+        "es_obligatorio": False,
+        "orden": 5,
     },
-
     {
-
-        'nombre': 'Fotografías del daño',
-
-        'descripcion': 'Evidencia fotográfica del estado del bien y los daños ocasionados.',
-
-        'es_obligatorio': False,
-
-        'orden': 6,
-
+        "nombre": "Fotografías del daño",
+        "descripcion": "Evidencia fotográfica del estado del bien y los daños ocasionados.",
+        "es_obligatorio": False,
+        "orden": 6,
     },
-
     {
-
-        'nombre': 'Documentos adicionales',
-
-        'descripcion': 'Cualquier otro documento relevante solicitado por la aseguradora.',
-
-        'es_obligatorio': False,
-
-        'orden': 7,
-
+        "nombre": "Documentos adicionales",
+        "descripcion": "Cualquier otro documento relevante solicitado por la aseguradora.",
+        "es_obligatorio": False,
+        "orden": 7,
     },
-
 ]
 
 # Documentos específicos por tipo
 
 documentos_especificos = {
-
-    'robo': [
-
+    "robo": [
         {
-
-            'nombre': 'Denuncia policial',
-
-            'descripcion': 'Parte policial o denuncia formal del robo ante las autoridades competentes.',
-
-            'es_obligatorio': True,
-
-            'orden': 2,  # Reemplaza al informe técnico
-
+            "nombre": "Denuncia policial",
+            "descripcion": "Parte policial o denuncia formal del robo ante las autoridades competentes.",
+            "es_obligatorio": True,
+            "orden": 2,  # Reemplaza al informe técnico
         },
-
     ],
-
-    'hurto': [
-
+    "hurto": [
         {
-
-            'nombre': 'Denuncia policial',
-
-            'descripcion': 'Parte policial o denuncia formal del hurto ante las autoridades competentes.',
-
-            'es_obligatorio': True,
-
-            'orden': 2,
-
+            "nombre": "Denuncia policial",
+            "descripcion": "Parte policial o denuncia formal del hurto ante las autoridades competentes.",
+            "es_obligatorio": True,
+            "orden": 2,
         },
-
     ],
-
 }
 
 print("\n" + "-" * 60)
@@ -220,7 +145,7 @@ for tipo in TipoSiniestro.objects.filter(activo=True):
 
             for i, doc in enumerate(docs_a_crear):
 
-                if doc['orden'] == doc_esp['orden']:
+                if doc["orden"] == doc_esp["orden"]:
 
                     docs_a_crear[i] = doc_esp
 
@@ -235,28 +160,19 @@ for tipo in TipoSiniestro.objects.filter(activo=True):
     for doc in docs_a_crear:
 
         item, created = ChecklistSiniestroConfig.objects.get_or_create(
-
             tipo_siniestro=tipo,
-
-            nombre=doc['nombre'],
-
+            nombre=doc["nombre"],
             defaults={
-
-                'descripcion': doc['descripcion'],
-
-                'es_obligatorio': doc['es_obligatorio'],
-
-                'orden': doc['orden'],
-
-                'activo': True,
-
-            }
-
+                "descripcion": doc["descripcion"],
+                "es_obligatorio": doc["es_obligatorio"],
+                "orden": doc["orden"],
+                "activo": True,
+            },
         )
 
         if created:
 
-            obligatorio = "🔴" if doc['es_obligatorio'] else "⚪"
+            obligatorio = "🔴" if doc["es_obligatorio"] else "⚪"
 
             print(f"   {obligatorio} {doc['nombre']}")
 

@@ -7,49 +7,27 @@ Validadores y gestión de configuración del sistema.
 """
 
 from .validators import (
-
-    ValidadorConfig,
-
-    PorcentajeValidator,
-
-    RangoNumericoValidator,
-
-    JsonValidator,
-
     EmailValidator,
-
-    UrlValidator,
-
+    JsonValidator,
     ListaValoresValidator,
-
+    PorcentajeValidator,
+    RangoNumericoValidator,
     TablaTasasValidator,
-
+    UrlValidator,
+    ValidadorConfig,
     registro_validadores,
-
     validar_configuracion,
-
 )
 
 __all__ = [
-
-    'ValidadorConfig',
-
-    'PorcentajeValidator',
-
-    'RangoNumericoValidator',
-
-    'JsonValidator',
-
-    'EmailValidator',
-
-    'UrlValidator',
-
-    'ListaValoresValidator',
-
-    'TablaTasasValidator',
-
-    'registro_validadores',
-
-    'validar_configuracion',
-
+    "ValidadorConfig",
+    "PorcentajeValidator",
+    "RangoNumericoValidator",
+    "JsonValidator",
+    "EmailValidator",
+    "UrlValidator",
+    "ListaValoresValidator",
+    "TablaTasasValidator",
+    "registro_validadores",
+    "validar_configuracion",
 ]

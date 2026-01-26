@@ -7,16 +7,14 @@ Responsabilidad única: Gestión de notas de crédito sobre facturas.
 """
 
 from decimal import Decimal
-
 from typing import Optional
 
 from django.db.models import Sum
 
-from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
+from ..base import BaseService, ResultadoOperacion, ResultadoValidacion
 
 
 class NotaCreditoService(BaseService):
-
     """
 
     Servicio para gestión de Notas de Crédito.
@@ -40,48 +38,24 @@ class NotaCreditoService(BaseService):
     """
 
     @classmethod
-    def validar_monto(
-
-        cls,
-
-        factura,
-
-        monto: Decimal,
-
-        nota_pk: Optional[int] = None
-
-    ) -> ResultadoValidacion:
-
+    def validar_monto(cls, factura, monto: Decimal, nota_pk: Optional[int] = None) -> ResultadoValidacion:
         """Valida que el monto total de notas de crédito no exceda la factura."""
 
         from app.models import NotaCredito
 
-        notas_existentes = NotaCredito.objects.filter(
-
-            factura=factura,
-
-            estado__in=['emitida', 'aplicada']
-
-        )
+        notas_existentes = NotaCredito.objects.filter(factura=factura, estado__in=["emitida", "aplicada"])
 
         if nota_pk:
 
             notas_existentes = notas_existentes.exclude(pk=nota_pk)
 
-        total_notas = notas_existentes.aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
+        total_notas = notas_existentes.aggregate(total=Sum("monto"))["total"] or Decimal("0.00")
 
         if total_notas + monto > factura.monto_total:
 
             return ResultadoValidacion(
-
                 es_valido=False,
-
-                errores={
-
-                    'monto': 'El monto total de notas de crédito no puede exceder el monto de la factura.'
-
-                }
-
+                errores={"monto": "El monto total de notas de crédito no puede exceder el monto de la factura."},
             )
 
         return ResultadoValidacion(es_valido=True)

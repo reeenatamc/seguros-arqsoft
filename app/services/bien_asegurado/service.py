@@ -6,11 +6,10 @@ Responsabilidad única: Gestión de bienes asegurados y su relación con póliza
 
 """
 
-from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
+from ..base import BaseService, ResultadoOperacion, ResultadoValidacion
 
 
 class BienAseguradoService(BaseService):
-
     """
 
     Servicio para gestión de Bienes Asegurados.
@@ -35,31 +34,22 @@ class BienAseguradoService(BaseService):
 
     @classmethod
     def validar_subgrupo_poliza(cls, poliza, subgrupo_ramo) -> ResultadoValidacion:
-
         """Valida que el subgrupo pertenezca al grupo de la póliza."""
 
         if poliza and subgrupo_ramo:
 
-            if hasattr(poliza, 'grupo_ramo') and poliza.grupo_ramo:
+            if hasattr(poliza, "grupo_ramo") and poliza.grupo_ramo:
 
                 if subgrupo_ramo.grupo_ramo_id != poliza.grupo_ramo_id:
 
                     return ResultadoValidacion(
-
                         es_valido=False,
-
                         errores={
-
-                            'subgrupo_ramo': (
-
+                            "subgrupo_ramo": (
                                 f'El subgrupo "{subgrupo_ramo.nombre}" no pertenece '
-
                                 f'al grupo "{poliza.grupo_ramo.nombre}" de la póliza.'
-
                             )
-
-                        }
-
+                        },
                     )
 
         return ResultadoValidacion(es_valido=True)
