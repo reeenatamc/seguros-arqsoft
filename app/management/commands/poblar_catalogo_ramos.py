@@ -12,6 +12,7 @@ from django.db import transaction
 
 from app.models import TipoRamo, GrupoRamo, SubgrupoRamo
 
+
 class Command(BaseCommand):
 
     help = 'Pobla el catálogo de ramos con los datos predefinidos de Ramos Generales'

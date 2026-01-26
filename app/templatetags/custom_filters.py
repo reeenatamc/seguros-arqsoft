@@ -8,6 +8,7 @@ from django import template
 
 register = template.Library()
 
+
 @register.filter
 def abs_value(value):
 
@@ -21,7 +22,10 @@ def abs_value(value):
 
         return value
 
+
+
 @register.filter
+
 def multiply(value, arg):
 
     """Multiplica un valor por el argumento."""
@@ -34,7 +38,10 @@ def multiply(value, arg):
 
         return value
 
+
 @register.filter
+
+
 def divide(value, arg):
 
     """Divide un valor por el argumento."""
@@ -47,7 +54,10 @@ def divide(value, arg):
 
         return value
 
+
+
 @register.filter
+
 def percentage(value, total):
 
     """Calcula el porcentaje de un valor respecto al total."""
@@ -64,7 +74,10 @@ def percentage(value, total):
 
         return 0
 
+
 @register.filter
+
+
 def currency(value):
 
     """Formatea un valor como moneda."""
@@ -76,6 +89,7 @@ def currency(value):
     except (TypeError, ValueError):
 
         return value
+
 
 @register.filter
 def subtract(value, arg):
@@ -89,6 +103,7 @@ def subtract(value, arg):
     except (TypeError, ValueError):
 
         return value
+
 
 @register.filter(name='add_class')
 def add_class(field, css):

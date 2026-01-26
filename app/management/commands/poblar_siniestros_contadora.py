@@ -28,6 +28,7 @@ from app.models import (
 
 )
 
+
 class Command(BaseCommand):
 
     help = 'Poblar siniestros con datos completos para el reporte de contaduría'

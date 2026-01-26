@@ -14,6 +14,7 @@ from typing import Optional
 
 from .base import BaseNotifier
 
+
 class BrokerNotifier(BaseNotifier):
 
     """

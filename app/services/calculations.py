@@ -84,6 +84,7 @@ from typing import Optional, Dict, Any
 
 from django.utils import timezone
 
+
 class FacturaCalculationService:
 
     """
@@ -359,6 +360,8 @@ class FacturaCalculationService:
 
         }
 
+
+
 class DetalleRamoCalculationService:
 
     """
@@ -565,6 +568,8 @@ class DetalleRamoCalculationService:
             'valor_por_pagar': valor_por_pagar,
 
         }
+
+
 
 class PolizaCalculationService:
 

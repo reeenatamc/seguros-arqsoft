@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 
 from app.models import Ramo, SubtipoRamo
 
+
 class Command(BaseCommand):
 
     help = "Puebla los datos maestros de RAMOS GENERALES según la tabla del TDR de Seguros UTPL"

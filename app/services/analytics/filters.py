@@ -22,6 +22,7 @@ from typing import Dict, List, Any, Optional, Tuple
 
 import json
 
+
 class DateRangePresets:
 
     """
@@ -232,6 +233,8 @@ class DateRangePresets:
         # Default: últimos 30 días
 
         return today - timedelta(days=29), today
+
+
 
 class DashboardFiltersService:
 

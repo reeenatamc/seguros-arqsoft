@@ -24,6 +24,7 @@ from django.urls import reverse
 
 # ============================================
 
+
 class ConfigurationTests(TestCase):
 
     """Tests para verificar la configuración básica de Django"""
@@ -58,7 +59,10 @@ class ConfigurationTests(TestCase):
 
 # ============================================
 
+
+
 @pytest.mark.django_db
+
 class UserModelTests(TestCase):
 
     """Tests para el modelo de Usuario"""
@@ -99,7 +103,10 @@ class UserModelTests(TestCase):
 
 # ============================================
 
+
 @pytest.mark.django_db
+
+
 class ViewTests(TestCase):
 
     """Tests para las vistas de la aplicación"""
@@ -154,8 +161,13 @@ class ViewTests(TestCase):
 
 # ============================================
 
+
+
 @pytest.mark.integration
+
 @pytest.mark.django_db
+
+
 class IntegrationTests(TestCase):
 
     """Tests de integración del sistema"""
@@ -204,6 +216,7 @@ class IntegrationTests(TestCase):
 
 # ============================================
 
+
 class SecurityTests(TestCase):
 
     """Tests de seguridad básicos"""
@@ -250,7 +263,10 @@ class SecurityTests(TestCase):
 
 # ============================================
 
+
+
 @pytest.mark.slow
+
 class PerformanceTests(TestCase):
 
     """Tests de rendimiento del sistema"""
@@ -295,6 +311,7 @@ class PerformanceTests(TestCase):
 # Tests de Utilidades
 
 # ============================================
+
 
 class UtilityTests(TestCase):
 
@@ -348,7 +365,10 @@ class UtilityTests(TestCase):
 
 # ============================================
 
+
+
 @pytest.fixture
+
 def user_factory():
 
     """Factory para crear usuarios de prueba"""
@@ -371,7 +391,10 @@ def user_factory():
 
     return create_user
 
+
 @pytest.fixture
+
+
 def authenticated_client(user_factory):
 
     """Cliente autenticado para pruebas"""
@@ -390,7 +413,10 @@ def authenticated_client(user_factory):
 
 # ============================================
 
+
+
 @pytest.mark.django_db
+
 def test_user_creation_with_factory(user_factory):
 
     """Test usando factory fixture"""
@@ -399,7 +425,10 @@ def test_user_creation_with_factory(user_factory):
 
     assert user.username == 'factoryuser'
 
+
 @pytest.mark.django_db
+
+
 def test_authenticated_access(authenticated_client):
 
     """Test de acceso con usuario autenticado"""
@@ -424,6 +453,7 @@ def test_authenticated_access(authenticated_client):
     ("user3", "", False),
 
 ])
+
 
 @pytest.mark.django_db
 def test_user_validation(username, email, valid):

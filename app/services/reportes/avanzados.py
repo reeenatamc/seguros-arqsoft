@@ -26,6 +26,7 @@ from app.models import (
 
 )
 
+
 class ReportesAvanzadosService:
 
     """Servicio para reportes especializados de seguros"""

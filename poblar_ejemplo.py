@@ -5,10 +5,10 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'seguros.settings')
 django.setup()
 
-from decimal import Decimal
-from datetime import date
-from django.contrib.auth.models import User
-from app.models import (
+from decimal import Decimal  # noqa: E402
+from datetime import date  # noqa: E402
+from django.contrib.auth.models import User  # noqa: E402
+from app.models import (  # noqa: E402
     CompaniaAseguradora, CorredorSeguros, TipoPoliza,
     Poliza, Ramo, DetallePolizaRamo
 )

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 from typing import Dict, Any, Optional
 
+
 @dataclass
 class ResultadoValidacion:
 
@@ -45,7 +46,10 @@ class ResultadoValidacion:
 
         return self
 
+
+
 @dataclass
+
 class ResultadoOperacion:
 
     """Resultado de una operación de servicio."""
@@ -92,6 +96,7 @@ class ResultadoOperacion:
             mensaje=mensaje or "Error de validación"
 
         )
+
 
 class BaseService:
 

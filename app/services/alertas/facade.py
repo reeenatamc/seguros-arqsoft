@@ -16,6 +16,7 @@ from .poliza import PolizaNotifier
 
 from .alertas import AlertasService
 
+
 class NotificacionesFacade:
 
     """

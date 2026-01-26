@@ -36,6 +36,7 @@ from app.models import (
 
 )
 
+
 class Command(BaseCommand):
 
     help = 'Poblar la base de datos con datos de prueba'

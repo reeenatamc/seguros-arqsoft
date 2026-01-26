@@ -32,6 +32,7 @@ from django.core.management import call_command
 
 from django.db import connection
 
+
 class Command(BaseCommand):
 
     help = 'Restaura la base de datos desde un archivo de backup'

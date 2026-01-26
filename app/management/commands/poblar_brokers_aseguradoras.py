@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 
 from app.models import Poliza
 
+
 class Command(BaseCommand):
 
     help = "Puebla la relación de brokers autorizados por aseguradora a partir de las pólizas existentes."

@@ -16,6 +16,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 from openpyxl.utils import get_column_letter
 
+
 def make_naive(dt):
 
     """
@@ -37,6 +38,8 @@ def make_naive(dt):
         return timezone.localtime(dt).replace(tzinfo=None)
 
     return dt
+
+
 
 class ExportacionService:
 

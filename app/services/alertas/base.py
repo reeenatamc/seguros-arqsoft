@@ -14,6 +14,7 @@ from django.conf import settings
 
 from typing import Optional, List, Dict, Any
 
+
 class BaseNotifier:
 
     """

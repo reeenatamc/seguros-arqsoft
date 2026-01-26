@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from .base import BaseNotifier
 
+
 class ResponsableNotifier(BaseNotifier):
 
     """

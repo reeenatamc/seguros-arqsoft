@@ -38,6 +38,7 @@ except ImportError:
 
     DOCX_AVAILABLE = False
 
+
 class DocumentosService:
 
     """Servicio para generación y gestión de documentos"""

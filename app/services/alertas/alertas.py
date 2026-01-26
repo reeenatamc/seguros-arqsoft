@@ -12,6 +12,7 @@ from .broker import BrokerNotifier
 
 from .responsable import ResponsableNotifier
 
+
 class AlertasService:
 
     """

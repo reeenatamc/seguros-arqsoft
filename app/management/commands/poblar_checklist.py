@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 
 from app.models import TipoSiniestro, ChecklistSiniestroConfig
 
+
 class Command(BaseCommand):
 
     help = "Configura el checklist de documentación para todos los tipos de siniestro"

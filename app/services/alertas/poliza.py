@@ -8,6 +8,7 @@ Responsabilidad única: notificaciones sobre pólizas (vencimiento, renovación)
 
 from .base import BaseNotifier
 
+
 class PolizaNotifier(BaseNotifier):
 
     """

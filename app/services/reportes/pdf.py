@@ -48,6 +48,7 @@ from reportlab.graphics.charts.legends import Legend
 
 # =============================================================================
 
+
 class Colors:
 
     """Paleta limitada y profesional para documentos institucionales."""
@@ -97,6 +98,8 @@ class Colors:
 # SERVICIO PRINCIPAL
 
 # =============================================================================
+
+
 
 class PDFReportesService:
 

@@ -20,6 +20,7 @@ from typing import Dict, List, Any, Optional, Tuple
 
 import json
 
+
 class DashboardAnalyticsService:
 
     """

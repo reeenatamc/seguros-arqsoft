@@ -36,6 +36,7 @@ from app.models import (
 
 )
 
+
 class AdvancedAnalyticsService:
 
     """Servicio para cálculos analíticos avanzados del dashboard"""

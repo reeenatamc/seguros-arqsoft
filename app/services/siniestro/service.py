@@ -20,6 +20,7 @@ from django.utils import timezone
 
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
 
+
 class SiniestroService(BaseService):
 
     """

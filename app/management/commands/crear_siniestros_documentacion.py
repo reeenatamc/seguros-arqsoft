@@ -22,6 +22,7 @@ from app.models import (
 
 )
 
+
 class Command(BaseCommand):
 
     help = "Crea dos siniestros en estado 'documentacion_pendiente' para pruebas"

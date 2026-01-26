@@ -32,6 +32,7 @@ from django.conf import settings
 
 from django.core.management import call_command
 
+
 class Command(BaseCommand):
 
     help = 'Crea un respaldo completo de la base de datos y opcionalmente archivos media'

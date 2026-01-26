@@ -50,6 +50,7 @@ from app.services.email_reader import (
 
 )
 
+
 class Command(BaseCommand):
 
     help = 'Lee correos de siniestros desde la bandeja de entrada IMAP y los guarda en la BD'

@@ -8,6 +8,7 @@ from decimal import Decimal
 
 import json
 
+
 class ReportesService:
 
     @staticmethod

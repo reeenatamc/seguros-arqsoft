@@ -26,6 +26,7 @@ from app.models import (
 
 )
 
+
 class NotificacionesService:
 
     """Servicio para gestión de notificaciones por email"""

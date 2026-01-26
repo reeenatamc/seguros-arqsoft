@@ -48,6 +48,7 @@ from app.models import (
 
 )
 
+
 class Command(BaseCommand):
 
     help = (

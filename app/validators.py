@@ -106,6 +106,7 @@ DANGEROUS_EXTENSIONS = [
 
 DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB en bytes
 
+
 @deconstructible
 class FileValidator:
 
@@ -283,7 +284,10 @@ class FileValidator:
 
         )
 
+
+
 @deconstructible
+
 class ImageValidator(FileValidator):
 
     """
@@ -312,7 +316,10 @@ class ImageValidator(FileValidator):
 
         )
 
+
 @deconstructible
+
+
 class PDFValidator(FileValidator):
 
     """
@@ -340,6 +347,8 @@ validate_document = FileValidator()
 validate_image = ImageValidator()
 
 validate_pdf = PDFValidator()
+
+
 
 def validate_file_extension(value):
 

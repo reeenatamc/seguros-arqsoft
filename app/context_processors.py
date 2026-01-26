@@ -1,5 +1,6 @@
 from .models import Alerta
 
+
 def alertas_context(request):
 
     if request.user.is_authenticated:

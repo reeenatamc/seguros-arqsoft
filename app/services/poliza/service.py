@@ -16,6 +16,7 @@ from django.db.models import Q
 
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
 
+
 class PolizaService(BaseService):
 
     """

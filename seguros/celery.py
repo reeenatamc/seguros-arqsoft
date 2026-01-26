@@ -82,6 +82,7 @@ app.conf.beat_schedule = {
 
 app.conf.timezone = 'America/Guayaquil'
 
+
 @app.task(bind=True, ignore_result=True)
 def debug_task(self):
 

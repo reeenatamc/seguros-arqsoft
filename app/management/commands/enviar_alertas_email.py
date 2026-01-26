@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from app.models import Alerta
 
+
 class Command(BaseCommand):
 
     help = 'Envía alertas pendientes por correo electrónico'

@@ -24,6 +24,7 @@ from .validators import validate_document
 
 # Centralizan reglas de negocio para evitar duplicación de lógica de filtrado
 
+
 class PolizaManager(models.Manager):
 
     """
@@ -144,6 +145,8 @@ class PolizaManager(models.Manager):
 
         )
 
+
+
 class FacturaManager(models.Manager):
 
     """
@@ -213,6 +216,8 @@ class FacturaManager(models.Manager):
         """Facturas que tienen saldo por pagar."""
 
         return self.filter(estado__in=['pendiente', 'parcial', 'vencida'])
+
+
 
 class SiniestroManager(models.Manager):
 
@@ -376,6 +381,8 @@ class SiniestroManager(models.Manager):
 
         )
 
+
+
 class BienAseguradoManager(models.Manager):
 
     """
@@ -427,6 +434,8 @@ validador_ruc = RegexValidator(
 )
 
 # ==================== MODELOS ====================
+
+
 
 class ConfiguracionSistema(models.Model):
 
@@ -724,6 +733,8 @@ class ConfiguracionSistema(models.Model):
 
             )
 
+
+
 class CompaniaAseguradora(models.Model):
 
     """Modelo para las compañías aseguradoras"""
@@ -778,6 +789,7 @@ class CompaniaAseguradora(models.Model):
         """Retorna los corredores activos de esta compañía"""
 
         return self.corredores.filter(activo=True)
+
 
 class CorredorSeguros(models.Model):
 
@@ -839,6 +851,7 @@ class CorredorSeguros(models.Model):
 
         return f"{self.nombre} ({self.compania_aseguradora.nombre})"
 
+
 class TipoPoliza(models.Model):
 
     """Modelo para los tipos de póliza"""
@@ -860,6 +873,8 @@ class TipoPoliza(models.Model):
     def __str__(self):
 
         return self.nombre
+
+
 
 class ResponsableCustodio(models.Model):
 
@@ -902,6 +917,8 @@ class ResponsableCustodio(models.Model):
             return f"{self.nombre} - {self.departamento}"
 
         return self.nombre
+
+
 
 class Poliza(models.Model):
 
@@ -1229,6 +1246,8 @@ class Poliza(models.Model):
 
         return deducible_fijo
 
+
+
 class Factura(models.Model):
 
     """Modelo para las facturas emitidas por las aseguradoras"""
@@ -1437,6 +1456,7 @@ class Factura(models.Model):
 
             return False
 
+
 class Pago(models.Model):
 
     """Modelo para registrar los pagos realizados a las facturas"""
@@ -1525,6 +1545,7 @@ class Pago(models.Model):
 
         return f"Pago {self.referencia} - ${self.monto} ({self.fecha_pago})"
 
+
 class TipoSiniestro(models.Model):
 
     """Modelo para los tipos de siniestro"""
@@ -1568,6 +1589,8 @@ class TipoSiniestro(models.Model):
     def __str__(self):
 
         return self.get_nombre_display()
+
+
 
 class Siniestro(models.Model):
 
@@ -2088,6 +2111,7 @@ class Siniestro(models.Model):
 
             return Decimal('0.00')
 
+
 class Documento(models.Model):
 
     """Modelo para almacenar documentos asociados a pólizas y siniestros"""
@@ -2239,6 +2263,8 @@ class Documento(models.Model):
 
 # ==================== MODELOS DE CHECKLIST Y ADJUNTOS DE SINIESTRO ====================
 
+
+
 class ChecklistSiniestroConfig(models.Model):
 
     """
@@ -2280,6 +2306,7 @@ class ChecklistSiniestroConfig(models.Model):
     def __str__(self):
 
         return f"{self.tipo_siniestro.get_nombre_display()} - {self.nombre}"
+
 
 class ChecklistSiniestro(models.Model):
 
@@ -2348,6 +2375,8 @@ class ChecklistSiniestro(models.Model):
         self.completado_por = usuario
 
         self.save()
+
+
 
 class AdjuntoSiniestro(models.Model):
 
@@ -2510,6 +2539,7 @@ class AdjuntoSiniestro(models.Model):
 
         return ''
 
+
 class Alerta(models.Model):
 
     """Modelo para gestionar las alertas automáticas del sistema"""
@@ -2615,6 +2645,7 @@ class Alerta(models.Model):
         self.save()
 
 # ==================== MODELO NOTIFICACIÓN EMAIL ====================
+
 
 class NotificacionEmail(models.Model):
 
@@ -2774,6 +2805,8 @@ class NotificacionEmail(models.Model):
 
 # ==================== MODELO NOTA DE CRÉDITO ====================
 
+
+
 class NotaCredito(models.Model):
 
     """
@@ -2865,6 +2898,8 @@ class NotaCredito(models.Model):
         return f"NC-{self.numero} - ${self.monto}"
 
 # ==================== NUEVOS MODELOS (Código en inglés, interfaz en español) ====================
+
+
 
 class Quote(models.Model):
 
@@ -3067,6 +3102,8 @@ class Quote(models.Model):
 
         return policy
 
+
+
 class QuoteOption(models.Model):
 
     """
@@ -3165,6 +3202,7 @@ class QuoteOption(models.Model):
             return (self.premium_amount / self.quote.sum_insured) * 1000
 
         return 0
+
 
 class PolicyRenewal(models.Model):
 
@@ -3373,6 +3411,7 @@ class PolicyRenewal(models.Model):
 
         self.save()
 
+
 class PaymentApproval(models.Model):
 
     """
@@ -3554,6 +3593,8 @@ class PaymentApproval(models.Model):
 
 # ==================== MODELOS DE CATÁLOGO DE RAMOS (JERARQUÍA) ====================
 
+
+
 class TipoRamo(models.Model):
 
     """
@@ -3607,6 +3648,8 @@ class TipoRamo(models.Model):
             raise ValidationError("No se puede eliminar un tipo de ramo predefinido.")
 
         super().delete(*args, **kwargs)
+
+
 
 class GrupoRamo(models.Model):
 
@@ -3673,6 +3716,8 @@ class GrupoRamo(models.Model):
             raise ValidationError("No se puede eliminar un grupo de ramo predefinido.")
 
         super().delete(*args, **kwargs)
+
+
 
 class SubgrupoRamo(models.Model):
 
@@ -3754,6 +3799,7 @@ Ramo = GrupoRamo
 SubtipoRamo = SubgrupoRamo
 
 # ==================== MODELO BIEN ASEGURADO ====================
+
 
 class BienAsegurado(models.Model):
 
@@ -4007,6 +4053,8 @@ class BienAsegurado(models.Model):
         """Retorna el número total de siniestros del bien"""
 
         return self.siniestros.count()
+
+
 
 class DetallePolizaRamo(models.Model):
 
@@ -4295,6 +4343,7 @@ class DetallePolizaRamo(models.Model):
 
 # ==================== MODELO GRUPO DE BIENES ====================
 
+
 class GrupoBienes(models.Model):
 
     """
@@ -4378,6 +4427,8 @@ class GrupoBienes(models.Model):
             total=models.Sum('current_value')
 
         )['total'] or Decimal('0.00')
+
+
 
 class CalendarEvent(models.Model):
 
@@ -4590,6 +4641,7 @@ class CalendarEvent(models.Model):
         return event
 
 # ==================== MODELO SINIESTRO EMAIL ====================
+
 
 class SiniestroEmail(models.Model):
 
@@ -4981,6 +5033,7 @@ class SiniestroEmail(models.Model):
 
 # ==================== SISTEMA DE RESPALDOS ====================
 
+
 class BackupRegistro(models.Model):
 
     """
@@ -5216,6 +5269,7 @@ class BackupRegistro(models.Model):
             )['promedio'] or 0,
 
         }
+
 
 class ConfiguracionBackup(models.Model):
 
