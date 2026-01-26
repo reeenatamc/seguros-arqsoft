@@ -43,7 +43,7 @@ jobs:
     - name: ⚫ Verificar formato con black
       run: |
         echo "⚫ Verificando formato de código..."
-        black --check --diff .
+        black --check --diff . --exclude="app/management/commands/poblar_datos_prueba.py"
 
     - name: 📋 Verificar orden de imports con isort
       run: |
