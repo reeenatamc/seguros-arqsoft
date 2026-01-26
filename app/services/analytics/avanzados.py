@@ -29,7 +29,6 @@ from collections import defaultdict
 import json
 
 
-
 from app.models import (
 
     Poliza, Factura, Pago, Siniestro, TipoPoliza, TipoSiniestro,
@@ -39,17 +38,11 @@ from app.models import (
 )
 
 
-
-
-
 class AdvancedAnalyticsService:
 
     """Servicio para cálculos analíticos avanzados del dashboard"""
 
-    
-
     @classmethod
-
     def get_loss_ratio_by_policy_type(cls):
 
         """
@@ -64,11 +57,7 @@ class AdvancedAnalyticsService:
 
         results = []
 
-        
-
         tipos_poliza = TipoPoliza.objects.filter(activo=True)
-
-        
 
         for tipo in tipos_poliza:
 
@@ -77,8 +66,6 @@ class AdvancedAnalyticsService:
             polizas = Poliza.objects.filter(tipo_poliza=tipo)
 
             poliza_ids = polizas.values_list('id', flat=True)
-
-            
 
             # Calcular primas cobradas (pagos aprobados de facturas de estas pólizas)
 
@@ -94,8 +81,6 @@ class AdvancedAnalyticsService:
 
             )['total']
 
-            
-
             # Calcular montos indemnizados (siniestros liquidados de estas pólizas)
 
             montos_indemnizados = Siniestro.objects.filter(
@@ -110,8 +95,6 @@ class AdvancedAnalyticsService:
 
             )['total']
 
-            
-
             # Calcular ratio
 
             if primas_pagadas > 0:
@@ -122,15 +105,11 @@ class AdvancedAnalyticsService:
 
                 ratio = 0
 
-            
-
             # Conteos adicionales
 
             num_polizas = polizas.count()
 
             num_siniestros = Siniestro.objects.filter(poliza__in=poliza_ids).count()
-
-            
 
             results.append({
 
@@ -154,20 +133,13 @@ class AdvancedAnalyticsService:
 
             })
 
-        
-
         # Ordenar por ratio descendente
 
         results.sort(key=lambda x: x['ratio'], reverse=True)
 
-        
-
         return results
 
-    
-
     @classmethod
-
     def get_claims_vs_premiums_trend(cls, months=12):
 
         """
@@ -181,8 +153,6 @@ class AdvancedAnalyticsService:
         today = timezone.now().date()
 
         start_date = today.replace(day=1) - timedelta(days=months * 30)
-
-        
 
         # Primas pagadas por mes
 
@@ -202,8 +172,6 @@ class AdvancedAnalyticsService:
 
         ).order_by('month')
 
-        
-
         # Indemnizaciones por mes
 
         claims_by_month = Siniestro.objects.filter(
@@ -222,13 +190,9 @@ class AdvancedAnalyticsService:
 
         ).order_by('month')
 
-        
-
         # Combinar datos en un diccionario por mes
 
         data_by_month = defaultdict(lambda: {'premiums': 0, 'claims': 0})
-
-        
 
         for item in premiums_by_month:
 
@@ -238,8 +202,6 @@ class AdvancedAnalyticsService:
 
                 data_by_month[key]['premiums'] = float(item['total'] or 0)
 
-        
-
         for item in claims_by_month:
 
             if item['month']:
@@ -247,8 +209,6 @@ class AdvancedAnalyticsService:
                 key = item['month'].strftime('%Y-%m')
 
                 data_by_month[key]['claims'] = float(item['total'] or 0)
-
-        
 
         # Generar lista ordenada de los últimos N meses
 
@@ -264,8 +224,6 @@ class AdvancedAnalyticsService:
 
         }
 
-        
-
         current = start_date.replace(day=1)
 
         while current <= today:
@@ -274,15 +232,11 @@ class AdvancedAnalyticsService:
 
             label = current.strftime('%b %Y')
 
-            
-
             premiums = data_by_month[key]['premiums']
 
             claims = data_by_month[key]['claims']
 
             ratio = (claims / premiums * 100) if premiums > 0 else 0
-
-            
 
             result['labels'].append(label)
 
@@ -291,8 +245,6 @@ class AdvancedAnalyticsService:
             result['claims'].append(claims)
 
             result['ratios'].append(round(ratio, 2))
-
-            
 
             # Avanzar al siguiente mes
 
@@ -304,14 +256,9 @@ class AdvancedAnalyticsService:
 
                 current = current.replace(month=current.month + 1)
 
-        
-
         return result
 
-    
-
     @classmethod
-
     def get_claims_by_location(cls):
 
         """
@@ -342,13 +289,9 @@ class AdvancedAnalyticsService:
 
         ).order_by('-count')[:20]  # Top 20 ubicaciones
 
-        
-
         # Normalizar para el heatmap (0-100)
 
         max_count = max([loc['count'] for loc in locations_data], default=1)
-
-        
 
         result = []
 
@@ -357,8 +300,6 @@ class AdvancedAnalyticsService:
             # Limpiar nombre de ubicación
 
             location_name = loc['ubicacion'][:50] if loc['ubicacion'] else 'Sin especificar'
-
-            
 
             result.append({
 
@@ -376,14 +317,9 @@ class AdvancedAnalyticsService:
 
             })
 
-        
-
         return result
 
-    
-
     @classmethod
-
     def get_claims_by_type_distribution(cls):
 
         """
@@ -406,8 +342,6 @@ class AdvancedAnalyticsService:
 
         ).order_by('-count')
 
-        
-
         result = {
 
             'labels': [],
@@ -417,8 +351,6 @@ class AdvancedAnalyticsService:
             'amounts': [],
 
         }
-
-        
 
         for item in distribution:
 
@@ -430,14 +362,9 @@ class AdvancedAnalyticsService:
 
             result['amounts'].append(float(item['total_estimado']))
 
-        
-
         return result
 
-    
-
     @classmethod
-
     def predict_renewal_premium(cls, policy_id=None):
 
         """
@@ -449,8 +376,6 @@ class AdvancedAnalyticsService:
         - Tendencia general del mercado
 
         - Factor de inflación estimado
-
-        
 
         Usa un modelo de regresión lineal simple.
 
@@ -464,10 +389,7 @@ class AdvancedAnalyticsService:
 
             return cls._predict_all_policies()
 
-    
-
     @classmethod
-
     def _predict_single_policy(cls, policy_id):
 
         """Predicción para una póliza específica"""
@@ -480,21 +402,15 @@ class AdvancedAnalyticsService:
 
             return None
 
-        
-
         # Obtener prima actual (último pago de factura)
 
         ultima_factura = poliza.facturas.order_by('-fecha_emision').first()
 
         prima_actual = float(ultima_factura.subtotal) if ultima_factura else 0
 
-        
-
         # Factor base de inflación (5% anual estimado)
 
         inflation_factor = 1.05
-
-        
 
         # Factor de siniestralidad de la póliza
 
@@ -508,8 +424,6 @@ class AdvancedAnalyticsService:
 
         )['total'])
 
-        
-
         # Calcular factor de riesgo basado en siniestralidad
 
         if prima_actual > 0:
@@ -519,8 +433,6 @@ class AdvancedAnalyticsService:
         else:
 
             loss_ratio = 0
-
-        
 
         # Factor de riesgo: si ratio > 70%, incrementar prima
 
@@ -544,21 +456,15 @@ class AdvancedAnalyticsService:
 
             risk_factor = 1.0
 
-        
-
         # Calcular prima predicha
 
         prima_predicha = prima_actual * inflation_factor * risk_factor
-
-        
 
         # Calcular intervalo de confianza (±10%)
 
         confidence_low = prima_predicha * 0.90
 
         confidence_high = prima_predicha * 1.10
-
-        
 
         return {
 
@@ -592,17 +498,12 @@ class AdvancedAnalyticsService:
 
         }
 
-    
-
     @classmethod
-
     def _predict_all_policies(cls):
 
         """Predicción para todas las pólizas por renovar"""
 
         today = timezone.now().date()
-
-        
 
         # Pólizas que vencen en los próximos 90 días
 
@@ -616,11 +517,7 @@ class AdvancedAnalyticsService:
 
         ).order_by('fecha_fin')
 
-        
-
         predictions = []
-
-        
 
         for poliza in polizas_por_renovar:
 
@@ -637,8 +534,6 @@ class AdvancedAnalyticsService:
                 prediction['insurer'] = poliza.compania_aseguradora.nombre
 
                 predictions.append(prediction)
-
-        
 
         # Resumen estadístico
 
@@ -657,8 +552,6 @@ class AdvancedAnalyticsService:
             total_predicted = 0
 
             avg_change = 0
-
-        
 
         return {
 
@@ -684,10 +577,7 @@ class AdvancedAnalyticsService:
 
         }
 
-    
-
     @classmethod
-
     def get_insurer_performance(cls):
 
         """
@@ -700,11 +590,7 @@ class AdvancedAnalyticsService:
 
         insurers = CompaniaAseguradora.objects.filter(activo=True)
 
-        
-
         results = []
-
-        
 
         for insurer in insurers:
 
@@ -712,21 +598,15 @@ class AdvancedAnalyticsService:
 
             poliza_ids = polizas.values_list('id', flat=True)
 
-            
-
             # Siniestros de esta aseguradora
 
             siniestros = Siniestro.objects.filter(poliza__in=poliza_ids)
-
-            
 
             total_siniestros = siniestros.count()
 
             siniestros_aprobados = siniestros.filter(estado__in=['aprobado', 'liquidado', 'cerrado']).count()
 
             siniestros_rechazados = siniestros.filter(estado='rechazado').count()
-
-            
 
             # Tiempo promedio de respuesta (días desde envío hasta respuesta)
 
@@ -742,8 +622,6 @@ class AdvancedAnalyticsService:
 
             )
 
-            
-
             # Monto total indemnizado
 
             monto_indemnizado = float(siniestros.aggregate(
@@ -751,8 +629,6 @@ class AdvancedAnalyticsService:
                 total=Coalesce(Sum('monto_indemnizado'), Value(Decimal('0')))
 
             )['total'])
-
-            
 
             # Tasa de aprobación
 
@@ -763,8 +639,6 @@ class AdvancedAnalyticsService:
             else:
 
                 approval_rate = 0
-
-            
 
             results.append({
 
@@ -788,20 +662,13 @@ class AdvancedAnalyticsService:
 
             })
 
-        
-
         # Ordenar por tasa de aprobación
 
         results.sort(key=lambda x: x['approval_rate'], reverse=True)
 
-        
-
         return results
 
-    
-
     @classmethod
-
     def get_dashboard_summary(cls):
 
         """
@@ -814,8 +681,6 @@ class AdvancedAnalyticsService:
 
         start_year = today.replace(month=1, day=1)
 
-        
-
         # KPIs principales
 
         total_primas_year = Pago.objects.filter(
@@ -826,8 +691,6 @@ class AdvancedAnalyticsService:
 
         ).aggregate(total=Coalesce(Sum('monto'), Value(Decimal('0'))))['total']
 
-        
-
         total_indemnizaciones_year = Siniestro.objects.filter(
 
             estado__in=['liquidado', 'cerrado'],
@@ -835,8 +698,6 @@ class AdvancedAnalyticsService:
             fecha_liquidacion__gte=start_year
 
         ).aggregate(total=Coalesce(Sum('monto_indemnizado'), Value(Decimal('0'))))['total']
-
-        
 
         # Ratio global de siniestralidad
 
@@ -847,8 +708,6 @@ class AdvancedAnalyticsService:
         else:
 
             loss_ratio_global = 0
-
-        
 
         # Conteos
 
@@ -861,8 +720,6 @@ class AdvancedAnalyticsService:
             estado__in=['cerrado', 'rechazado']
 
         ).count()
-
-        
 
         return {
 
@@ -881,4 +738,3 @@ class AdvancedAnalyticsService:
             'status': 'danger' if loss_ratio_global > 100 else ('warning' if loss_ratio_global > 70 else 'success'),
 
         }
-

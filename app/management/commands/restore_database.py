@@ -3,7 +3,6 @@
 Comando para restaurar la base de datos desde un backup.
 
 
-
 Uso:
 
     python manage.py restore_database backup_20240115_120000.json
@@ -17,7 +16,6 @@ Uso:
 """
 
 
-
 import os
 
 import gzip
@@ -29,7 +27,6 @@ from datetime import datetime
 from pathlib import Path
 
 
-
 from django.core.management.base import BaseCommand, CommandError
 
 from django.conf import settings
@@ -39,14 +36,9 @@ from django.core.management import call_command
 from django.db import connection
 
 
-
-
-
 class Command(BaseCommand):
 
     help = 'Restaura la base de datos desde un archivo de backup'
-
-
 
     def add_arguments(self, parser):
 
@@ -124,21 +116,15 @@ class Command(BaseCommand):
 
         )
 
-
-
     def handle(self, *args, **options):
 
         backup_dir = self._get_backup_dir()
-
-        
 
         # Listar backups disponibles
 
         if options['list']:
 
             return self._list_backups(backup_dir)
-
-        
 
         # Obtener archivo de backup
 
@@ -164,15 +150,11 @@ class Command(BaseCommand):
 
             )
 
-        
-
         # Verificar que el archivo existe
 
         if not backup_file.exists():
 
             raise CommandError(f'Archivo de backup no encontrado: {backup_file}')
-
-        
 
         # Confirmar restauración
 
@@ -200,8 +182,6 @@ class Command(BaseCommand):
 
                 return
 
-        
-
         try:
 
             # Crear backup de seguridad antes de restaurar
@@ -214,8 +194,6 @@ class Command(BaseCommand):
 
                 self.stdout.write(self.style.SUCCESS('Backup de seguridad creado'))
 
-            
-
             # Descomprimir si es necesario
 
             is_compressed = options['compressed'] or str(backup_file).endswith('.gz')
@@ -224,13 +202,9 @@ class Command(BaseCommand):
 
                 backup_file = self._decompress_file(backup_file)
 
-            
-
             # Detectar formato
 
             backup_format = self._detect_format(backup_file)
-
-            
 
             # Limpiar base de datos
 
@@ -238,15 +212,11 @@ class Command(BaseCommand):
 
             self._flush_database()
 
-            
-
             # Restaurar datos
 
             self.stdout.write('Restaurando datos...')
 
             self._restore_data(backup_file, backup_format)
-
-            
 
             # Limpiar archivo temporal si se descomprimió
 
@@ -254,13 +224,9 @@ class Command(BaseCommand):
 
                 backup_file.unlink()
 
-            
-
             # Registrar restauración
 
             self._register_restore(backup_file)
-
-            
 
             self.stdout.write(
 
@@ -276,13 +242,9 @@ class Command(BaseCommand):
 
             )
 
-            
-
         except Exception as e:
 
             raise CommandError(f'Error durante la restauración: {str(e)}')
-
-
 
     def _get_backup_dir(self):
 
@@ -296,8 +258,6 @@ class Command(BaseCommand):
 
         return Path(settings.BASE_DIR) / 'backups'
 
-
-
     def _list_backups(self, backup_dir):
 
         """Lista todos los backups disponibles."""
@@ -308,8 +268,6 @@ class Command(BaseCommand):
 
             return
 
-        
-
         backups = sorted(
 
             backup_dir.glob('backup_*'),
@@ -320,15 +278,11 @@ class Command(BaseCommand):
 
         )
 
-        
-
         if not backups:
 
             self.stdout.write(self.style.WARNING('No hay backups disponibles'))
 
             return
-
-        
 
         self.stdout.write(self.style.SUCCESS(f'\nBackups disponibles en: {backup_dir}\n'))
 
@@ -338,8 +292,6 @@ class Command(BaseCommand):
 
         self.stdout.write('-' * 80)
 
-        
-
         for backup in backups:
 
             size = self._format_size(backup.stat().st_size)
@@ -348,13 +300,9 @@ class Command(BaseCommand):
 
             self.stdout.write(f'{backup.name:<45} {size:<12} {date:<20}')
 
-        
-
         self.stdout.write('-' * 80)
 
         self.stdout.write(f'Total: {len(backups)} backups\n')
-
-
 
     def _get_latest_backup(self, backup_dir):
 
@@ -363,8 +311,6 @@ class Command(BaseCommand):
         if not backup_dir.exists():
 
             return None
-
-        
 
         backups = sorted(
 
@@ -376,11 +322,7 @@ class Command(BaseCommand):
 
         )
 
-        
-
         return backups[0] if backups else None
-
-
 
     def _resolve_backup_path(self, backup_file, backup_dir):
 
@@ -388,15 +330,11 @@ class Command(BaseCommand):
 
         backup_path = Path(backup_file)
 
-        
-
         # Si es ruta absoluta
 
         if backup_path.is_absolute():
 
             return backup_path
-
-        
 
         # Buscar en directorio de backups
 
@@ -404,13 +342,9 @@ class Command(BaseCommand):
 
             return backup_dir / backup_file
 
-        
-
         # Buscar en directorio actual
 
         return backup_path
-
-
 
     def _decompress_file(self, file_path):
 
@@ -418,11 +352,7 @@ class Command(BaseCommand):
 
         self.stdout.write('Descomprimiendo archivo...')
 
-        
-
         decompressed_path = Path(str(file_path).replace('.gz', ''))
-
-        
 
         with gzip.open(file_path, 'rb') as f_in:
 
@@ -430,19 +360,13 @@ class Command(BaseCommand):
 
                 shutil.copyfileobj(f_in, f_out)
 
-        
-
         return decompressed_path
-
-
 
     def _detect_format(self, file_path):
 
         """Detecta el formato del archivo de backup."""
 
         suffix = file_path.suffix.lower()
-
-        
 
         if suffix == '.json':
 
@@ -455,8 +379,6 @@ class Command(BaseCommand):
         elif suffix == '.yaml' or suffix == '.yml':
 
             return 'yaml'
-
-        
 
         # Intentar detectar por contenido
 
@@ -472,11 +394,7 @@ class Command(BaseCommand):
 
                 return 'xml'
 
-        
-
         return 'json'
-
-
 
     def _flush_database(self):
 
@@ -485,8 +403,6 @@ class Command(BaseCommand):
         # Usar flush de Django
 
         call_command('flush', '--no-input', verbosity=0)
-
-
 
     def _restore_data(self, backup_file, backup_format):
 
@@ -504,8 +420,6 @@ class Command(BaseCommand):
 
         )
 
-
-
     def _register_restore(self, backup_file):
 
         """Registra la restauración en la base de datos."""
@@ -513,8 +427,6 @@ class Command(BaseCommand):
         try:
 
             from app.models import BackupRegistro
-
-            
 
             BackupRegistro.objects.create(
 
@@ -536,8 +448,6 @@ class Command(BaseCommand):
 
             pass
 
-
-
     def _format_size(self, size):
 
         """Formatea el tamaño en bytes."""
@@ -551,4 +461,3 @@ class Command(BaseCommand):
             size /= 1024
 
         return f'{size:.2f} TB'
-

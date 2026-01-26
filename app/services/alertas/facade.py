@@ -7,7 +7,6 @@ Proporciona un punto de entrada único manteniendo compatibilidad con código ex
 """
 
 
-
 from .broker import BrokerNotifier
 
 from .user import UserNotifier
@@ -19,22 +18,15 @@ from .poliza import PolizaNotifier
 from .alertas import AlertasService
 
 
-
-
-
 class NotificacionesFacade:
 
     """
 
     Facade que agrupa todos los notificadores para acceso conveniente.
 
-    
-
     USO:
 
         facade = NotificacionesFacade()
-
-        
 
         # Acceso por tipo de notificador
 
@@ -44,13 +36,9 @@ class NotificacionesFacade:
 
         facade.poliza.notificar_vencimiento(poliza)
 
-        
-
         # Verificar alertas
 
         facade.alertas.verificar_todas()
-
-    
 
     NOTA:
 
@@ -59,8 +47,6 @@ class NotificacionesFacade:
         individuales directamente si solo necesitas uno.
 
     """
-
-    
 
     def __init__(self):
 
@@ -74,10 +60,7 @@ class NotificacionesFacade:
 
         self._alertas = None
 
-    
-
     @property
-
     def broker(self) -> BrokerNotifier:
 
         """Notificador para comunicaciones con el broker."""
@@ -88,10 +71,7 @@ class NotificacionesFacade:
 
         return self._broker
 
-    
-
     @property
-
     def user(self) -> UserNotifier:
 
         """Notificador para comunicaciones con usuarios internos."""
@@ -102,10 +82,7 @@ class NotificacionesFacade:
 
         return self._user
 
-    
-
     @property
-
     def responsable(self) -> ResponsableNotifier:
 
         """Notificador para comunicaciones con responsables/custodios."""
@@ -116,10 +93,7 @@ class NotificacionesFacade:
 
         return self._responsable
 
-    
-
     @property
-
     def poliza(self) -> PolizaNotifier:
 
         """Notificador para comunicaciones sobre pólizas."""
@@ -130,10 +104,7 @@ class NotificacionesFacade:
 
         return self._poliza
 
-    
-
     @property
-
     def alertas(self) -> AlertasService:
 
         """Servicio de verificación de alertas automáticas."""
@@ -144,8 +115,6 @@ class NotificacionesFacade:
 
         return self._alertas
 
-    
-
     # Métodos de conveniencia para compatibilidad con código existente
 
     def notificar_siniestro_a_broker(self, siniestro, usuario=None):
@@ -154,15 +123,11 @@ class NotificacionesFacade:
 
         return self.broker.notificar_siniestro(siniestro, usuario)
 
-    
-
     def notificar_siniestro_a_usuario(self, siniestro, usuario=None):
 
         """Alias para compatibilidad con NotificacionesService."""
 
         return self.user.confirmar_registro_siniestro(siniestro, usuario)
-
-    
 
     def notificar_responsable_bien(self, siniestro, usuario=None):
 
@@ -170,19 +135,14 @@ class NotificacionesFacade:
 
         return self.responsable.notificar_siniestro_pendiente(siniestro, usuario)
 
-    
-
     def notificar_vencimiento_poliza(self, poliza, dias_antes=30, usuario=None):
 
         """Alias para compatibilidad con NotificacionesService."""
 
         return self.poliza.notificar_vencimiento(poliza, dias_antes, usuario)
 
-    
-
     def verificar_alertas_siniestros(self):
 
         """Alias para compatibilidad con NotificacionesService."""
 
         return self.alertas.verificar_todas()
-

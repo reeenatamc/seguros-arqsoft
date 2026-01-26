@@ -13,7 +13,6 @@ from django.utils.deconstruct import deconstructible
 from django.template.defaultfilters import filesizeformat
 
 
-
 # Importar magic opcionalmente (solo si está disponible)
 
 try:
@@ -25,9 +24,6 @@ try:
 except ImportError:
 
     MAGIC_AVAILABLE = False
-
-
-
 
 
 # Tipos MIME permitidos para documentos
@@ -79,11 +75,9 @@ ALLOWED_MIME_TYPES = {
 }
 
 
-
 # Extensiones permitidas
 
 ALLOWED_EXTENSIONS = [ext for exts in ALLOWED_MIME_TYPES.values() for ext in exts]
-
 
 
 # Extensiones peligrosas que nunca se deben permitir
@@ -113,17 +107,12 @@ DANGEROUS_EXTENSIONS = [
 ]
 
 
-
 # Tamaño máximo por defecto: 10MB
 
 DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB en bytes
 
 
-
-
-
 @deconstructible
-
 class FileValidator:
 
     """
@@ -140,11 +129,9 @@ class FileValidator:
 
     """
 
-    
+    def __init__(self,
 
-    def __init__(self, 
-
-                 max_size=DEFAULT_MAX_FILE_SIZE, 
+                 max_size=DEFAULT_MAX_FILE_SIZE,
 
                  allowed_extensions=None,
 
@@ -156,27 +143,19 @@ class FileValidator:
 
         self.allowed_mime_types = allowed_mime_types or list(ALLOWED_MIME_TYPES.keys())
 
-    
-
     def __call__(self, file):
 
         # Validar tamaño
 
         self._validate_size(file)
 
-        
-
         # Validar extensión
 
         self._validate_extension(file)
 
-        
-
         # Validar tipo MIME real
 
         self._validate_mime_type(file)
-
-    
 
     def _validate_size(self, file):
 
@@ -194,15 +173,11 @@ class FileValidator:
 
             )
 
-    
-
     def _validate_extension(self, file):
 
         """Valida la extensión del archivo."""
 
         ext = os.path.splitext(file.name)[1].lower()
-
-        
 
         # Verificar que no sea una extensión peligrosa
 
@@ -213,8 +188,6 @@ class FileValidator:
                 f'El tipo de archivo "{ext}" no está permitido por razones de seguridad.'
 
             )
-
-        
 
         # Verificar que esté en la lista de permitidos
 
@@ -227,8 +200,6 @@ class FileValidator:
                 f'Extensiones permitidas: {", ".join(self.allowed_extensions)}'
 
             )
-
-    
 
     def _validate_mime_type(self, file):
 
@@ -252,8 +223,6 @@ class FileValidator:
 
             return
 
-            
-
         try:
 
             # Leer los primeros bytes para detectar el tipo real
@@ -264,13 +233,9 @@ class FileValidator:
 
             file.seek(0)
 
-            
-
             # Detectar el tipo MIME real
 
             mime = magic.from_buffer(file_header, mime=True)
-
-            
 
             if mime not in self.allowed_mime_types:
 
@@ -284,15 +249,11 @@ class FileValidator:
 
                 )
 
-            
-
             # Verificar que la extensión coincida con el tipo MIME
 
             ext = os.path.splitext(file.name)[1].lower()
 
             expected_extensions = ALLOWED_MIME_TYPES.get(mime, [])
-
-            
 
             if expected_extensions and ext not in expected_extensions:
 
@@ -306,8 +267,6 @@ class FileValidator:
 
                 )
 
-                
-
         except Exception as e:
 
             # Log del error pero no bloquear la subida por errores de detección
@@ -317,8 +276,6 @@ class FileValidator:
             logger = logging.getLogger(__name__)
 
             logger.warning(f'Error validando tipo MIME: {e}')
-
-    
 
     def __eq__(self, other):
 
@@ -332,12 +289,7 @@ class FileValidator:
 
         )
 
-
-
-
-
 @deconstructible
-
 class ImageValidator(FileValidator):
 
     """
@@ -346,8 +298,6 @@ class ImageValidator(FileValidator):
 
     """
 
-    
-
     ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.tiff', '.tif']
 
     ALLOWED_IMAGE_MIME_TYPES = [
@@ -355,8 +305,6 @@ class ImageValidator(FileValidator):
         'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/tiff'
 
     ]
-
-    
 
     def __init__(self, max_size=5 * 1024 * 1024):  # 5MB por defecto para imágenes
 
@@ -370,12 +318,7 @@ class ImageValidator(FileValidator):
 
         )
 
-
-
-
-
 @deconstructible
-
 class PDFValidator(FileValidator):
 
     """
@@ -383,8 +326,6 @@ class PDFValidator(FileValidator):
     Validador específico para archivos PDF.
 
     """
-
-    
 
     def __init__(self, max_size=20 * 1024 * 1024):  # 20MB por defecto para PDFs
 
@@ -398,10 +339,6 @@ class PDFValidator(FileValidator):
 
         )
 
-
-
-
-
 # Instancias pre-configuradas para uso común
 
 validate_document = FileValidator()
@@ -409,9 +346,6 @@ validate_document = FileValidator()
 validate_image = ImageValidator()
 
 validate_pdf = PDFValidator()
-
-
-
 
 
 def validate_file_extension(value):
@@ -426,7 +360,6 @@ def validate_file_extension(value):
 
     ext = os.path.splitext(value.name)[1].lower()
 
-    
 
     if ext in DANGEROUS_EXTENSIONS:
 
@@ -436,7 +369,6 @@ def validate_file_extension(value):
 
         )
 
-    
 
     if ext not in ALLOWED_EXTENSIONS:
 
@@ -447,4 +379,3 @@ def validate_file_extension(value):
             f'Use: PDF, imágenes (JPG, PNG), o documentos Office.'
 
         )
-

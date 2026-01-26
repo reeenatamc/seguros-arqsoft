@@ -7,15 +7,11 @@ Responsabilidad única: verificar y generar alertas programadas.
 """
 
 
-
 from typing import Dict, List
 
 from .broker import BrokerNotifier
 
 from .responsable import ResponsableNotifier
-
-
-
 
 
 class AlertasService:
@@ -26,15 +22,11 @@ class AlertasService:
 
     Diseñado para ejecutarse como tarea periódica (Celery, cron, etc.).
 
-    
-
     USO:
 
         service = AlertasService()
 
         resultados = service.verificar_todas()
-
-        
 
         # O verificar tipos específicos
 
@@ -42,23 +34,17 @@ class AlertasService:
 
     """
 
-    
-
     def __init__(self):
 
         self._broker_notifier = BrokerNotifier()
 
         self._responsable_notifier = ResponsableNotifier()
 
-    
-
     def verificar_todas(self) -> Dict[str, any]:
 
         """
 
         Verifica todas las alertas programadas.
-
-        
 
         Returns:
 
@@ -80,8 +66,6 @@ class AlertasService:
 
         }
 
-        
-
         # Ejecutar todas las verificaciones
 
         r1 = self.verificar_respuestas_pendientes()
@@ -90,15 +74,11 @@ class AlertasService:
 
         resultados['errores'].extend(r1['errores'])
 
-        
-
         r2 = self.verificar_notificacion_responsables()
 
         resultados['alertas_responsable'] = r2['generadas']
 
         resultados['errores'].extend(r2['errores'])
-
-        
 
         r3 = self.verificar_documentacion_pendiente()
 
@@ -106,27 +86,19 @@ class AlertasService:
 
         resultados['errores'].extend(r3['errores'])
 
-        
-
         r4 = self.verificar_depositos_pendientes()
 
         resultados['alertas_deposito'] = r4['generadas']
 
         resultados['errores'].extend(r4['errores'])
 
-        
-
         return resultados
-
-    
 
     def verificar_respuestas_pendientes(self) -> Dict[str, any]:
 
         """
 
         Verifica siniestros esperando respuesta de la aseguradora.
-
-        
 
         Returns:
 
@@ -136,11 +108,7 @@ class AlertasService:
 
         from app.models import Siniestro
 
-        
-
         resultado = {'generadas': 0, 'errores': []}
-
-        
 
         siniestros = Siniestro.objects.filter(
 
@@ -151,8 +119,6 @@ class AlertasService:
             fecha_respuesta_aseguradora__isnull=True,
 
         )
-
-        
 
         for siniestro in siniestros:
 
@@ -174,19 +140,13 @@ class AlertasService:
 
                     )
 
-        
-
         return resultado
-
-    
 
     def verificar_notificacion_responsables(self) -> Dict[str, any]:
 
         """
 
         Verifica siniestros que requieren notificar al responsable.
-
-        
 
         Returns:
 
@@ -196,11 +156,7 @@ class AlertasService:
 
         from app.models import Siniestro
 
-        
-
         resultado = {'generadas': 0, 'errores': []}
-
-        
 
         siniestros = Siniestro.objects.filter(
 
@@ -209,8 +165,6 @@ class AlertasService:
             fecha_notificacion_responsable__isnull=True,
 
         )
-
-        
 
         for siniestro in siniestros:
 
@@ -232,19 +186,13 @@ class AlertasService:
 
                     )
 
-        
-
         return resultado
-
-    
 
     def verificar_documentacion_pendiente(self) -> Dict[str, any]:
 
         """
 
         Verifica siniestros con documentación pendiente (recordatorio cada 8 días).
-
-        
 
         Returns:
 
@@ -254,15 +202,9 @@ class AlertasService:
 
         from app.models import Siniestro
 
-        
-
         resultado = {'generadas': 0, 'errores': []}
 
-        
-
         siniestros = Siniestro.objects.filter(estado='documentacion_pendiente')
-
-        
 
         for siniestro in siniestros:
 
@@ -288,19 +230,13 @@ class AlertasService:
 
                     )
 
-        
-
         return resultado
-
-    
 
     def verificar_depositos_pendientes(self) -> Dict[str, any]:
 
         """
 
         Verifica siniestros con depósito de indemnización pendiente.
-
-        
 
         Returns:
 
@@ -310,11 +246,7 @@ class AlertasService:
 
         from app.models import Siniestro
 
-        
-
         resultado = {'generadas': 0, 'errores': []}
-
-        
 
         siniestros = Siniestro.objects.filter(
 
@@ -323,8 +255,6 @@ class AlertasService:
             fecha_pago__isnull=True,
 
         )
-
-        
 
         for siniestro in siniestros:
 
@@ -346,7 +276,4 @@ class AlertasService:
 
                     )
 
-        
-
         return resultado
-

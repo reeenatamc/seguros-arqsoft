@@ -1,18 +1,12 @@
 from django.core.management.base import BaseCommand
 
 
-
 from app.models import Poliza
-
-
-
 
 
 class Command(BaseCommand):
 
     help = "Puebla la relación de brokers autorizados por aseguradora a partir de las pólizas existentes."
-
-
 
     def handle(self, *args, **options):
 
@@ -26,15 +20,9 @@ class Command(BaseCommand):
 
         from app.models import CompaniaAseguradora  # import local para evitar ciclos
 
-
-
         self.stdout.write(self.style.MIGRATE_HEADING("Poblando brokers autorizados por aseguradora..."))
 
-
-
         total_relaciones = 0
-
-
 
         for poliza in Poliza.objects.select_related('compania_aseguradora', 'corredor_seguros'):
 
@@ -42,13 +30,9 @@ class Command(BaseCommand):
 
                 continue
 
-
-
             compania = poliza.compania_aseguradora
 
             broker = poliza.corredor_seguros
-
-
 
             if not compania.brokers.filter(pk=broker.pk).exists():
 
@@ -66,8 +50,6 @@ class Command(BaseCommand):
 
                 )
 
-
-
         self.stdout.write(
 
             self.style.SUCCESS(
@@ -77,4 +59,3 @@ class Command(BaseCommand):
             )
 
         )
-

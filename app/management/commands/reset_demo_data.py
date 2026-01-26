@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 
 
-
 from app.models import (
 
     CompaniaAseguradora,
@@ -51,9 +50,6 @@ from app.models import (
 )
 
 
-
-
-
 class Command(BaseCommand):
 
     help = (
@@ -64,10 +60,7 @@ class Command(BaseCommand):
 
     )
 
-
-
     @transaction.atomic
-
     def handle(self, *args, **options):
 
         self.stdout.write(self.style.WARNING(
@@ -78,81 +71,55 @@ class Command(BaseCommand):
 
         ))
 
-
-
         # Borrar en orden para respetar FKs (siniestros primero, luego pólizas, luego catálogos)
 
         self.stdout.write("Eliminando adjuntos de siniestros...")
 
         AdjuntoSiniestro.objects.all().delete()
 
-
-
         self.stdout.write("Eliminando checklists de siniestros...")
 
         ChecklistSiniestro.objects.all().delete()
-
-
 
         self.stdout.write("Eliminando configuración de checklists...")
 
         ChecklistSiniestroConfig.objects.all().delete()
 
-
-
         self.stdout.write("Eliminando aprobaciones de pagos...")
 
         PaymentApproval.objects.all().delete()
-
-
 
         self.stdout.write("Eliminando pagos...")
 
         Pago.objects.all().delete()
 
-
-
         self.stdout.write("Eliminando facturas...")
 
         Factura.objects.all().delete()
-
-
 
         self.stdout.write("Eliminando bienes asegurados...")
 
         BienAsegurado.objects.all().delete()
 
-
-
         self.stdout.write("Eliminando renovaciones...")
 
         PolicyRenewal.objects.all().delete()
-
-
 
         self.stdout.write("Eliminando siniestros...")
 
         Siniestro.objects.all().delete()
 
-
-
         self.stdout.write("Eliminando pólizas...")
 
         Poliza.objects.all().delete()
-
-
 
         self.stdout.write("Eliminando grupos de bienes...")
 
         GrupoBienes.objects.all().delete()
 
-
-
         self.stdout.write("Eliminando responsables/custodios...")
 
         ResponsableCustodio.objects.all().delete()
-
-
 
         self.stdout.write("Eliminando ramos y subtipos...")
 
@@ -160,13 +127,9 @@ class Command(BaseCommand):
 
         Ramo.objects.all().delete()
 
-
-
         self.stdout.write("Eliminando tipos de póliza...")
 
         TipoPoliza.objects.all().delete()
-
-
 
         self.stdout.write("Eliminando compañías aseguradoras y corredores...")
 
@@ -174,11 +137,7 @@ class Command(BaseCommand):
 
         CorredorSeguros.objects.all().delete()
 
-
-
         self.stdout.write(self.style.SUCCESS("Datos de negocio eliminados. Creando datos de ejemplo..."))
-
-
 
         # 1) Catálogos básicos
 
@@ -202,8 +161,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         broker = CorredorSeguros.objects.create(
 
             nombre="Broker UTPL",
@@ -226,8 +183,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         tipo_poliza = TipoPoliza.objects.create(
 
             nombre="Multiriesgo Incendio",
@@ -237,8 +192,6 @@ class Command(BaseCommand):
             activo=True,
 
         )
-
-
 
         # Ramo y subtipo de ejemplo (si quieres luego puedes usar poblar_ramos_generales)
 
@@ -256,8 +209,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         subtipo_ramo = SubtipoRamo.objects.create(
 
             ramo=ramo,
@@ -272,8 +223,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         # 2) Póliza de ejemplo
 
         from django.utils import timezone
@@ -281,8 +230,6 @@ class Command(BaseCommand):
         from decimal import Decimal
 
         from datetime import timedelta
-
-
 
         hoy = timezone.now().date()
 
@@ -310,8 +257,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         # 2.1) Detalle de póliza por ramo (desglose financiero)
 
         detalle_ramo = DetallePolizaRamo.objects.create(
@@ -332,8 +277,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         # 3) Responsable y grupo de bienes de ejemplo
 
         responsable = ResponsableCustodio.objects.create(
@@ -352,8 +295,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         grupo = GrupoBienes.objects.create(
 
             nombre="Equipos de Cómputo UTPL",
@@ -363,8 +304,6 @@ class Command(BaseCommand):
             ramo=ramo,
 
         )
-
-
 
         # 4) Siniestro de ejemplo
 
@@ -381,8 +320,6 @@ class Command(BaseCommand):
             }
 
         )
-
-
 
         siniestro = Siniestro.objects.create(
 
@@ -428,8 +365,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         # 5) Factura de ejemplo
 
         factura = Factura.objects.create(
@@ -452,8 +387,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         # 6) Pago de ejemplo
 
         pago = Pago.objects.create(
@@ -472,8 +405,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         # 7) Aprobación de pago de ejemplo
 
         PaymentApproval.objects.create(
@@ -491,8 +422,6 @@ class Command(BaseCommand):
             digital_signature=True,
 
         )
-
-
 
         # 8) Bien asegurado de ejemplo
 
@@ -546,8 +475,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         # 9) Renovación de póliza de ejemplo
 
         renovacion = PolicyRenewal.objects.create(
@@ -572,8 +499,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         self.stdout.write(self.style.SUCCESS("Datos de ejemplo creados correctamente."))
 
         self.stdout.write(self.style.SUCCESS(f"Póliza creada: {poliza.numero_poliza}"))
@@ -591,4 +516,3 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Bien asegurado creado: {bien.asset_code}"))
 
         self.stdout.write(self.style.SUCCESS(f"Renovación creada: {renovacion.renewal_number}"))
-

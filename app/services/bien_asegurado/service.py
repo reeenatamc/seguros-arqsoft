@@ -7,11 +7,7 @@ Responsabilidad única: Gestión de bienes asegurados y su relación con póliza
 """
 
 
-
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
-
-
-
 
 
 class BienAseguradoService(BaseService):
@@ -20,19 +16,13 @@ class BienAseguradoService(BaseService):
 
     Servicio para gestión de Bienes Asegurados.
 
-    
-
     Responsabilidades:
 
     - Validar coherencia entre subgrupo y grupo de póliza
 
-    
-
     USO:
 
         from app.services.bien_asegurado import BienAseguradoService
-
-        
 
         validacion = BienAseguradoService.validar_subgrupo_poliza(
 
@@ -44,10 +34,7 @@ class BienAseguradoService(BaseService):
 
     """
 
-    
-
     @classmethod
-
     def validar_subgrupo_poliza(cls, poliza, subgrupo_ramo) -> ResultadoValidacion:
 
         """Valida que el subgrupo pertenezca al grupo de la póliza."""
@@ -76,7 +63,4 @@ class BienAseguradoService(BaseService):
 
                     )
 
-        
-
         return ResultadoValidacion(es_valido=True)
-

@@ -29,14 +29,9 @@ from app.models import Siniestro, TipoSiniestro, Poliza
 import os
 
 
-
-
-
 class Command(BaseCommand):
 
     help = 'Genera reportes de siniestros con análisis estadístico'
-
-
 
     def add_arguments(self, parser):
 
@@ -68,25 +63,17 @@ class Command(BaseCommand):
 
         )
 
-
-
     def handle(self, *args, **options):
 
         formato = options['formato']
 
         periodo = options['periodo']
 
-        
-
         self.stdout.write(self.style.SUCCESS(f'Generando reporte de siniestros (período: {periodo})...'))
-
-        
 
         # Obtener siniestros según período
 
         siniestros = self.obtener_siniestros_periodo(periodo)
-
-        
 
         # Crear directorio de reportes si no existe
 
@@ -94,11 +81,7 @@ class Command(BaseCommand):
 
         os.makedirs(reportes_dir, exist_ok=True)
 
-        
-
         timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-
-        
 
         if formato in ['excel', 'ambos']:
 
@@ -108,8 +91,6 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS(f'  ✓ Reporte Excel generado: {excel_file}'))
 
-        
-
         if formato in ['pdf', 'ambos']:
 
             pdf_file = f'{reportes_dir}/reporte_siniestros_{periodo}_{timestamp}.pdf'
@@ -118,19 +99,13 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS(f'  ✓ Reporte PDF generado: {pdf_file}'))
 
-        
-
         self.stdout.write(self.style.SUCCESS(f'✓ Reporte completado: {siniestros.count()} siniestros procesados'))
-
-
 
     def obtener_siniestros_periodo(self, periodo):
 
         """Obtiene los siniestros según el período especificado"""
 
         hoy = timezone.now()
-
-        
 
         if periodo == 'semanal':
 
@@ -152,19 +127,13 @@ class Command(BaseCommand):
 
             return Siniestro.objects.all()
 
-        
-
         return Siniestro.objects.filter(fecha_siniestro__gte=fecha_inicio)
-
-
 
     def generar_excel(self, siniestros, filename, periodo):
 
         """Genera el reporte en formato Excel"""
 
         wb = openpyxl.Workbook()
-
-        
 
         # Hoja 1: Resumen Ejecutivo
 
@@ -174,15 +143,11 @@ class Command(BaseCommand):
 
         self.crear_hoja_resumen(ws_resumen, siniestros, periodo)
 
-        
-
         # Hoja 2: Detalle de Siniestros
 
         ws_detalle = wb.create_sheet("Detalle de Siniestros")
 
         self.crear_hoja_detalle(ws_detalle, siniestros)
-
-        
 
         # Hoja 3: Análisis por Tipo
 
@@ -190,15 +155,11 @@ class Command(BaseCommand):
 
         self.crear_hoja_analisis_tipo(ws_tipo, siniestros)
 
-        
-
         # Hoja 4: Análisis por Póliza
 
         ws_poliza = wb.create_sheet("Análisis por Póliza")
 
         self.crear_hoja_analisis_poliza(ws_poliza, siniestros)
-
-        
 
         # Hoja 5: Tiempos de Resolución
 
@@ -206,11 +167,7 @@ class Command(BaseCommand):
 
         self.crear_hoja_tiempos(ws_tiempos, siniestros)
 
-        
-
         wb.save(filename)
-
-
 
     def crear_hoja_resumen(self, ws, siniestros, periodo):
 
@@ -226,21 +183,15 @@ class Command(BaseCommand):
 
         ws.merge_cells('A1:D1')
 
-        
-
         ws['A2'] = f'Fecha de Generación: {timezone.now().strftime("%d/%m/%Y %H:%M")}'
 
         ws['A2'].font = Font(size=10, italic=True)
-
-        
 
         # Estadísticas generales
 
         ws['A4'] = 'ESTADÍSTICAS GENERALES'
 
         ws['A4'].font = Font(size=12, bold=True)
-
-        
 
         total_siniestros = siniestros.count()
 
@@ -254,8 +205,6 @@ class Command(BaseCommand):
 
         tiempo_promedio = self.calcular_tiempo_promedio_resolucion(siniestros)
 
-        
-
         estadisticas = [
 
             ['Total de Siniestros:', total_siniestros],
@@ -267,8 +216,6 @@ class Command(BaseCommand):
             ['Tiempo Promedio de Resolución:', f'{tiempo_promedio} días'],
 
         ]
-
-        
 
         row = 5
 
@@ -282,15 +229,11 @@ class Command(BaseCommand):
 
             row += 1
 
-        
-
         # Resumen por estado
 
         ws['A10'] = 'RESUMEN POR ESTADO'
 
         ws['A10'].font = Font(size=12, bold=True)
-
-        
 
         headers = ['Estado', 'Cantidad', 'Monto Estimado', 'Porcentaje']
 
@@ -304,8 +247,6 @@ class Command(BaseCommand):
 
             cell.alignment = Alignment(horizontal='center')
 
-        
-
         estados = [
 
             'registrado', 'documentacion_pendiente', 'enviado_aseguradora',
@@ -313,8 +254,6 @@ class Command(BaseCommand):
             'en_evaluacion', 'aprobado', 'rechazado', 'liquidado', 'cerrado'
 
         ]
-
-        
 
         row = 12
 
@@ -328,8 +267,6 @@ class Command(BaseCommand):
 
             porcentaje = (cantidad / total_siniestros * 100) if total_siniestros > 0 else 0
 
-            
-
             ws.cell(row=row, column=1, value=estado.replace('_', ' ').title())
 
             ws.cell(row=row, column=2, value=cantidad)
@@ -339,8 +276,6 @@ class Command(BaseCommand):
             ws.cell(row=row, column=4, value=f'{porcentaje:.1f}%')
 
             row += 1
-
-        
 
         # Ajustar columnas
 
@@ -352,8 +287,6 @@ class Command(BaseCommand):
 
         ws.column_dimensions['D'].width = 15
 
-
-
     def crear_hoja_detalle(self, ws, siniestros):
 
         """Crea la hoja con el detalle de todos los siniestros"""
@@ -362,8 +295,6 @@ class Command(BaseCommand):
 
         ws['A1'].font = Font(size=14, bold=True)
 
-        
-
         headers = [
 
             'Número', 'Tipo', 'Bien', 'Póliza', 'Fecha Siniestro',
@@ -371,8 +302,6 @@ class Command(BaseCommand):
             'Monto Estimado', 'Monto Indemnizado', 'Estado', 'Días desde Registro'
 
         ]
-
-        
 
         for col, header in enumerate(headers, start=1):
 
@@ -383,8 +312,6 @@ class Command(BaseCommand):
             cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
 
             cell.alignment = Alignment(horizontal='center', wrap_text=True)
-
-        
 
         row = 4
 
@@ -410,13 +337,9 @@ class Command(BaseCommand):
 
             row += 1
 
-        
-
         for col in range(1, len(headers) + 1):
 
             ws.column_dimensions[get_column_letter(col)].width = 18
-
-
 
     def crear_hoja_analisis_tipo(self, ws, siniestros):
 
@@ -426,11 +349,7 @@ class Command(BaseCommand):
 
         ws['A1'].font = Font(size=14, bold=True)
 
-        
-
         headers = ['Tipo de Siniestro', 'Cantidad', 'Porcentaje', 'Monto Total', 'Monto Promedio']
-
-        
 
         for col, header in enumerate(headers, start=1):
 
@@ -442,13 +361,9 @@ class Command(BaseCommand):
 
             cell.alignment = Alignment(horizontal='center')
 
-        
-
         total_siniestros = siniestros.count()
 
         tipos = TipoSiniestro.objects.all()
-
-        
 
         row = 4
 
@@ -458,8 +373,6 @@ class Command(BaseCommand):
 
             cantidad = siniestros_tipo.count()
 
-            
-
             if cantidad > 0:
 
                 porcentaje = (cantidad / total_siniestros * 100) if total_siniestros > 0 else 0
@@ -467,8 +380,6 @@ class Command(BaseCommand):
                 monto_total = siniestros_tipo.aggregate(Sum('monto_estimado'))['monto_estimado__sum'] or 0
 
                 monto_promedio = monto_total / cantidad if cantidad > 0 else 0
-
-                
 
                 ws.cell(row=row, column=1, value=str(tipo))
 
@@ -482,13 +393,9 @@ class Command(BaseCommand):
 
                 row += 1
 
-        
-
         for col in range(1, len(headers) + 1):
 
             ws.column_dimensions[get_column_letter(col)].width = 20
-
-
 
     def crear_hoja_analisis_poliza(self, ws, siniestros):
 
@@ -498,11 +405,7 @@ class Command(BaseCommand):
 
         ws['A1'].font = Font(size=14, bold=True)
 
-        
-
         headers = ['Número de Póliza', 'Compañía', 'Cantidad Siniestros', 'Monto Total']
-
-        
 
         for col, header in enumerate(headers, start=1):
 
@@ -513,8 +416,6 @@ class Command(BaseCommand):
             cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
 
             cell.alignment = Alignment(horizontal='center')
-
-        
 
         # Agrupar siniestros por póliza
 
@@ -540,8 +441,6 @@ class Command(BaseCommand):
 
             polizas_stats[poliza_id]['monto_total'] += siniestro.monto_estimado
 
-        
-
         # Ordenar por cantidad de siniestros
 
         polizas_ordenadas = sorted(
@@ -553,8 +452,6 @@ class Command(BaseCommand):
             reverse=True
 
         )[:20]
-
-        
 
         row = 4
 
@@ -570,13 +467,9 @@ class Command(BaseCommand):
 
             row += 1
 
-        
-
         for col in range(1, len(headers) + 1):
 
             ws.column_dimensions[get_column_letter(col)].width = 25
-
-
 
     def crear_hoja_tiempos(self, ws, siniestros):
 
@@ -586,19 +479,13 @@ class Command(BaseCommand):
 
         ws['A1'].font = Font(size=14, bold=True)
 
-        
-
         # Siniestros cerrados
 
         siniestros_cerrados = siniestros.filter(estado='cerrado')
 
-        
-
         ws['A3'] = f'Total de Siniestros Cerrados: {siniestros_cerrados.count()}'
 
         ws['A3'].font = Font(bold=True)
-
-        
 
         headers = [
 
@@ -607,8 +494,6 @@ class Command(BaseCommand):
             'Días de Gestión', 'Estado Final'
 
         ]
-
-        
 
         for col, header in enumerate(headers, start=1):
 
@@ -620,13 +505,9 @@ class Command(BaseCommand):
 
             cell.alignment = Alignment(horizontal='center')
 
-        
-
         row = 6
 
         tiempos = []
-
-        
 
         for siniestro in siniestros_cerrados:
 
@@ -635,8 +516,6 @@ class Command(BaseCommand):
                 dias_gestion = (siniestro.fecha_liquidacion - siniestro.fecha_registro.date()).days
 
                 tiempos.append(dias_gestion)
-
-                
 
                 ws.cell(row=row, column=1, value=siniestro.numero_siniestro)
 
@@ -652,8 +531,6 @@ class Command(BaseCommand):
 
                 row += 1
 
-        
-
         # Estadísticas de tiempo
 
         if tiempos:
@@ -662,21 +539,15 @@ class Command(BaseCommand):
 
             ws[f'A{row + 2}'].font = Font(bold=True)
 
-            
-
             ws[f'A{row + 3}'] = f'Tiempo Mínimo: {min(tiempos)} días'
 
             ws[f'A{row + 4}'] = f'Tiempo Máximo: {max(tiempos)} días'
 
             ws[f'A{row + 5}'] = f'Tiempo Promedio: {sum(tiempos) / len(tiempos):.1f} días'
 
-        
-
         for col in range(1, len(headers) + 1):
 
             ws.column_dimensions[get_column_letter(col)].width = 20
-
-
 
     def calcular_tiempo_promedio_resolucion(self, siniestros):
 
@@ -690,13 +561,9 @@ class Command(BaseCommand):
 
         )
 
-        
-
         if not siniestros_cerrados:
 
             return 0
-
-        
 
         tiempos = []
 
@@ -706,11 +573,7 @@ class Command(BaseCommand):
 
             tiempos.append(dias)
 
-        
-
         return sum(tiempos) / len(tiempos) if tiempos else 0
-
-
 
     def generar_pdf(self, siniestros, filename, periodo):
 
@@ -721,8 +584,6 @@ class Command(BaseCommand):
         elements = []
 
         styles = getSampleStyleSheet()
-
-        
 
         title_style = ParagraphStyle(
 
@@ -740,23 +601,17 @@ class Command(BaseCommand):
 
         )
 
-        
-
         # Título
 
         title = Paragraph(f'REPORTE DE SINIESTROS ({periodo.upper()})', title_style)
 
         elements.append(title)
 
-        
-
         fecha_text = f'Fecha de Generación: {timezone.now().strftime("%d/%m/%Y %H:%M")}'
 
         elements.append(Paragraph(fecha_text, styles['Normal']))
 
         elements.append(Spacer(1, 20))
-
-        
 
         # Estadísticas generales
 
@@ -766,11 +621,7 @@ class Command(BaseCommand):
 
         tiempo_promedio = self.calcular_tiempo_promedio_resolucion(siniestros)
 
-        
-
         elements.append(Paragraph('ESTADÍSTICAS GENERALES', styles['Heading2']))
-
-        
 
         stats_data = [
 
@@ -781,8 +632,6 @@ class Command(BaseCommand):
             ['Tiempo Promedio de Resolución:', f'{tiempo_promedio:.1f} días'],
 
         ]
-
-        
 
         stats_table = Table(stats_data, colWidths=[3*inch, 2*inch])
 
@@ -802,19 +651,13 @@ class Command(BaseCommand):
 
         elements.append(Spacer(1, 20))
 
-        
-
         # Resumen por tipo
 
         elements.append(Paragraph('ANÁLISIS POR TIPO DE SINIESTRO', styles['Heading2']))
 
-        
-
         tipo_data = [['Tipo', 'Cantidad', 'Monto Total']]
 
         tipos = TipoSiniestro.objects.all()
-
-        
 
         for tipo in tipos:
 
@@ -836,8 +679,6 @@ class Command(BaseCommand):
 
                 ])
 
-        
-
         tipo_table = Table(tipo_data, colWidths=[2.5*inch, 1.5*inch, 2*inch])
 
         tipo_table.setStyle(TableStyle([
@@ -858,7 +699,4 @@ class Command(BaseCommand):
 
         elements.append(tipo_table)
 
-        
-
         doc.build(elements)
-

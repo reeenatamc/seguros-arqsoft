@@ -5,7 +5,6 @@ Comando para poblar siniestros con datos completos para el reporte de contadurí
 Incluye todas las fechas de gestión y montos financieros.
 
 
-
 Uso: python manage.py poblar_siniestros_contadora
 
 """
@@ -23,7 +22,6 @@ from decimal import Decimal
 import random
 
 
-
 from app.models import (
 
     Poliza, Siniestro, TipoSiniestro, ResponsableCustodio,
@@ -33,26 +31,17 @@ from app.models import (
 )
 
 
-
-
-
 class Command(BaseCommand):
 
     help = 'Poblar siniestros con datos completos para el reporte de contaduría'
-
-
 
     def handle(self, *args, **options):
 
         self.stdout.write(self.style.NOTICE('🚀 Iniciando población de siniestros para contaduría...'))
 
-        
-
         # Obtener o crear usuario admin
 
         admin_user = self.get_or_create_admin()
-
-        
 
         # Crear datos base si no existen
 
@@ -66,8 +55,6 @@ class Command(BaseCommand):
 
         responsables = self.crear_responsables_si_no_existen()
 
-        
-
         # Crear pólizas si no hay suficientes
 
         polizas = list(Poliza.objects.all()[:20])
@@ -76,8 +63,6 @@ class Command(BaseCommand):
 
             polizas = self.crear_polizas(companias, corredores, tipos_poliza, admin_user)
 
-        
-
         # Crear siniestros con datos completos
 
         siniestros = self.crear_siniestros_completos(
@@ -85,8 +70,6 @@ class Command(BaseCommand):
             polizas, tipos_siniestro, responsables, admin_user
 
         )
-
-        
 
         self.stdout.write('')
 
@@ -101,8 +84,6 @@ class Command(BaseCommand):
         self.stdout.write(f'   URL del reporte: /reportes/dias-gestion/')
 
         self.stdout.write('')
-
-
 
     def get_or_create_admin(self):
 
@@ -134,15 +115,11 @@ class Command(BaseCommand):
 
         return user
 
-
-
     def crear_companias_si_no_existen(self):
 
         if CompaniaAseguradora.objects.exists():
 
             return list(CompaniaAseguradora.objects.filter(activo=True))
-
-        
 
         companias_data = [
 
@@ -153,8 +130,6 @@ class Command(BaseCommand):
             {'nombre': 'Seguros Sucre', 'ruc': '1790014975001'},
 
         ]
-
-        
 
         companias = []
 
@@ -184,15 +159,11 @@ class Command(BaseCommand):
 
         return companias
 
-
-
     def crear_corredores_si_no_existen(self, companias):
 
         if CorredorSeguros.objects.exists():
 
             return list(CorredorSeguros.objects.filter(activo=True))
-
-        
 
         corredores_data = [
 
@@ -201,8 +172,6 @@ class Command(BaseCommand):
             {'nombre': 'Asertec', 'ruc': '1791234567001'},
 
         ]
-
-        
 
         corredores = []
 
@@ -234,15 +203,11 @@ class Command(BaseCommand):
 
         return corredores
 
-
-
     def crear_tipos_poliza_si_no_existen(self):
 
         if TipoPoliza.objects.exists():
 
             return list(TipoPoliza.objects.filter(activo=True))
-
-        
 
         tipos_data = [
 
@@ -253,8 +218,6 @@ class Command(BaseCommand):
             {'nombre': 'Equipo Electrónico', 'descripcion': 'Seguro para equipos'},
 
         ]
-
-        
 
         tipos = []
 
@@ -272,25 +235,19 @@ class Command(BaseCommand):
 
         return tipos
 
-
-
     def crear_tipos_siniestro_si_no_existen(self):
 
         if TipoSiniestro.objects.exists():
 
             return list(TipoSiniestro.objects.filter(activo=True))
 
-        
-
         tipos_data = [
 
-            'Daño accidental', 'Robo', 'Hurto', 'Incendio', 
+            'Daño accidental', 'Robo', 'Hurto', 'Incendio',
 
             'Colisión vehicular', 'Cortocircuito', 'Vandalismo'
 
         ]
-
-        
 
         tipos = []
 
@@ -308,15 +265,11 @@ class Command(BaseCommand):
 
         return tipos
 
-
-
     def crear_responsables_si_no_existen(self):
 
         if ResponsableCustodio.objects.exists():
 
             return list(ResponsableCustodio.objects.filter(activo=True))
-
-        
 
         responsables_data = [
 
@@ -329,8 +282,6 @@ class Command(BaseCommand):
             {'nombre': 'Ana Martínez', 'departamento': 'Recursos Humanos'},
 
         ]
-
-        
 
         responsables = []
 
@@ -358,15 +309,11 @@ class Command(BaseCommand):
 
         return responsables
 
-
-
     def crear_polizas(self, companias, corredores, tipos, usuario):
 
         hoy = timezone.now().date()
 
         polizas = []
-
-        
 
         for i in range(10):
 
@@ -394,13 +341,9 @@ class Command(BaseCommand):
 
             polizas.append(poliza)
 
-        
-
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(polizas)} pólizas creadas'))
 
         return polizas
-
-
 
     def crear_siniestros_completos(self, polizas, tipos_siniestro, responsables, usuario):
 
@@ -408,13 +351,9 @@ class Command(BaseCommand):
 
         from django.db import connection
 
-        
-
         hoy = timezone.now()
 
         siniestros_creados = 0
-
-        
 
         # Estados con sus pesos de distribución
 
@@ -438,8 +377,6 @@ class Command(BaseCommand):
 
         ]
 
-        
-
         bienes = [
 
             ('Laptop HP ProBook', 'HP', 'ProBook 450'),
@@ -452,15 +389,9 @@ class Command(BaseCommand):
 
         ]
 
-        
-
         ubicaciones = ['Edificio A', 'Edificio B', 'Bodega Central', 'Parqueadero']
 
-        
-
         self.stdout.write('     Creando siniestros...')
-
-        
 
         # Crear 30 siniestros (reducido para velocidad)
 
@@ -470,15 +401,11 @@ class Command(BaseCommand):
 
             estado, _, tiene_envio, tiene_respuesta, tiene_liquidacion, tiene_pago = estado_cfg
 
-            
-
             poliza = random.choice(polizas)
 
             tipo = random.choice(tipos_siniestro)
 
             bien = random.choice(bienes)
-
-            
 
             # Fecha del siniestro dentro de la vigencia de la póliza
 
@@ -486,13 +413,9 @@ class Command(BaseCommand):
 
             fecha_siniestro_date = poliza.fecha_inicio + timedelta(days=dias_desde_inicio)
 
-            
-
             if fecha_siniestro_date > hoy.date():
 
                 fecha_siniestro_date = hoy.date() - timedelta(days=random.randint(10, 90))
-
-            
 
             fecha_siniestro = timezone.make_aware(
 
@@ -500,11 +423,7 @@ class Command(BaseCommand):
 
             ) + timedelta(hours=random.randint(8, 17))
 
-            
-
             monto_estimado = Decimal(random.randint(1000, 30000))
-
-            
 
             # Preparar datos
 
@@ -540,31 +459,21 @@ class Command(BaseCommand):
 
             }
 
-            
-
             if responsables:
 
                 data['responsable_custodio_id'] = random.choice(responsables).id
-
-            
 
             # Fechas de gestión
 
             fecha_base = fecha_siniestro_date
 
-            
-
             if tiene_envio:
 
                 data['fecha_envio_aseguradora'] = fecha_base + timedelta(days=random.randint(2, 5))
 
-            
-
             if tiene_respuesta and 'fecha_envio_aseguradora' in data:
 
                 data['fecha_respuesta_aseguradora'] = data['fecha_envio_aseguradora'] + timedelta(days=random.randint(5, 20))
-
-            
 
             if tiene_liquidacion and 'fecha_respuesta_aseguradora' in data:
 
@@ -574,23 +483,17 @@ class Command(BaseCommand):
 
                 data['deducible_aplicado'] = (monto_estimado * Decimal('0.1')).quantize(Decimal('0.01'))
 
-            
-
             if tiene_pago and 'fecha_liquidacion' in data:
 
                 data['fecha_pago'] = data['fecha_liquidacion'] + timedelta(days=random.randint(1, 5))
 
                 data['valor_pagado'] = data.get('monto_indemnizado', monto_estimado) - data.get('deducible_aplicado', Decimal('0'))
 
-            
-
             if estado == 'rechazado':
 
                 data['monto_indemnizado'] = Decimal('0')
 
                 data['observaciones'] = 'Rechazado: No cumple condiciones de póliza.'
-
-            
 
             # Crear usando bulk_create para velocidad (sin validación)
 
@@ -606,9 +509,6 @@ class Command(BaseCommand):
 
                 continue
 
-        
-
         self.stdout.write(self.style.SUCCESS(f'     ✓ {siniestros_creados} siniestros creados'))
 
         return list(Siniestro.objects.all()[:30])
-

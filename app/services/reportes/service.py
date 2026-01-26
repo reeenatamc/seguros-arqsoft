@@ -9,28 +9,18 @@ from decimal import Decimal
 import json
 
 
-
-
-
 class ReportesService:
 
-    
-
     @staticmethod
-
     def generar_reporte_polizas(filtros=None):
 
         from app.models import Poliza
-
-        
 
         queryset = Poliza.objects.select_related(
 
             'compania_aseguradora', 'corredor_seguros', 'tipo_poliza'
 
         )
-
-        
 
         if filtros:
 
@@ -54,8 +44,6 @@ class ReportesService:
 
                 queryset = queryset.filter(fecha_fin__lte=filtros['fecha_hasta'])
 
-        
-
         totales = queryset.aggregate(
 
             cantidad=Count('id'),
@@ -70,8 +58,6 @@ class ReportesService:
 
         )
 
-        
-
         por_compania = list(queryset.values(
 
             'compania_aseguradora__nombre'
@@ -84,8 +70,6 @@ class ReportesService:
 
         ).order_by('-suma'))
 
-        
-
         por_tipo = list(queryset.values(
 
             'tipo_poliza__nombre'
@@ -97,8 +81,6 @@ class ReportesService:
             suma=Sum('suma_asegurada')
 
         ).order_by('-cantidad'))
-
-        
 
         return {
 
@@ -114,23 +96,16 @@ class ReportesService:
 
         }
 
-    
-
     @staticmethod
-
     def generar_reporte_facturas(filtros=None):
 
         from app.models import Factura
-
-        
 
         queryset = Factura.objects.select_related(
 
             'poliza', 'poliza__compania_aseguradora'
 
         )
-
-        
 
         if filtros:
 
@@ -145,8 +120,6 @@ class ReportesService:
             if filtros.get('fecha_hasta'):
 
                 queryset = queryset.filter(fecha_emision__lte=filtros['fecha_hasta'])
-
-        
 
         totales = queryset.aggregate(
 
@@ -166,8 +139,6 @@ class ReportesService:
 
         )
 
-        
-
         return {
 
             'queryset': queryset,
@@ -178,23 +149,16 @@ class ReportesService:
 
         }
 
-    
-
     @staticmethod
-
     def generar_reporte_siniestros(filtros=None):
 
         from app.models import Siniestro
-
-        
 
         queryset = Siniestro.objects.select_related(
 
             'poliza', 'tipo_siniestro', 'poliza__compania_aseguradora'
 
         )
-
-        
 
         if filtros:
 
@@ -214,8 +178,6 @@ class ReportesService:
 
                 queryset = queryset.filter(fecha_siniestro__date__lte=filtros['fecha_hasta'])
 
-        
-
         totales = queryset.aggregate(
 
             cantidad=Count('id'),
@@ -232,8 +194,6 @@ class ReportesService:
 
         )
 
-        
-
         por_tipo = list(queryset.values(
 
             'tipo_siniestro__nombre'
@@ -246,8 +206,6 @@ class ReportesService:
 
         ).order_by('-cantidad'))
 
-        
-
         por_estado = list(queryset.values('estado').annotate(
 
             cantidad=Count('id'),
@@ -255,8 +213,6 @@ class ReportesService:
             monto=Sum('monto_estimado')
 
         ).order_by('-cantidad'))
-
-        
 
         return {
 
@@ -272,23 +228,16 @@ class ReportesService:
 
         }
 
-    
-
     @staticmethod
-
     def get_datos_graficos_polizas():
 
         from app.models import Poliza
-
-        
 
         estados = Poliza.objects.values('estado').annotate(
 
             count=Count('id')
 
         )
-
-        
 
         labels = []
 
@@ -308,8 +257,6 @@ class ReportesService:
 
         background_colors = []
 
-        
-
         for item in estados:
 
             labels.append(item['estado'].replace('_', ' ').title())
@@ -317,8 +264,6 @@ class ReportesService:
             data.append(item['count'])
 
             background_colors.append(colors.get(item['estado'], '#CBD5E0'))
-
-        
 
         return {
 
@@ -330,15 +275,10 @@ class ReportesService:
 
         }
 
-    
-
     @staticmethod
-
     def get_datos_graficos_facturas():
 
         from app.models import Factura
-
-        
 
         estados = Factura.objects.values('estado').annotate(
 
@@ -347,8 +287,6 @@ class ReportesService:
             total=Sum('monto_total')
 
         )
-
-        
 
         labels = []
 
@@ -368,8 +306,6 @@ class ReportesService:
 
         background_colors = []
 
-        
-
         for item in estados:
 
             labels.append(item['estado'].title())
@@ -377,8 +313,6 @@ class ReportesService:
             data.append(item['count'])
 
             background_colors.append(colors.get(item['estado'], '#CBD5E0'))
-
-        
 
         return {
 
@@ -390,21 +324,14 @@ class ReportesService:
 
         }
 
-    
-
     @staticmethod
-
     def get_datos_graficos_siniestros_mensual():
 
         from app.models import Siniestro
 
         from django.db.models.functions import TruncMonth
 
-        
-
         hace_12_meses = timezone.now() - timedelta(days=365)
-
-        
 
         por_mes = Siniestro.objects.filter(
 
@@ -422,21 +349,15 @@ class ReportesService:
 
         ).order_by('mes')
 
-        
-
         labels = []
 
         data_count = []
 
         data_monto = []
 
-        
-
-        meses_es = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+        meses_es = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
 
                    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-
-        
 
         for item in por_mes:
 
@@ -445,8 +366,6 @@ class ReportesService:
             data_count.append(item['count'])
 
             data_monto.append(float(item['monto'] or 0))
-
-        
 
         return {
 
@@ -458,15 +377,10 @@ class ReportesService:
 
         }
 
-    
-
     @staticmethod
-
     def get_datos_graficos_siniestros_por_tipo():
 
         from app.models import Siniestro
-
-        
 
         por_tipo = Siniestro.objects.values(
 
@@ -480,8 +394,6 @@ class ReportesService:
 
         ).order_by('-count')[:8]
 
-        
-
         labels = []
 
         data = []
@@ -489,8 +401,6 @@ class ReportesService:
         montos = []
 
         colors = ['#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16', '#22C55E', '#14B8A6', '#06B6D4']
-
-        
 
         for i, item in enumerate(por_tipo):
 
@@ -501,8 +411,6 @@ class ReportesService:
             data.append(item['count'])
 
             montos.append(float(item['monto'] or 0))
-
-        
 
         return {
 
@@ -516,21 +424,14 @@ class ReportesService:
 
         }
 
-    
-
     @staticmethod
-
     def get_datos_graficos_facturacion_mensual():
 
         from app.models import Factura
 
         from django.db.models.functions import TruncMonth
 
-        
-
         hace_12_meses = timezone.now().date() - timedelta(days=365)
-
-        
 
         por_mes = Factura.objects.filter(
 
@@ -548,21 +449,15 @@ class ReportesService:
 
         ).order_by('mes')
 
-        
-
         labels = []
 
         data_facturado = []
 
         data_cantidad = []
 
-        
-
-        meses_es = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+        meses_es = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
 
                    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-
-        
 
         for item in por_mes:
 
@@ -571,8 +466,6 @@ class ReportesService:
             data_facturado.append(float(item['facturado'] or 0))
 
             data_cantidad.append(item['cantidad'])
-
-        
 
         return {
 
@@ -584,15 +477,10 @@ class ReportesService:
 
         }
 
-    
-
     @staticmethod
-
     def get_datos_graficos_polizas_por_tipo():
 
         from app.models import Poliza
-
-        
 
         por_tipo = Poliza.objects.values(
 
@@ -606,8 +494,6 @@ class ReportesService:
 
         ).order_by('-count')
 
-        
-
         labels = []
 
         data = []
@@ -615,8 +501,6 @@ class ReportesService:
         sumas = []
 
         colors = ['#3B82F6', '#8B5CF6', '#EC4899', '#F43F5E', '#F97316', '#84CC16', '#14B8A6', '#06B6D4']
-
-        
 
         for item in por_tipo:
 
@@ -627,8 +511,6 @@ class ReportesService:
             data.append(item['count'])
 
             sumas.append(float(item['suma'] or 0))
-
-        
 
         return {
 
@@ -642,25 +524,18 @@ class ReportesService:
 
         }
 
-    
-
     @staticmethod
-
     def get_datos_graficos_comparativo():
 
         from app.models import Poliza, Factura, Siniestro
 
         from django.db.models.functions import TruncMonth
 
-        
-
         hace_6_meses = timezone.now() - timedelta(days=180)
 
-        meses_es = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+        meses_es = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
 
                    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-
-        
 
         polizas_mes = Poliza.objects.filter(
 
@@ -672,8 +547,6 @@ class ReportesService:
 
         ).values('mes').annotate(count=Count('id')).order_by('mes')
 
-        
-
         facturas_mes = Factura.objects.filter(
 
             fecha_emision__gte=hace_6_meses.date()
@@ -684,8 +557,6 @@ class ReportesService:
 
         ).values('mes').annotate(count=Count('id')).order_by('mes')
 
-        
-
         siniestros_mes = Siniestro.objects.filter(
 
             fecha_siniestro__gte=hace_6_meses
@@ -695,8 +566,6 @@ class ReportesService:
             mes=TruncMonth('fecha_siniestro')
 
         ).values('mes').annotate(count=Count('id')).order_by('mes')
-
-        
 
         # Normalizar todas las fechas a date para poder compararlas
 
@@ -712,13 +581,9 @@ class ReportesService:
 
             meses.add(mes)
 
-        
-
         meses = sorted(list(meses))
 
         labels = [f"{meses_es[m.month - 1]}" for m in meses]
-
-        
 
         # Crear diccionarios normalizando las fechas
 
@@ -726,23 +591,17 @@ class ReportesService:
 
             return mes.date() if hasattr(mes, 'date') else mes
 
-        
-
         polizas_dict = {normalizar_mes(item['mes']): item['count'] for item in polizas_mes}
 
         facturas_dict = {normalizar_mes(item['mes']): item['count'] for item in facturas_mes}
 
         siniestros_dict = {normalizar_mes(item['mes']): item['count'] for item in siniestros_mes}
 
-        
-
         data_polizas = [polizas_dict.get(m, 0) for m in meses]
 
         data_facturas = [facturas_dict.get(m, 0) for m in meses]
 
         data_siniestros = [siniestros_dict.get(m, 0) for m in meses]
-
-        
 
         return {
 
@@ -755,4 +614,3 @@ class ReportesService:
             'data_siniestros': json.dumps(data_siniestros)
 
         }
-

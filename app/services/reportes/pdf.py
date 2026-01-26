@@ -13,11 +13,9 @@ from datetime import datetime
 from decimal import Decimal
 
 
-
 from django.http import HttpResponse
 
 from django.utils import timezone
-
 
 
 from reportlab.lib import colors
@@ -32,7 +30,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT, TA_JUSTIFY
 
 from reportlab.platypus import (
 
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, 
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
 
     PageBreak, Flowable, KeepTogether, PageTemplate, Frame
 
@@ -45,9 +43,6 @@ from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.charts.barcharts import VerticalBarChart, HorizontalBarChart
 
 from reportlab.graphics.charts.legends import Legend
-
-
-
 
 
 # =============================================================================
@@ -76,15 +71,11 @@ class Colors:
 
     WHITE = colors.HexColor('#ffffff')
 
-    
-
     # Acentos mínimos (solo para jerarquía, no decoración)
 
     ACCENT = colors.HexColor('#2c3e50')  # Azul oscuro institucional
 
     ACCENT_LIGHT = colors.HexColor('#ecf0f1')  # Fondo muy sutil
-
-    
 
     # Para gráficos (colores suaves y profesionales)
 
@@ -104,10 +95,6 @@ class Colors:
 
     ]
 
-
-
-
-
 # =============================================================================
 
 # SERVICIO PRINCIPAL
@@ -118,35 +105,28 @@ class PDFReportesService:
 
     """Generador de reportes PDF con diseño editorial profesional."""
 
-    
-
     PAGE_SIZE = A4  # A4 es más estándar para documentos institucionales
 
     MARGIN = 2 * cm  # Márgenes amplios (2cm = ~0.79 inch)
 
     WIDTH = PAGE_SIZE[0] - 2 * MARGIN
 
-    
-
     @classmethod
-
     def _styles(cls):
 
         """Estilos tipográficos editoriales - una sola familia, jerarquía clara."""
 
         s = getSampleStyleSheet()
 
-        
-
         # Título principal
 
-        s.add(ParagraphStyle('RptMainTitle', 
+        s.add(ParagraphStyle('RptMainTitle',
 
-                             fontName='Helvetica-Bold', 
+                             fontName='Helvetica-Bold',
 
                              fontSize=20,  # Tamaño equilibrado
 
-                             textColor=Colors.GRAY_900, 
+                             textColor=Colors.GRAY_900,
 
                              alignment=TA_LEFT,  # Alineación izquierda
 
@@ -154,35 +134,31 @@ class PDFReportesService:
 
                              leading=24))
 
-        
-
         # Subtítulo
 
-        s.add(ParagraphStyle('RptSubtitle', 
+        s.add(ParagraphStyle('RptSubtitle',
 
-                             fontName='Helvetica', 
+                             fontName='Helvetica',
 
-                             fontSize=10, 
+                             fontSize=10,
 
-                             textColor=Colors.GRAY_500, 
+                             textColor=Colors.GRAY_500,
 
-                             alignment=TA_LEFT, 
+                             alignment=TA_LEFT,
 
                              spaceAfter=30,  # Espacio generoso
 
                              leading=14))
 
-        
-
         # Título de sección
 
-        s.add(ParagraphStyle('RptSection', 
+        s.add(ParagraphStyle('RptSection',
 
-                             fontName='Helvetica-Bold', 
+                             fontName='Helvetica-Bold',
 
-                             fontSize=13, 
+                             fontSize=13,
 
-                             textColor=Colors.GRAY_900, 
+                             textColor=Colors.GRAY_900,
 
                              spaceBefore=35,  # Espaciado amplio entre secciones
 
@@ -190,35 +166,31 @@ class PDFReportesService:
 
                              leading=16))
 
-        
-
         # Subtítulo de sección
 
-        s.add(ParagraphStyle('RptSubSection', 
+        s.add(ParagraphStyle('RptSubSection',
 
-                             fontName='Helvetica-Bold', 
+                             fontName='Helvetica-Bold',
 
-                             fontSize=11, 
+                             fontSize=11,
 
-                             textColor=Colors.GRAY_700, 
+                             textColor=Colors.GRAY_700,
 
-                             spaceBefore=25, 
+                             spaceBefore=25,
 
                              spaceAfter=10,
 
                              leading=14))
 
-        
-
         # Texto de cuerpo
 
-        s.add(ParagraphStyle('RptBody', 
+        s.add(ParagraphStyle('RptBody',
 
-                             fontName='Helvetica', 
+                             fontName='Helvetica',
 
-                             fontSize=10, 
+                             fontSize=10,
 
-                             textColor=Colors.GRAY_700, 
+                             textColor=Colors.GRAY_700,
 
                              spaceAfter=12,  # Interlineado cómodo
 
@@ -226,138 +198,117 @@ class PDFReportesService:
 
                              alignment=TA_LEFT))
 
-        
-
         # Texto destacado
 
-        s.add(ParagraphStyle('RptHighlight', 
+        s.add(ParagraphStyle('RptHighlight',
 
-                             fontName='Helvetica-Bold', 
+                             fontName='Helvetica-Bold',
 
-                             fontSize=10, 
+                             fontSize=10,
 
-                             textColor=Colors.GRAY_900, 
+                             textColor=Colors.GRAY_900,
 
                              spaceAfter=8,
 
                              leading=14))
 
-        
-
         # Valores KPI
 
-        s.add(ParagraphStyle('RptKPIValue', 
+        s.add(ParagraphStyle('RptKPIValue',
 
-                             fontName='Helvetica-Bold', 
+                             fontName='Helvetica-Bold',
 
                              fontSize=18,  # Tamaño moderado
 
-                             textColor=Colors.GRAY_900, 
+                             textColor=Colors.GRAY_900,
 
                              alignment=TA_CENTER,
 
                              leading=22))
 
-        
-
         # Etiquetas KPI
 
-        s.add(ParagraphStyle('RptKPILabel', 
+        s.add(ParagraphStyle('RptKPILabel',
 
-                             fontName='Helvetica', 
+                             fontName='Helvetica',
 
-                             fontSize=9, 
+                             fontSize=9,
 
-                             textColor=Colors.GRAY_500, 
+                             textColor=Colors.GRAY_500,
 
                              alignment=TA_CENTER,
 
                              leading=12))
 
-        
-
         # Pie de página
 
-        s.add(ParagraphStyle('RptFooter', 
+        s.add(ParagraphStyle('RptFooter',
 
-                             fontName='Helvetica', 
+                             fontName='Helvetica',
 
-                             fontSize=8, 
+                             fontSize=8,
 
-                             textColor=Colors.GRAY_500, 
+                             textColor=Colors.GRAY_500,
 
                              alignment=TA_CENTER,
 
                              leading=10))
 
-        
-
         # Celdas de tabla - texto
 
-        s.add(ParagraphStyle('RptCell', 
+        s.add(ParagraphStyle('RptCell',
 
-                             fontName='Helvetica', 
+                             fontName='Helvetica',
 
-                             fontSize=9, 
+                             fontSize=9,
 
-                             textColor=Colors.GRAY_700, 
+                             textColor=Colors.GRAY_700,
 
                              leading=12))
-
-        
 
         # Celdas de tabla - negrita
 
-        s.add(ParagraphStyle('RptCellBold', 
+        s.add(ParagraphStyle('RptCellBold',
 
-                             fontName='Helvetica-Bold', 
+                             fontName='Helvetica-Bold',
 
-                             fontSize=9, 
+                             fontSize=9,
 
-                             textColor=Colors.GRAY_900, 
+                             textColor=Colors.GRAY_900,
 
                              leading=12))
-
-        
 
         # Celdas de tabla - alineación derecha (números)
 
-        s.add(ParagraphStyle('RptCellRight', 
+        s.add(ParagraphStyle('RptCellRight',
 
-                             fontName='Helvetica', 
+                             fontName='Helvetica',
 
-                             fontSize=9, 
+                             fontSize=9,
 
-                             textColor=Colors.GRAY_700, 
+                             textColor=Colors.GRAY_700,
 
-                             alignment=TA_RIGHT, 
+                             alignment=TA_RIGHT,
 
                              leading=12))
 
-        
-
         # Encabezado de tabla
 
-        s.add(ParagraphStyle('RptCellHeader', 
+        s.add(ParagraphStyle('RptCellHeader',
 
-                             fontName='Helvetica-Bold', 
+                             fontName='Helvetica-Bold',
 
-                             fontSize=9, 
+                             fontSize=9,
 
-                             textColor=Colors.GRAY_900, 
+                             textColor=Colors.GRAY_900,
 
                              alignment=TA_LEFT,  # Alineación izquierda
 
                              leading=12))
 
-        
-
         return s
 
-    
-
     @classmethod
-
     def _fmt(cls, val, currency=False, short=False):
 
         """Formatea números de forma clara y legible."""
@@ -382,8 +333,6 @@ class PDFReportesService:
 
         return f"{int(v):,}"
 
-    
-
     # =========================================================================
 
     # COMPONENTES DE DISEÑO EDITORIAL
@@ -391,14 +340,11 @@ class PDFReportesService:
     # =========================================================================
 
     @classmethod
-
     def _header_banner(cls, title, subtitle=None):
 
         """Encabezado limpio y profesional."""
 
         elements = []
-
-        
 
         # Línea sutil superior (muy delgada)
 
@@ -410,15 +356,11 @@ class PDFReportesService:
 
         elements.append(Spacer(1, 25))  # Espacio generoso
 
-        
-
         # Título
 
         s = cls._styles()
 
         elements.append(Paragraph(title, s['RptMainTitle']))
-
-        
 
         # Subtítulo con fecha (formato simple)
 
@@ -434,8 +376,6 @@ class PDFReportesService:
 
         elements.append(Paragraph(sub_text, s['RptSubtitle']))
 
-        
-
         # Línea sutil inferior
 
         elements.append(Spacer(1, 20))
@@ -448,21 +388,14 @@ class PDFReportesService:
 
         elements.append(Spacer(1, 30))  # Espacio antes del contenido
 
-        
-
         return elements
 
-    
-
     @classmethod
-
     def _kpi_cards(cls, kpis):
 
         """Tarjetas KPI minimalistas y limpias."""
 
         s = cls._styles()
-
-        
 
         cards = []
 
@@ -472,8 +405,6 @@ class PDFReportesService:
 
             value_style = ParagraphStyle('KPIVal', parent=s['RptKPIValue'])
 
-            
-
             card_data = [
 
                 [Paragraph(str(kpi['value']), value_style)],
@@ -481,8 +412,6 @@ class PDFReportesService:
                 [Paragraph(kpi['label'], s['RptKPILabel'])]
 
             ]
-
-            
 
             card = Table(card_data, colWidths=[cls.WIDTH / len(kpis) - 15])
 
@@ -520,8 +449,6 @@ class PDFReportesService:
 
             cards.append(card)
 
-        
-
         # Contenedor con espaciado uniforme
 
         container = Table([cards], colWidths=[(cls.WIDTH / len(kpis))] * len(kpis))
@@ -538,14 +465,9 @@ class PDFReportesService:
 
         ]))
 
-        
-
         return container
 
-    
-
     @classmethod
-
     def _section_title(cls, text):
 
         """Título de sección limpio, sin iconos decorativos."""
@@ -554,23 +476,16 @@ class PDFReportesService:
 
         return Paragraph(text, s['RptSection'])
 
-    
-
     @classmethod
-
     def _data_table(cls, headers, rows, col_widths=None):
 
         """Tabla de datos con diseño simple y legible."""
 
         s = cls._styles()
 
-        
-
         # Procesar headers
 
         header_row = [Paragraph(h, s['RptCellHeader']) for h in headers]
-
-        
 
         # Procesar datos
 
@@ -592,11 +507,7 @@ class PDFReportesService:
 
             data_rows.append(cells)
 
-        
-
         all_data = [header_row] + data_rows
-
-        
 
         # Calcular anchos si no se proporcionan
 
@@ -604,11 +515,7 @@ class PDFReportesService:
 
             col_widths = [cls.WIDTH / len(headers)] * len(headers)
 
-        
-
         table = Table(all_data, colWidths=col_widths, repeatRows=1)
-
-        
 
         style_cmds = [
 
@@ -628,8 +535,6 @@ class PDFReportesService:
 
             ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
 
-            
-
             # Cuerpo
 
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
@@ -644,8 +549,6 @@ class PDFReportesService:
 
             ('RIGHTPADDING', (0, 0), (-1, -1), 10),
 
-            
-
             # Bordes sutiles
 
             ('LINEBELOW', (0, 0), (-1, 0), 1, Colors.GRAY_300),  # Borde inferior del header
@@ -656,8 +559,6 @@ class PDFReportesService:
 
         ]
 
-        
-
         # Alternar colores de fondo muy sutiles (opcional, puede comentarse)
 
         for i in range(1, len(all_data)):
@@ -666,16 +567,11 @@ class PDFReportesService:
 
                 style_cmds.append(('BACKGROUND', (0, i), (-1, i), Colors.WHITE))  # Blanco puro
 
-        
-
         table.setStyle(TableStyle(style_cmds))
 
         return table
 
-    
-
     @classmethod
-
     def _pie_chart(cls, data, labels, title=None, width=260, height=180):
 
         """Gráfico de pastel simple y profesional."""
@@ -684,11 +580,7 @@ class PDFReportesService:
 
             return Spacer(1, 10)
 
-        
-
         d = Drawing(width, height)
-
-        
 
         # Título si se proporciona
 
@@ -699,8 +591,6 @@ class PDFReportesService:
                         fontName='Helvetica-Bold', fontSize=10,
 
                         fillColor=Colors.GRAY_700, textAnchor='middle'))
-
-        
 
         pie = Pie()
 
@@ -716,8 +606,6 @@ class PDFReportesService:
 
         pie.labels = None  # Sin labels en el pie
 
-        
-
         # Colores suaves y profesionales
 
         for i in range(len(data)):
@@ -730,11 +618,7 @@ class PDFReportesService:
 
             pie.slices[i].popout = 0  # Sin efectos
 
-        
-
         d.add(pie)
-
-        
 
         # Leyenda simple
 
@@ -762,8 +646,6 @@ class PDFReportesService:
 
         legend.dxTextSpace = 6
 
-        
-
         legend.colorNamePairs = [
 
             (Colors.CHART[i % len(Colors.CHART)], f"{labels[i]} ({data[i]})")
@@ -774,14 +656,9 @@ class PDFReportesService:
 
         d.add(legend)
 
-        
-
         return d
 
-    
-
     @classmethod
-
     def _bar_chart(cls, data, labels, title=None, width=280, height=160):
 
         """Gráfico de barras horizontal simple."""
@@ -790,11 +667,7 @@ class PDFReportesService:
 
             return Spacer(1, 10)
 
-        
-
         d = Drawing(width, height)
-
-        
 
         # Título
 
@@ -805,8 +678,6 @@ class PDFReportesService:
                         fontName='Helvetica-Bold', fontSize=10,
 
                         fillColor=Colors.GRAY_700, textAnchor='middle'))
-
-        
 
         bc = HorizontalBarChart()
 
@@ -822,8 +693,6 @@ class PDFReportesService:
 
         bc.categoryAxis.categoryNames = [l[:15] for l in labels]  # Truncar si es necesario
 
-        
-
         # Color simple y profesional
 
         bc.bars[0].fillColor = Colors.ACCENT
@@ -831,8 +700,6 @@ class PDFReportesService:
         bc.bars[0].strokeColor = Colors.GRAY_300
 
         bc.bars[0].strokeWidth = 0.5
-
-        
 
         bc.categoryAxis.labels.fontName = 'Helvetica'
 
@@ -845,8 +712,6 @@ class PDFReportesService:
         bc.categoryAxis.strokeColor = Colors.GRAY_300
 
         bc.categoryAxis.strokeWidth = 0.5
-
-        
 
         bc.valueAxis.labels.fontName = 'Helvetica'
 
@@ -862,22 +727,15 @@ class PDFReportesService:
 
         bc.valueAxis.visibleGrid = 1
 
-        
-
         bc.barWidth = 12
 
         bc.barSpacing = 5
-
-        
 
         d.add(bc)
 
         return d
 
-    
-
     @classmethod
-
     def _footer(cls):
 
         """Pie de página minimalista."""
@@ -887,8 +745,6 @@ class PDFReportesService:
         elements = []
 
         elements.append(Spacer(1, 40))  # Espacio generoso antes del footer
-
-        
 
         # Línea sutil
 
@@ -900,8 +756,6 @@ class PDFReportesService:
 
         elements.append(Spacer(1, 8))
 
-        
-
         elements.append(Paragraph(
 
             f"Seguros UTPL • Sistema de Gestión • {timezone.now().strftime('%d/%m/%Y %H:%M')}",
@@ -912,19 +766,14 @@ class PDFReportesService:
 
         return elements
 
-    
-
     @classmethod
-
     def _indicator_box(cls, text):
 
         """Caja de indicador simple, sin colores llamativos."""
 
         s = cls._styles()
 
-        
-
-        data = [[Paragraph(text, ParagraphStyle('Ind', parent=s['RptBody'], 
+        data = [[Paragraph(text, ParagraphStyle('Ind', parent=s['RptBody'],
 
                                                  textColor=Colors.GRAY_700,
 
@@ -950,8 +799,6 @@ class PDFReportesService:
 
         return t
 
-    
-
     # =========================================================================
 
     # REPORTE DE PÓLIZAS
@@ -959,7 +806,6 @@ class PDFReportesService:
     # =========================================================================
 
     @classmethod
-
     def generar_reporte_polizas_pdf(cls, reporte_data, filtros_texto=None):
 
         """Reporte de pólizas con diseño editorial."""
@@ -972,21 +818,15 @@ class PDFReportesService:
 
                                topMargin=cls.MARGIN, bottomMargin=cls.MARGIN)
 
-        
-
         s = cls._styles()
 
         elements = []
-
-        
 
         # === HEADER ===
 
         subtitle = f"Filtros aplicados: {filtros_texto}" if filtros_texto else None
 
         elements.extend(cls._header_banner("Reporte de Pólizas", subtitle))
-
-        
 
         # === KPIs ===
 
@@ -1008,13 +848,11 @@ class PDFReportesService:
 
         elements.append(Spacer(1, 15))
 
-        
-
         # KPI de suma asegurada
 
         suma_kpi = [
 
-            {'value': cls._fmt(totales.get('suma_total', 0), currency=True, short=True), 
+            {'value': cls._fmt(totales.get('suma_total', 0), currency=True, short=True),
 
              'label': 'Suma Total Asegurada'}
 
@@ -1024,17 +862,11 @@ class PDFReportesService:
 
         elements.append(Spacer(1, 30))
 
-        
-
         # === GRÁFICOS ===
 
         elements.append(cls._section_title("Análisis Visual"))
 
-        
-
         charts = []
-
-        
 
         # Pie de estados
 
@@ -1060,13 +892,9 @@ class PDFReportesService:
 
             estados_labels.append('Vencidas')
 
-        
-
         if estados_data:
 
             charts.append(cls._pie_chart(estados_data, estados_labels, "Distribución por Estado"))
-
-        
 
         # Barras por compañía
 
@@ -1079,8 +907,6 @@ class PDFReportesService:
             comp_labels = [item.get('compania_aseguradora__nombre', 'N/A') for item in por_compania]
 
             charts.append(cls._bar_chart(comp_data, comp_labels, "Top 5 Compañías"))
-
-        
 
         if charts:
 
@@ -1100,11 +926,7 @@ class PDFReportesService:
 
             elements.append(chart_table)
 
-        
-
         elements.append(Spacer(1, 25))
-
-        
 
         # === TABLAS DE DISTRIBUCIÓN ===
 
@@ -1122,8 +944,6 @@ class PDFReportesService:
 
             ] for item in reporte_data.get('por_compania', [])[:8]]
 
-            
-
             elements.append(cls._data_table(
 
                 ['Compañía', 'Pólizas', 'Suma Asegurada'],
@@ -1135,8 +955,6 @@ class PDFReportesService:
             ))
 
             elements.append(Spacer(1, 20))
-
-        
 
         por_tipo = reporte_data.get('por_tipo', [])
 
@@ -1154,8 +972,6 @@ class PDFReportesService:
 
             ] for item in por_tipo[:8]]
 
-            
-
             elements.append(cls._data_table(
 
                 ['Tipo', 'Cantidad', 'Suma Asegurada'],
@@ -1168,21 +984,15 @@ class PDFReportesService:
 
             elements.append(Spacer(1, 20))
 
-        
-
         # === DETALLE ===
 
         elements.append(PageBreak())
 
         elements.append(cls._section_title("Detalle de Pólizas"))
 
-        
-
         queryset = list(reporte_data.get('queryset', []))
 
         total = len(queryset)
-
-        
 
         if total > 35:
 
@@ -1195,8 +1005,6 @@ class PDFReportesService:
             ))
 
             elements.append(Spacer(1, 12))
-
-        
 
         rows = []
 
@@ -1220,8 +1028,6 @@ class PDFReportesService:
 
             ])
 
-        
-
         if rows:
 
             elements.append(cls._data_table(
@@ -1238,27 +1044,19 @@ class PDFReportesService:
 
             elements.append(Paragraph("No hay pólizas con los filtros aplicados.", s['RptBody']))
 
-        
-
         # Footer
 
         elements.extend(cls._footer())
 
-        
-
         doc.build(elements)
 
         buffer.seek(0)
-
-        
 
         response = HttpResponse(buffer, content_type='application/pdf')
 
         response['Content-Disposition'] = f'attachment; filename="reporte_polizas_{timezone.now().strftime("%Y%m%d_%H%M")}.pdf"'
 
         return response
-
-    
 
     # =========================================================================
 
@@ -1267,7 +1065,6 @@ class PDFReportesService:
     # =========================================================================
 
     @classmethod
-
     def generar_reporte_siniestros_pdf(cls, reporte_data, filtros_texto=None):
 
         """Reporte de siniestros con diseño editorial."""
@@ -1280,21 +1077,15 @@ class PDFReportesService:
 
                                topMargin=cls.MARGIN, bottomMargin=cls.MARGIN)
 
-        
-
         s = cls._styles()
 
         elements = []
-
-        
 
         # === HEADER ===
 
         subtitle = f"Filtros aplicados: {filtros_texto}" if filtros_texto else None
 
         elements.extend(cls._header_banner("Reporte de Siniestros", subtitle))
-
-        
 
         # === KPIs ===
 
@@ -1316,17 +1107,15 @@ class PDFReportesService:
 
         elements.append(Spacer(1, 15))
 
-        
-
         # KPIs de montos
 
         kpis_montos = [
 
-            {'value': cls._fmt(totales.get('monto_estimado', 0), currency=True, short=True), 
+            {'value': cls._fmt(totales.get('monto_estimado', 0), currency=True, short=True),
 
              'label': 'Monto Estimado'},
 
-            {'value': cls._fmt(totales.get('monto_indemnizado', 0), currency=True, short=True), 
+            {'value': cls._fmt(totales.get('monto_indemnizado', 0), currency=True, short=True),
 
              'label': 'Indemnizado'},
 
@@ -1335,8 +1124,6 @@ class PDFReportesService:
         elements.append(cls._kpi_cards(kpis_montos))
 
         elements.append(Spacer(1, 25))
-
-        
 
         # Indicadores
 
@@ -1356,8 +1143,6 @@ class PDFReportesService:
 
             elements.append(Spacer(1, 12))
 
-        
-
         if totales.get('rechazados') and totales.get('cantidad'):
 
             tasa = (totales['rechazados'] / totales['cantidad']) * 100
@@ -1368,21 +1153,13 @@ class PDFReportesService:
 
             ))
 
-        
-
         elements.append(Spacer(1, 20))
-
-        
 
         # === GRÁFICOS ===
 
         elements.append(cls._section_title("Análisis Visual"))
 
-        
-
         charts = []
-
-        
 
         # Pie por tipo
 
@@ -1395,8 +1172,6 @@ class PDFReportesService:
             tipo_labels = [(item.get('tipo_siniestro__nombre') or 'Sin tipo') for item in por_tipo]
 
             charts.append(cls._pie_chart(tipo_data, tipo_labels, "Distribución por Tipo"))
-
-        
 
         # Barras por estado
 
@@ -1422,8 +1197,6 @@ class PDFReportesService:
 
             charts.append(cls._bar_chart(est_data, est_labels, "Distribución por Estado"))
 
-        
-
         if charts:
 
             chart_table = Table([charts], colWidths=[cls.WIDTH/2] * len(charts) if len(charts) > 1 else [cls.WIDTH])
@@ -1442,11 +1215,7 @@ class PDFReportesService:
 
             elements.append(chart_table)
 
-        
-
         elements.append(Spacer(1, 25))
-
-        
 
         # === TABLAS ===
 
@@ -1464,8 +1233,6 @@ class PDFReportesService:
 
             ] for item in reporte_data.get('por_tipo', [])[:8]]
 
-            
-
             elements.append(cls._data_table(
 
                 ['Tipo', 'Casos', 'Monto Estimado'],
@@ -1478,21 +1245,15 @@ class PDFReportesService:
 
             elements.append(Spacer(1, 20))
 
-        
-
         # === DETALLE ===
 
         elements.append(PageBreak())
 
         elements.append(cls._section_title("Detalle de Siniestros"))
 
-        
-
         queryset = list(reporte_data.get('queryset', []))
 
         total = len(queryset)
-
-        
 
         if total > 35:
 
@@ -1505,8 +1266,6 @@ class PDFReportesService:
             ))
 
             elements.append(Spacer(1, 12))
-
-        
 
         rows = []
 
@@ -1532,8 +1291,6 @@ class PDFReportesService:
 
             ])
 
-        
-
         if rows:
 
             elements.append(cls._data_table(
@@ -1546,25 +1303,17 @@ class PDFReportesService:
 
             ))
 
-        
-
         elements.extend(cls._footer())
-
-        
 
         doc.build(elements)
 
         buffer.seek(0)
-
-        
 
         response = HttpResponse(buffer, content_type='application/pdf')
 
         response['Content-Disposition'] = f'attachment; filename="reporte_siniestros_{timezone.now().strftime("%Y%m%d_%H%M")}.pdf"'
 
         return response
-
-    
 
     # =========================================================================
 
@@ -1573,7 +1322,6 @@ class PDFReportesService:
     # =========================================================================
 
     @classmethod
-
     def generar_reporte_facturas_pdf(cls, reporte_data, filtros_texto=None):
 
         """Reporte de facturas con diseño editorial."""
@@ -1586,21 +1334,15 @@ class PDFReportesService:
 
                                topMargin=cls.MARGIN, bottomMargin=cls.MARGIN)
 
-        
-
         s = cls._styles()
 
         elements = []
-
-        
 
         # Header
 
         subtitle = f"Filtros aplicados: {filtros_texto}" if filtros_texto else None
 
         elements.extend(cls._header_banner("Reporte de Facturas", subtitle))
-
-        
 
         # KPIs
 
@@ -1622,21 +1364,19 @@ class PDFReportesService:
 
         elements.append(Spacer(1, 15))
 
-        
-
         # KPIs montos
 
         kpis_montos = [
 
-            {'value': cls._fmt(totales.get('total_facturado', 0), currency=True, short=True), 
+            {'value': cls._fmt(totales.get('total_facturado', 0), currency=True, short=True),
 
              'label': 'Total Facturado'},
 
-            {'value': cls._fmt(totales.get('total_pendiente', 0), currency=True, short=True), 
+            {'value': cls._fmt(totales.get('total_pendiente', 0), currency=True, short=True),
 
              'label': 'Por Cobrar'},
 
-            {'value': cls._fmt(totales.get('total_vencido', 0), currency=True, short=True), 
+            {'value': cls._fmt(totales.get('total_vencido', 0), currency=True, short=True),
 
              'label': 'Vencido'},
 
@@ -1645,8 +1385,6 @@ class PDFReportesService:
         elements.append(cls._kpi_cards(kpis_montos))
 
         elements.append(Spacer(1, 25))
-
-        
 
         # Indicador
 
@@ -1666,13 +1404,9 @@ class PDFReportesService:
 
             elements.append(Spacer(1, 25))
 
-        
-
         # Gráfico
 
         elements.append(cls._section_title("Distribución"))
-
-        
 
         estados_data = []
 
@@ -1696,37 +1430,25 @@ class PDFReportesService:
 
             estados_labels.append('Vencidas')
 
-        
-
         if estados_data:
 
             elements.append(cls._pie_chart(estados_data, estados_labels, "Distribución por Estado", width=350, height=180))
 
-        
-
         elements.append(Spacer(1, 25))
-
-        
 
         # Detalle
 
         elements.append(cls._section_title("Detalle de Facturas"))
 
-        
-
         queryset = list(reporte_data.get('queryset', []))
 
         total = len(queryset)
-
-        
 
         if total > 35:
 
             elements.append(Paragraph(f"Mostrando 35 de {total} facturas.", s['RptBody']))
 
             elements.append(Spacer(1, 12))
-
-        
 
         rows = []
 
@@ -1752,8 +1474,6 @@ class PDFReportesService:
 
             ])
 
-        
-
         if rows:
 
             elements.append(cls._data_table(
@@ -1766,25 +1486,17 @@ class PDFReportesService:
 
             ))
 
-        
-
         elements.extend(cls._footer())
-
-        
 
         doc.build(elements)
 
         buffer.seek(0)
-
-        
 
         response = HttpResponse(buffer, content_type='application/pdf')
 
         response['Content-Disposition'] = f'attachment; filename="reporte_facturas_{timezone.now().strftime("%Y%m%d_%H%M")}.pdf"'
 
         return response
-
-    
 
     # =========================================================================
 
@@ -1793,7 +1505,6 @@ class PDFReportesService:
     # =========================================================================
 
     @classmethod
-
     def generar_reporte_ejecutivo_pdf(cls, dashboard_data):
 
         """Reporte ejecutivo con diseño editorial."""
@@ -1806,23 +1517,15 @@ class PDFReportesService:
 
                                topMargin=cls.MARGIN, bottomMargin=cls.MARGIN)
 
-        
-
         s = cls._styles()
 
         elements = []
-
-        
 
         # Header
 
         elements.extend(cls._header_banner("Reporte Ejecutivo", "Resumen General del Sistema"))
 
-        
-
         stats = dashboard_data.get('stats', {})
-
-        
 
         # === PÓLIZAS ===
 
@@ -1836,7 +1539,7 @@ class PDFReportesService:
 
             {'value': cls._fmt(stats.get('polizas_por_vencer', 0)), 'label': 'Por Vencer'},
 
-            {'value': cls._fmt(stats.get('suma_total_asegurada', 0), currency=True, short=True), 
+            {'value': cls._fmt(stats.get('suma_total_asegurada', 0), currency=True, short=True),
 
              'label': 'Suma Asegurada'},
 
@@ -1845,8 +1548,6 @@ class PDFReportesService:
         elements.append(cls._kpi_cards(kpis))
 
         elements.append(Spacer(1, 30))
-
-        
 
         # === FACTURACIÓN ===
 
@@ -1858,11 +1559,11 @@ class PDFReportesService:
 
             {'value': cls._fmt(stats.get('facturas_pendientes', 0)), 'label': 'Pendientes'},
 
-            {'value': cls._fmt(stats.get('total_facturado', 0), currency=True, short=True), 
+            {'value': cls._fmt(stats.get('total_facturado', 0), currency=True, short=True),
 
              'label': 'Facturado'},
 
-            {'value': cls._fmt(stats.get('total_por_cobrar', 0), currency=True, short=True), 
+            {'value': cls._fmt(stats.get('total_por_cobrar', 0), currency=True, short=True),
 
              'label': 'Por Cobrar'},
 
@@ -1871,8 +1572,6 @@ class PDFReportesService:
         elements.append(cls._kpi_cards(kpis))
 
         elements.append(Spacer(1, 30))
-
-        
 
         # === SINIESTROS ===
 
@@ -1884,11 +1583,11 @@ class PDFReportesService:
 
             {'value': cls._fmt(stats.get('siniestros_activos', 0)), 'label': 'Activos'},
 
-            {'value': cls._fmt(stats.get('monto_siniestros', 0), currency=True, short=True), 
+            {'value': cls._fmt(stats.get('monto_siniestros', 0), currency=True, short=True),
 
              'label': 'Estimado'},
 
-            {'value': cls._fmt(stats.get('monto_indemnizado', 0), currency=True, short=True), 
+            {'value': cls._fmt(stats.get('monto_indemnizado', 0), currency=True, short=True),
 
              'label': 'Indemnizado'},
 
@@ -1897,8 +1596,6 @@ class PDFReportesService:
         elements.append(cls._kpi_cards(kpis))
 
         elements.append(Spacer(1, 30))
-
-        
 
         # === ALERTAS ===
 
@@ -1916,8 +1613,6 @@ class PDFReportesService:
 
         elements.append(Spacer(1, 35))
 
-        
-
         # Nota
 
         elements.append(Paragraph(
@@ -1930,21 +1625,14 @@ class PDFReportesService:
 
         ))
 
-        
-
         elements.extend(cls._footer())
-
-        
 
         doc.build(elements)
 
         buffer.seek(0)
-
-        
 
         response = HttpResponse(buffer, content_type='application/pdf')
 
         response['Content-Disposition'] = f'attachment; filename="reporte_ejecutivo_{timezone.now().strftime("%Y%m%d_%H%M")}.pdf"'
 
         return response
-

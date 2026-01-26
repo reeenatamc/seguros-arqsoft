@@ -7,7 +7,6 @@ Proporciona estadísticas comparativas entre períodos, tendencias y KPIs dinám
 """
 
 
-
 from django.db.models import Sum, Count, Avg, Q, F, Value, Case, When
 
 from django.db.models.functions import TruncMonth, TruncYear, TruncWeek, TruncDay, Coalesce
@@ -23,9 +22,6 @@ from typing import Dict, List, Any, Optional, Tuple
 import json
 
 
-
-
-
 class DashboardAnalyticsService:
 
     """
@@ -36,8 +32,6 @@ class DashboardAnalyticsService:
 
     """
 
-    
-
     # Constantes para períodos
 
     PERIOD_YEAR = 'year'
@@ -47,8 +41,6 @@ class DashboardAnalyticsService:
     PERIOD_WEEK = 'week'
 
     PERIOD_DAY = 'day'
-
-    
 
     PERIOD_CHOICES = {
 
@@ -62,8 +54,6 @@ class DashboardAnalyticsService:
 
     }
 
-    
-
     # Nombres de meses en español
 
     MONTH_NAMES_ES = [
@@ -74,8 +64,6 @@ class DashboardAnalyticsService:
 
     ]
 
-    
-
     MONTH_NAMES_SHORT_ES = [
 
         'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
@@ -84,10 +72,7 @@ class DashboardAnalyticsService:
 
     ]
 
-
-
     @classmethod
-
     def get_date_range_for_period(
 
         cls,
@@ -104,8 +89,6 @@ class DashboardAnalyticsService:
 
         Calcula el rango de fechas para un período específico.
 
-        
-
         Args:
 
             period_type: Tipo de período (year, month, week, day)
@@ -113,8 +96,6 @@ class DashboardAnalyticsService:
             reference_date: Fecha de referencia (por defecto hoy)
 
             offset: Desplazamiento hacia atrás (0 = período actual, 1 = período anterior, etc.)
-
-        
 
         Returns:
 
@@ -126,8 +107,6 @@ class DashboardAnalyticsService:
 
             reference_date = timezone.now().date()
 
-        
-
         if period_type == cls.PERIOD_YEAR:
 
             year = reference_date.year - offset
@@ -135,8 +114,6 @@ class DashboardAnalyticsService:
             start_date = date(year, 1, 1)
 
             end_date = date(year, 12, 31)
-
-            
 
         elif period_type == cls.PERIOD_MONTH:
 
@@ -158,8 +135,6 @@ class DashboardAnalyticsService:
 
                 year += 1
 
-            
-
             start_date = date(year, month, 1)
 
             # Último día del mes
@@ -171,8 +146,6 @@ class DashboardAnalyticsService:
             else:
 
                 end_date = date(year, month + 1, 1) - timedelta(days=1)
-
-                
 
         elif period_type == cls.PERIOD_WEEK:
 
@@ -186,8 +159,6 @@ class DashboardAnalyticsService:
 
             end_date = start_date + timedelta(days=6)
 
-            
-
         else:  # PERIOD_DAY
 
             target_date = reference_date - timedelta(days=offset)
@@ -196,14 +167,9 @@ class DashboardAnalyticsService:
 
             end_date = target_date
 
-        
-
         return start_date, end_date
 
-
-
     @classmethod
-
     def get_period_label(cls, period_type: str, start_date: date, end_date: date) -> str:
 
         """
@@ -228,10 +194,7 @@ class DashboardAnalyticsService:
 
             return start_date.strftime('%d/%m/%Y')
 
-
-
     @classmethod
-
     def get_comparative_stats(
 
         cls,
@@ -246,8 +209,6 @@ class DashboardAnalyticsService:
 
         Obtiene estadísticas comparativas entre el período actual y el anterior.
 
-        
-
         Returns:
 
             Diccionario con estadísticas actuales, anteriores, variación porcentual
@@ -257,8 +218,6 @@ class DashboardAnalyticsService:
         """
 
         from app.models import Poliza, Factura, Siniestro, Alerta
-
-        
 
         # Calcular rangos de fechas
 
@@ -274,15 +233,11 @@ class DashboardAnalyticsService:
 
         )
 
-        
-
         # Estadísticas de pólizas
 
         current_policies = cls._get_policy_stats(current_start, current_end)
 
         previous_policies = cls._get_policy_stats(previous_start, previous_end)
-
-        
 
         # Estadísticas de facturas
 
@@ -290,15 +245,11 @@ class DashboardAnalyticsService:
 
         previous_invoices = cls._get_invoice_stats(previous_start, previous_end)
 
-        
-
         # Estadísticas de siniestros
 
         current_claims = cls._get_claim_stats(current_start, current_end)
 
         previous_claims = cls._get_claim_stats(previous_start, previous_end)
-
-        
 
         # Calcular variaciones
 
@@ -314,8 +265,6 @@ class DashboardAnalyticsService:
 
                 percentage = ((current - previous) / previous) * 100
 
-            
-
             return {
 
                 'current': float(current),
@@ -329,8 +278,6 @@ class DashboardAnalyticsService:
                 'trend': 'up' if current > previous else 'down' if current < previous else 'stable'
 
             }
-
-        
 
         return {
 
@@ -458,17 +405,12 @@ class DashboardAnalyticsService:
 
         }
 
-
-
     @classmethod
-
     def _get_policy_stats(cls, start_date: date, end_date: date) -> Dict[str, Any]:
 
         """Obtiene estadísticas de pólizas para un rango de fechas."""
 
         from app.models import Poliza
-
-        
 
         # Pólizas nuevas en el período
 
@@ -479,8 +421,6 @@ class DashboardAnalyticsService:
             fecha_creacion__date__lte=end_date
 
         )
-
-        
 
         # Pólizas vencidas en el período
 
@@ -494,8 +434,6 @@ class DashboardAnalyticsService:
 
         )
 
-        
-
         new_count = new_policies.count()
 
         total_insured = new_policies.aggregate(
@@ -503,8 +441,6 @@ class DashboardAnalyticsService:
             total=Coalesce(Sum('suma_asegurada'), Value(Decimal('0')))
 
         )['total']
-
-        
 
         return {
 
@@ -516,17 +452,12 @@ class DashboardAnalyticsService:
 
         }
 
-
-
     @classmethod
-
     def _get_invoice_stats(cls, start_date: date, end_date: date) -> Dict[str, Any]:
 
         """Obtiene estadísticas de facturas para un rango de fechas."""
 
         from app.models import Factura
-
-        
 
         invoices = Factura.objects.filter(
 
@@ -536,8 +467,6 @@ class DashboardAnalyticsService:
 
         )
 
-        
-
         count = invoices.count()
 
         total_amount = invoices.aggregate(
@@ -546,21 +475,15 @@ class DashboardAnalyticsService:
 
         )['total']
 
-        
-
         paid_amount = invoices.filter(estado='pagada').aggregate(
 
             total=Coalesce(Sum('monto_total'), Value(Decimal('0')))
 
         )['total']
 
-        
-
         # Tasa de cobro
 
         collection_rate = round((paid_amount / total_amount * 100), 1) if total_amount > 0 else 0
-
-        
 
         return {
 
@@ -574,17 +497,12 @@ class DashboardAnalyticsService:
 
         }
 
-
-
     @classmethod
-
     def _get_claim_stats(cls, start_date: date, end_date: date) -> Dict[str, Any]:
 
         """Obtiene estadísticas de siniestros para un rango de fechas."""
 
         from app.models import Siniestro
-
-        
 
         claims = Siniestro.objects.filter(
 
@@ -593,8 +511,6 @@ class DashboardAnalyticsService:
             fecha_siniestro__date__lte=end_date
 
         )
-
-        
 
         count = claims.count()
 
@@ -610,8 +526,6 @@ class DashboardAnalyticsService:
 
         )['total']
 
-        
-
         return {
 
             'count': count,
@@ -622,10 +536,7 @@ class DashboardAnalyticsService:
 
         }
 
-
-
     @classmethod
-
     def get_trend_data(
 
         cls,
@@ -642,15 +553,11 @@ class DashboardAnalyticsService:
 
         Útil para gráficos de líneas/barras con histórico.
 
-        
-
         Args:
 
             period_type: Tipo de período
 
             periods_count: Cantidad de períodos a incluir
-
-            
 
         Returns:
 
@@ -659,8 +566,6 @@ class DashboardAnalyticsService:
         """
 
         from app.models import Poliza, Factura, Siniestro
-
-        
 
         labels = []
 
@@ -672,19 +577,13 @@ class DashboardAnalyticsService:
 
         claims_amount_data = []
 
-        
-
         today = timezone.now().date()
-
-        
 
         # Iterar desde el período más antiguo al más reciente
 
         for offset in range(periods_count - 1, -1, -1):
 
             start_date, end_date = cls.get_date_range_for_period(period_type, today, offset)
-
-            
 
             # Etiqueta del período
 
@@ -708,11 +607,7 @@ class DashboardAnalyticsService:
 
                 label = start_date.strftime('%d/%m')
 
-            
-
             labels.append(label)
-
-            
 
             # Datos de pólizas (nuevas en el período)
 
@@ -725,8 +620,6 @@ class DashboardAnalyticsService:
             ).count()
 
             policies_data.append(policies_count)
-
-            
 
             # Datos de facturas
 
@@ -743,8 +636,6 @@ class DashboardAnalyticsService:
             )['total']
 
             invoices_amount_data.append(float(invoice_total))
-
-            
 
             # Datos de siniestros
 
@@ -764,13 +655,9 @@ class DashboardAnalyticsService:
 
             )['total']
 
-            
-
             claims_data.append(claims_count)
 
             claims_amount_data.append(float(claims_amount))
-
-        
 
         return {
 
@@ -822,10 +709,7 @@ class DashboardAnalyticsService:
 
         }
 
-
-
     @classmethod
-
     def get_year_over_year_comparison(cls) -> Dict[str, Any]:
 
         """
@@ -838,19 +722,13 @@ class DashboardAnalyticsService:
 
         from app.models import Factura, Siniestro
 
-        
-
         today = timezone.now().date()
 
         current_year = today.year
 
         previous_year = current_year - 1
 
-        
-
         labels = cls.MONTH_NAMES_SHORT_ES[:today.month]  # Solo hasta el mes actual
-
-        
 
         current_year_invoices = []
 
@@ -859,8 +737,6 @@ class DashboardAnalyticsService:
         current_year_claims = []
 
         previous_year_claims = []
-
-        
 
         for month in range(1, today.month + 1):
 
@@ -880,8 +756,6 @@ class DashboardAnalyticsService:
 
             current_year_invoices.append(float(current_invoice_total))
 
-            
-
             current_claim_count = Siniestro.objects.filter(
 
                 fecha_siniestro__year=current_year,
@@ -891,8 +765,6 @@ class DashboardAnalyticsService:
             ).count()
 
             current_year_claims.append(current_claim_count)
-
-            
 
             # Año anterior
 
@@ -910,8 +782,6 @@ class DashboardAnalyticsService:
 
             previous_year_invoices.append(float(prev_invoice_total))
 
-            
-
             prev_claim_count = Siniestro.objects.filter(
 
                 fecha_siniestro__year=previous_year,
@@ -921,8 +791,6 @@ class DashboardAnalyticsService:
             ).count()
 
             previous_year_claims.append(prev_claim_count)
-
-        
 
         return {
 
@@ -950,10 +818,7 @@ class DashboardAnalyticsService:
 
         }
 
-
-
     @classmethod
-
     def get_quick_actions_data(cls) -> Dict[str, Any]:
 
         """
@@ -966,15 +831,11 @@ class DashboardAnalyticsService:
 
         from app.models import Poliza, Factura, Siniestro, Alerta
 
-        
-
         today = timezone.now().date()
 
         in_7_days = today + timedelta(days=7)
 
         in_30_days = today + timedelta(days=30)
-
-        
 
         return {
 
@@ -1026,10 +887,7 @@ class DashboardAnalyticsService:
 
         }
 
-
-
     @classmethod
-
     def get_top_performers(cls, limit: int = 5) -> Dict[str, Any]:
 
         """
@@ -1040,13 +898,9 @@ class DashboardAnalyticsService:
 
         from app.models import Poliza, Siniestro, CompaniaAseguradora
 
-        
-
         today = timezone.now().date()
 
         year_start = date(today.year, 1, 1)
-
-        
 
         # Compañías con más pólizas activas
 
@@ -1068,8 +922,6 @@ class DashboardAnalyticsService:
 
         )
 
-        
-
         # Compañías con más siniestros
 
         top_insurers_by_claims = list(
@@ -1090,8 +942,6 @@ class DashboardAnalyticsService:
 
         )
 
-        
-
         return {
 
             'top_insurers_by_policies': top_insurers_by_policies,
@@ -1100,10 +950,7 @@ class DashboardAnalyticsService:
 
         }
 
-
-
     @classmethod
-
     def get_dashboard_summary(
 
         cls,
@@ -1133,4 +980,3 @@ class DashboardAnalyticsService:
             'top_performers': cls.get_top_performers(),
 
         }
-

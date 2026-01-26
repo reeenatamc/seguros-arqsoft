@@ -3,14 +3,9 @@ from django.core.management.base import BaseCommand
 from app.models import TipoSiniestro, ChecklistSiniestroConfig
 
 
-
-
-
 class Command(BaseCommand):
 
     help = "Configura el checklist de documentación para todos los tipos de siniestro"
-
-
 
     def handle(self, *args, **options):
 
@@ -104,8 +99,6 @@ class Command(BaseCommand):
 
         ]
 
-
-
         # Documentos específicos por tipo
 
         documentos_especificos = {
@@ -144,15 +137,11 @@ class Command(BaseCommand):
 
         }
 
-
-
         self.stdout.write("=" * 60)
 
         self.stdout.write(self.style.SUCCESS("CONFIGURANDO CHECKLIST DE SINIESTROS"))
 
         self.stdout.write("=" * 60)
-
-
 
         # Asegurar que existe el tipo 'daño'
 
@@ -170,25 +159,17 @@ class Command(BaseCommand):
 
         )
 
-
-
         # Obtener todos los tipos de siniestro activos
 
         tipos_siniestro = TipoSiniestro.objects.filter(activo=True)
-
-
 
         for tipo in tipos_siniestro:
 
             self.stdout.write(f"\n📋 {tipo.get_nombre_display()}:")
 
-
-
             # Obtener documentos para este tipo
 
             docs_a_crear = documentos_comunes.copy()
-
-
 
             # Si hay documentos específicos, modificar la lista
 
@@ -211,8 +192,6 @@ class Command(BaseCommand):
                     else:
 
                         docs_a_crear.append(doc_esp)
-
-
 
             # Crear los items de checklist
 
@@ -248,15 +227,11 @@ class Command(BaseCommand):
 
                     self.stdout.write(f"   ✓ Ya existe: {doc['nombre']}")
 
-
-
         self.stdout.write("\n" + "=" * 60)
 
         self.stdout.write(self.style.SUCCESS("✅ CHECKLIST CONFIGURADO EXITOSAMENTE"))
 
         self.stdout.write("=" * 60)
-
-
 
         # Mostrar resumen
 
@@ -269,4 +244,3 @@ class Command(BaseCommand):
         self.stdout.write(f"  - Tipos de siniestro activos: {total_tipos}")
 
         self.stdout.write(f"  - Items de checklist totales: {total_items}")
-

@@ -7,21 +7,15 @@ Responsabilidad única: Gestión de notas de crédito sobre facturas.
 """
 
 
-
 from decimal import Decimal
 
 from typing import Optional
 
 
-
 from django.db.models import Sum
 
 
-
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
-
-
-
 
 
 class NotaCreditoService(BaseService):
@@ -30,19 +24,13 @@ class NotaCreditoService(BaseService):
 
     Servicio para gestión de Notas de Crédito.
 
-    
-
     Responsabilidades:
 
     - Validar que el monto no exceda el saldo de la factura
 
-    
-
     USO:
 
         from app.services.nota_credito import NotaCreditoService
-
-        
 
         validacion = NotaCreditoService.validar_monto(
 
@@ -54,10 +42,7 @@ class NotaCreditoService(BaseService):
 
     """
 
-    
-
     @classmethod
-
     def validar_monto(
 
         cls,
@@ -74,8 +59,6 @@ class NotaCreditoService(BaseService):
 
         from app.models import NotaCredito
 
-        
-
         notas_existentes = NotaCredito.objects.filter(
 
             factura=factura,
@@ -84,17 +67,11 @@ class NotaCreditoService(BaseService):
 
         )
 
-        
-
         if nota_pk:
 
             notas_existentes = notas_existentes.exclude(pk=nota_pk)
 
-        
-
         total_notas = notas_existentes.aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
-
-        
 
         if total_notas + monto > factura.monto_total:
 
@@ -110,7 +87,4 @@ class NotaCreditoService(BaseService):
 
             )
 
-        
-
         return ResultadoValidacion(es_valido=True)
-

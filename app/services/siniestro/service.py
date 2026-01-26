@@ -7,13 +7,11 @@ Responsabilidad única: Gestión del ciclo de vida de siniestros.
 """
 
 
-
 from decimal import Decimal
 
 from datetime import datetime
 
 from typing import Optional, Dict, Any
-
 
 
 from django.db import transaction
@@ -23,11 +21,7 @@ from django.db.models import Max
 from django.utils import timezone
 
 
-
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
-
-
-
 
 
 class SiniestroService(BaseService):
@@ -35,8 +29,6 @@ class SiniestroService(BaseService):
     """
 
     Servicio para gestión de Siniestros.
-
-    
 
     Responsabilidades:
 
@@ -48,13 +40,9 @@ class SiniestroService(BaseService):
 
     - Crear y actualizar siniestros
 
-    
-
     USO:
 
         from app.services.siniestro import SiniestroService
-
-        
 
         resultado = SiniestroService.crear_siniestro(
 
@@ -68,18 +56,13 @@ class SiniestroService(BaseService):
 
     """
 
-    
-
     # =========================================================================
 
     # SINCRONIZACIÓN
 
     # =========================================================================
 
-    
-
     @classmethod
-
     def sincronizar_desde_bien_asegurado(cls, siniestro) -> None:
 
         """Sincroniza los campos legacy del siniestro desde el bien asegurado."""
@@ -87,8 +70,6 @@ class SiniestroService(BaseService):
         if siniestro.bien_asegurado_id:
 
             bien = siniestro.bien_asegurado
-
-            
 
             siniestro.bien_nombre = bien.nombre
 
@@ -100,19 +81,13 @@ class SiniestroService(BaseService):
 
             siniestro.bien_codigo_activo = bien.codigo_activo or ''
 
-            
-
             if not siniestro.poliza_id:
 
                 siniestro.poliza = bien.poliza
 
-            
-
             if not siniestro.responsable_custodio_id and bien.responsable_custodio_id:
 
                 siniestro.responsable_custodio = bien.responsable_custodio
-
-    
 
     # =========================================================================
 
@@ -120,10 +95,7 @@ class SiniestroService(BaseService):
 
     # =========================================================================
 
-    
-
     @classmethod
-
     def validar_bien_asegurado(cls, siniestro) -> ResultadoValidacion:
 
         """Valida que el siniestro tenga un bien asegurado o campos legacy."""
@@ -144,10 +116,7 @@ class SiniestroService(BaseService):
 
         return ResultadoValidacion(es_valido=True)
 
-    
-
     @classmethod
-
     def validar_fecha_siniestro(cls, siniestro) -> ResultadoValidacion:
 
         """Valida que la fecha del siniestro no sea futura."""
@@ -172,17 +141,12 @@ class SiniestroService(BaseService):
 
         return ResultadoValidacion(es_valido=True)
 
-    
-
     @classmethod
-
     def validar_vigencia_poliza(cls, siniestro) -> ResultadoValidacion:
 
         """Valida que el siniestro esté dentro del período de vigencia de la póliza."""
 
         poliza = siniestro.get_poliza() if hasattr(siniestro, 'get_poliza') else siniestro.poliza
-
-        
 
         if poliza and siniestro.fecha_siniestro:
 
@@ -210,17 +174,12 @@ class SiniestroService(BaseService):
 
         return ResultadoValidacion(es_valido=True)
 
-    
-
     @classmethod
-
     def validar_siniestro(cls, siniestro) -> ResultadoValidacion:
 
         """Ejecuta todas las validaciones del siniestro."""
 
         resultado = ResultadoValidacion(es_valido=True)
-
-        
 
         for validacion in [
 
@@ -234,11 +193,7 @@ class SiniestroService(BaseService):
 
             resultado.fusionar(validacion(siniestro))
 
-        
-
         return resultado
-
-    
 
     # =========================================================================
 
@@ -246,17 +201,12 @@ class SiniestroService(BaseService):
 
     # =========================================================================
 
-    
-
     @classmethod
-
     def generar_numero_siniestro(cls, prefijo: str = "SIN") -> str:
 
         """Genera un número de siniestro único."""
 
         from app.models import Siniestro
-
-        
 
         anio = timezone.now().year
 
@@ -264,18 +214,13 @@ class SiniestroService(BaseService):
 
         return f"{prefijo}-{anio}-{str(ultimo + 1).zfill(5)}"
 
-    
-
     # =========================================================================
 
     # OPERACIONES CRUD
 
     # =========================================================================
 
-    
-
     @classmethod
-
     @transaction.atomic
 
     def crear_siniestro(
@@ -296,8 +241,6 @@ class SiniestroService(BaseService):
 
         from app.models import Siniestro
 
-        
-
         try:
 
             siniestro = Siniestro(
@@ -312,11 +255,7 @@ class SiniestroService(BaseService):
 
             )
 
-            
-
             cls.sincronizar_desde_bien_asegurado(siniestro)
-
-            
 
             validacion = cls.validar_siniestro(siniestro)
 
@@ -324,15 +263,9 @@ class SiniestroService(BaseService):
 
                 return ResultadoOperacion.desde_validacion(validacion)
 
-            
-
             siniestro.save()
 
-            
-
             return ResultadoOperacion.exito(siniestro, "Siniestro creado exitosamente")
-
-            
 
         except Exception as e:
 
@@ -344,10 +277,7 @@ class SiniestroService(BaseService):
 
             )
 
-    
-
     @classmethod
-
     @transaction.atomic
 
     def actualizar_siniestro(cls, siniestro, **campos) -> ResultadoOperacion:
@@ -362,11 +292,7 @@ class SiniestroService(BaseService):
 
                     setattr(siniestro, campo, valor)
 
-            
-
             cls.sincronizar_desde_bien_asegurado(siniestro)
-
-            
 
             validacion = cls.validar_siniestro(siniestro)
 
@@ -374,15 +300,9 @@ class SiniestroService(BaseService):
 
                 return ResultadoOperacion.desde_validacion(validacion)
 
-            
-
             siniestro.save()
 
-            
-
             return ResultadoOperacion.exito(siniestro, "Siniestro actualizado exitosamente")
-
-            
 
         except Exception as e:
 
@@ -394,18 +314,13 @@ class SiniestroService(BaseService):
 
             )
 
-    
-
     # =========================================================================
 
     # CREACIÓN DESDE EMAIL (Vista delegada)
 
     # =========================================================================
 
-    
-
     @classmethod
-
     @transaction.atomic
 
     def crear_desde_email(
@@ -438,8 +353,6 @@ class SiniestroService(BaseService):
 
         from app.models import Siniestro, ResponsableCustodio
 
-        
-
         try:
 
             # Obtener o crear responsable
@@ -453,8 +366,6 @@ class SiniestroService(BaseService):
                     defaults={'activo': True}
 
                 )
-
-            
 
             # Parsear fecha
 
@@ -488,13 +399,9 @@ class SiniestroService(BaseService):
 
                     pass
 
-            
-
             # Generar número
 
             numero_siniestro = cls.generar_numero_siniestro("SIN-EMAIL")
-
-            
 
             # Crear siniestro
 
@@ -530,8 +437,6 @@ class SiniestroService(BaseService):
 
             )
 
-            
-
             # Actualizar registro de email
 
             siniestro_email.siniestro_creado = siniestro
@@ -546,11 +451,7 @@ class SiniestroService(BaseService):
 
             siniestro_email.save()
 
-            
-
             return ResultadoOperacion.exito(siniestro, "Siniestro creado desde email exitosamente")
-
-            
 
         except Exception as e:
 
@@ -561,4 +462,3 @@ class SiniestroService(BaseService):
                 f"Error al crear siniestro desde email: {str(e)}"
 
             )
-

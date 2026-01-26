@@ -17,21 +17,15 @@ from datetime import timedelta, datetime
 import re
 
 
-
 from simple_history.models import HistoricalRecords
-
 
 
 from .validators import validate_document
 
 
-
-
-
 # ==================== MANAGERS PERSONALIZADOS (DRY) ====================
 
 # Centralizan reglas de negocio para evitar duplicación de lógica de filtrado
-
 
 
 class PolizaManager(models.Manager):
@@ -41,8 +35,6 @@ class PolizaManager(models.Manager):
     Manager personalizado para Póliza.
 
     Centraliza las reglas de negocio sobre estados y vencimientos.
-
-    
 
     Uso:
 
@@ -54,23 +46,17 @@ class PolizaManager(models.Manager):
 
     """
 
-    
-
     def vigentes(self):
 
         """Pólizas en estado vigente."""
 
         return self.filter(estado='vigente')
 
-    
-
     def por_vencer(self, dias=None):
 
         """
 
         Pólizas que vencen en los próximos X días.
-
-        
 
         Args:
 
@@ -88,13 +74,9 @@ class PolizaManager(models.Manager):
 
             dias = ConfiguracionSistema.get_config('DIAS_ALERTA_VENCIMIENTO_POLIZA', 30)
 
-        
-
         hoy = timezone.now().date()
 
         fecha_limite = hoy + timedelta(days=dias)
-
-        
 
         return self.filter(
 
@@ -106,8 +88,6 @@ class PolizaManager(models.Manager):
 
         )
 
-    
-
     def vencidas(self):
 
         """Pólizas vencidas (fecha_fin < hoy)."""
@@ -116,23 +96,17 @@ class PolizaManager(models.Manager):
 
         return self.filter(fecha_fin__lt=hoy)
 
-    
-
     def activas(self):
 
         """Pólizas vigentes o por vencer (pueden recibir siniestros)."""
 
         return self.filter(estado__in=['vigente', 'por_vencer'])
 
-    
-
     def canceladas(self):
 
         """Pólizas canceladas."""
 
         return self.filter(estado='cancelada')
-
-    
 
     def vencen_en_rango(self, dias_inicio=0, dias_fin=30):
 
@@ -144,8 +118,6 @@ class PolizaManager(models.Manager):
 
         fecha_limite = hoy + timedelta(days=dias_fin)
 
-        
-
         return self.filter(
 
             estado__in=['vigente', 'por_vencer'],
@@ -156,15 +128,11 @@ class PolizaManager(models.Manager):
 
         )
 
-    
-
     def requieren_renovacion(self, dias=60):
 
         """Pólizas que requieren iniciar proceso de renovación."""
 
         return self.por_vencer(dias=dias)
-
-    
 
     def con_estadisticas(self):
 
@@ -180,10 +148,6 @@ class PolizaManager(models.Manager):
 
         )
 
-
-
-
-
 class FacturaManager(models.Manager):
 
     """
@@ -194,15 +158,11 @@ class FacturaManager(models.Manager):
 
     """
 
-    
-
     def pendientes(self):
 
         """Facturas pendientes de pago (parcial o total)."""
 
         return self.filter(estado__in=['pendiente', 'parcial'])
-
-    
 
     def por_vencer(self, dias=None):
 
@@ -212,13 +172,9 @@ class FacturaManager(models.Manager):
 
             dias = 30
 
-        
-
         hoy = timezone.now().date()
 
         fecha_limite = hoy + timedelta(days=dias)
-
-        
 
         return self.filter(
 
@@ -229,8 +185,6 @@ class FacturaManager(models.Manager):
             fecha_vencimiento__lte=fecha_limite
 
         )
-
-    
 
     def vencidas(self):
 
@@ -246,15 +200,11 @@ class FacturaManager(models.Manager):
 
         )
 
-    
-
     def pagadas(self):
 
         """Facturas completamente pagadas."""
 
         return self.filter(estado='pagada')
-
-    
 
     def de_polizas_activas(self):
 
@@ -262,17 +212,11 @@ class FacturaManager(models.Manager):
 
         return self.filter(poliza__estado__in=['vigente', 'por_vencer'])
 
-    
-
     def con_saldo_pendiente(self):
 
         """Facturas que tienen saldo por pagar."""
 
         return self.filter(estado__in=['pendiente', 'parcial', 'vencida'])
-
-
-
-
 
 class SiniestroManager(models.Manager):
 
@@ -284,15 +228,11 @@ class SiniestroManager(models.Manager):
 
     """
 
-    
-
     def pendientes_documentacion(self, dias_alerta=None):
 
         """
 
         Siniestros con documentación pendiente que requieren atención.
-
-        
 
         Args:
 
@@ -308,11 +248,7 @@ class SiniestroManager(models.Manager):
 
             dias_alerta = ConfiguracionSistema.get_config('DIAS_ALERTA_DOCUMENTACION_SINIESTRO', 30)
 
-        
-
         fecha_limite = timezone.now() - timedelta(days=dias_alerta)
-
-        
 
         return self.filter(
 
@@ -322,15 +258,11 @@ class SiniestroManager(models.Manager):
 
         )
 
-    
-
     def esperando_respuesta(self, dias_alerta=None):
 
         """
 
         Siniestros enviados a aseguradora esperando respuesta.
-
-        
 
         Args:
 
@@ -346,11 +278,7 @@ class SiniestroManager(models.Manager):
 
             dias_alerta = ConfiguracionSistema.get_config('DIAS_ALERTA_RESPUESTA_ASEGURADORA', 8)
 
-        
-
         fecha_limite = timezone.now().date() - timedelta(days=dias_alerta)
-
-        
 
         return self.filter(
 
@@ -362,15 +290,11 @@ class SiniestroManager(models.Manager):
 
         )
 
-    
-
     def abiertos(self):
 
         """Siniestros que no están cerrados ni rechazados."""
 
         return self.exclude(estado__in=['cerrado', 'rechazado'])
-
-    
 
     def en_proceso(self):
 
@@ -378,17 +302,15 @@ class SiniestroManager(models.Manager):
 
         return self.filter(estado__in=[
 
-            'registrado', 
+            'registrado',
 
-            'documentacion_pendiente', 
+            'documentacion_pendiente',
 
-            'enviado_aseguradora', 
+            'enviado_aseguradora',
 
             'en_evaluacion'
 
         ])
-
-    
 
     def resueltos(self):
 
@@ -396,15 +318,11 @@ class SiniestroManager(models.Manager):
 
         return self.filter(estado__in=['aprobado', 'liquidado', 'cerrado'])
 
-    
-
     def de_polizas_activas(self):
 
         """Siniestros de pólizas vigentes o por vencer."""
 
         return self.filter(poliza__estado__in=['vigente', 'por_vencer'])
-
-    
 
     def requieren_atencion(self):
 
@@ -426,29 +344,23 @@ class SiniestroManager(models.Manager):
 
         dias_resp = ConfiguracionSistema.get_config('DIAS_ALERTA_RESPUESTA_ASEGURADORA', 8)
 
-        
-
         ahora = timezone.now()
 
         fecha_doc = ahora - timedelta(days=dias_doc)
 
         fecha_resp = ahora.date() - timedelta(days=dias_resp)
 
-        
-
         return self.filter(
 
             Q(estado='documentacion_pendiente', fecha_registro__lt=fecha_doc) |
 
-            Q(estado='enviado_aseguradora', 
+            Q(estado='enviado_aseguradora',
 
               fecha_envio_aseguradora__lt=fecha_resp,
 
               fecha_respuesta_aseguradora__isnull=True)
 
         )
-
-    
 
     def con_estadisticas_gestion(self):
 
@@ -468,10 +380,6 @@ class SiniestroManager(models.Manager):
 
         )
 
-
-
-
-
 class BienAseguradoManager(models.Manager):
 
     """
@@ -480,15 +388,11 @@ class BienAseguradoManager(models.Manager):
 
     """
 
-    
-
     def activos(self):
 
         """Bienes en estado activo."""
 
         return self.filter(estado='activo')
-
-    
 
     def de_polizas_activas(self):
 
@@ -496,15 +400,11 @@ class BienAseguradoManager(models.Manager):
 
         return self.filter(poliza__estado__in=['vigente', 'por_vencer'])
 
-    
-
     def sin_siniestros(self):
 
         """Bienes que nunca han tenido siniestros."""
 
         return self.filter(siniestros__isnull=True)
-
-    
 
     def con_siniestros(self):
 
@@ -512,20 +412,13 @@ class BienAseguradoManager(models.Manager):
 
         return self.filter(siniestros__isnull=False).distinct()
 
-    
-
     def por_responsable(self, responsable):
 
         """Bienes asignados a un responsable específico."""
 
         return self.filter(responsable_custodio=responsable)
 
-
-
-
-
 # ==================== CONSTANTES Y VALIDADORES ====================
-
 
 
 validador_ruc = RegexValidator(
@@ -539,11 +432,7 @@ validador_ruc = RegexValidator(
 )
 
 
-
-
-
 # ==================== MODELOS ====================
-
 
 
 class ConfiguracionSistema(models.Model):
@@ -578,8 +467,6 @@ class ConfiguracionSistema(models.Model):
 
     ], default='general', verbose_name="Categoría")
 
-    
-
     class Meta:
 
         verbose_name = "Configuración del Sistema"
@@ -588,13 +475,9 @@ class ConfiguracionSistema(models.Model):
 
         ordering = ['categoria', 'clave']
 
-    
-
     def __str__(self):
 
         return f"{self.clave} = {self.valor}"
-
-
 
     def clean(self):
 
@@ -602,13 +485,9 @@ class ConfiguracionSistema(models.Model):
 
         Validaciones usando el registro de validadores extensible.
 
-        
-
         Para agregar nuevas validaciones, registrar en:
 
         app/services/configuracion/validators.py
-
-        
 
         Ejemplo:
 
@@ -620,21 +499,15 @@ class ConfiguracionSistema(models.Model):
 
         super().clean()
 
-        
-
         # Usar el registro de validadores extensible
 
         from app.services.configuracion import validar_configuracion
-
-        
 
         errores = validar_configuracion(self.clave, self.valor, self.tipo)
 
         if errores:
 
             raise ValidationError(errores)
-
-
 
     def get_valor_tipado(self):
 
@@ -660,10 +533,7 @@ class ConfiguracionSistema(models.Model):
 
         return self.valor
 
-    
-
     @classmethod
-
     def get_config(cls, clave, default=None):
 
         try:
@@ -676,10 +546,7 @@ class ConfiguracionSistema(models.Model):
 
             return default
 
-    
-
     @classmethod
-
     def inicializar_valores_default(cls):
 
         configs_default = [
@@ -854,8 +721,6 @@ class ConfiguracionSistema(models.Model):
 
         ]
 
-        
-
         for config_data in configs_default:
 
             cls.objects.get_or_create(
@@ -866,8 +731,6 @@ class ConfiguracionSistema(models.Model):
 
             )
 
-
-
 class CompaniaAseguradora(models.Model):
 
     """Modelo para las compañías aseguradoras"""
@@ -876,9 +739,9 @@ class CompaniaAseguradora(models.Model):
 
     ruc = models.CharField(
 
-        max_length=13, 
+        max_length=13,
 
-        unique=True, 
+        unique=True,
 
         validators=[validador_ruc],
 
@@ -904,8 +767,6 @@ class CompaniaAseguradora(models.Model):
 
     # Nota: La relación con corredores se maneja desde CorredorSeguros.compania_aseguradora
 
-
-
     class Meta:
 
         verbose_name = "Compañía Aseguradora"
@@ -914,25 +775,16 @@ class CompaniaAseguradora(models.Model):
 
         ordering = ['nombre']
 
-
-
     def __str__(self):
 
         return self.nombre
 
-    
-
     @property
-
     def corredores_activos(self):
 
         """Retorna los corredores activos de esta compañía"""
 
         return self.corredores.filter(activo=True)
-
-
-
-
 
 class CorredorSeguros(models.Model):
 
@@ -954,9 +806,9 @@ class CorredorSeguros(models.Model):
 
     ruc = models.CharField(
 
-        max_length=13, 
+        max_length=13,
 
-        unique=True, 
+        unique=True,
 
         validators=[validador_ruc],
 
@@ -980,8 +832,6 @@ class CorredorSeguros(models.Model):
 
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
 
-
-
     class Meta:
 
         verbose_name = "Corredor de Seguros"
@@ -992,15 +842,9 @@ class CorredorSeguros(models.Model):
 
         unique_together = ['compania_aseguradora', 'nombre']  # Un corredor único por compañía
 
-
-
     def __str__(self):
 
         return f"{self.nombre} ({self.compania_aseguradora.nombre})"
-
-
-
-
 
 class TipoPoliza(models.Model):
 
@@ -1012,8 +856,6 @@ class TipoPoliza(models.Model):
 
     activo = models.BooleanField(default=True, verbose_name="Activo")
 
-
-
     class Meta:
 
         verbose_name = "Tipo de Póliza"
@@ -1022,15 +864,9 @@ class TipoPoliza(models.Model):
 
         ordering = ['nombre']
 
-
-
     def __str__(self):
 
         return self.nombre
-
-
-
-
 
 class ResponsableCustodio(models.Model):
 
@@ -1052,8 +888,6 @@ class ResponsableCustodio(models.Model):
 
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
 
-
-
     class Meta:
 
         verbose_name = "Responsable/Custodio"
@@ -1068,8 +902,6 @@ class ResponsableCustodio(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         if self.departamento:
@@ -1077,10 +909,6 @@ class ResponsableCustodio(models.Model):
             return f"{self.nombre} - {self.departamento}"
 
         return self.nombre
-
-
-
-
 
 class Poliza(models.Model):
 
@@ -1098,25 +926,21 @@ class Poliza(models.Model):
 
     ]
 
-
-
     # Información básica
 
     numero_poliza = models.CharField(max_length=100, unique=True, verbose_name="Número de Póliza")
 
-    compania_aseguradora = models.ForeignKey(CompaniaAseguradora, on_delete=models.PROTECT, 
+    compania_aseguradora = models.ForeignKey(CompaniaAseguradora, on_delete=models.PROTECT,
 
                                             related_name='polizas', verbose_name="Compañía Aseguradora")
 
-    corredor_seguros = models.ForeignKey(CorredorSeguros, on_delete=models.PROTECT, 
+    corredor_seguros = models.ForeignKey(CorredorSeguros, on_delete=models.PROTECT,
 
                                         related_name='polizas', verbose_name="Corredor de Seguros")
 
-    tipo_poliza = models.ForeignKey(TipoPoliza, on_delete=models.PROTECT, 
+    tipo_poliza = models.ForeignKey(TipoPoliza, on_delete=models.PROTECT,
 
                                    related_name='polizas', verbose_name="Tipo de Póliza")
-
-    
 
     # Clasificación de ramo (grupo al que pertenece la póliza)
 
@@ -1128,19 +952,15 @@ class Poliza(models.Model):
 
                                    help_text="Categoría de la póliza según clasificación de ramos")
 
-    
-
     # Coberturas y sumas
 
-    suma_asegurada = models.DecimalField(max_digits=15, decimal_places=2, 
+    suma_asegurada = models.DecimalField(max_digits=15, decimal_places=2,
 
                                         validators=[MinValueValidator(Decimal('0.01'))],
 
                                         verbose_name="Suma Asegurada")
 
     coberturas = models.TextField(verbose_name="Coberturas Detalladas")
-
-    
 
     # Prima del seguro (campos agregados para modelado correcto)
 
@@ -1163,8 +983,6 @@ class Poliza(models.Model):
                                       verbose_name="Prima Total",
 
                                       help_text="Prima neta + IVA + contribuciones")
-
-    
 
     # Deducible (característica del contrato, no del siniestro)
 
@@ -1200,27 +1018,19 @@ class Poliza(models.Model):
 
                                            help_text="Monto mínimo de deducible cuando se usa porcentaje")
 
-    
-
     # Fechas
 
     fecha_inicio = models.DateField(verbose_name="Fecha de Inicio de Vigencia")
 
     fecha_fin = models.DateField(verbose_name="Fecha de Fin de Vigencia")
 
-    
-
     # Estado
 
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='vigente', verbose_name="Estado")
 
-    
-
     # Observaciones
 
     observaciones = models.TextField(blank=True, verbose_name="Observaciones")
-
-
 
     # Gran Contribuyente (activa retenciones automáticas)
 
@@ -1234,8 +1044,6 @@ class Poliza(models.Model):
 
     )
 
-
-
     # Auditoría
 
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
@@ -1245,8 +1053,6 @@ class Poliza(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
 
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
-
-
 
     # Historial de cambios
 
@@ -1258,13 +1064,9 @@ class Poliza(models.Model):
 
     )
 
-
-
     # Manager personalizado (centraliza reglas de negocio)
 
     objects = PolizaManager()
-
-
 
     class Meta:
 
@@ -1282,16 +1084,11 @@ class Poliza(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"{self.numero_poliza} - {self.compania_aseguradora}"
 
-
-
     @property
-
     def dias_para_vencer(self):
 
         try:
@@ -1312,10 +1109,7 @@ class Poliza(models.Model):
 
             return 0
 
-
-
     @property
-
     def esta_vigente(self):
 
         try:
@@ -1332,12 +1126,9 @@ class Poliza(models.Model):
 
             return False
 
-
-
     # Propiedades calculadas para totales consolidados de ramos
 
     @property
-
     def total_suma_asegurada_ramos(self):
 
         """Retorna la suma total asegurada de todos los ramos"""
@@ -1348,10 +1139,7 @@ class Poliza(models.Model):
 
         )['total'] or Decimal('0.00')
 
-
-
     @property
-
     def total_prima_ramos(self):
 
         """
@@ -1376,10 +1164,7 @@ class Poliza(models.Model):
 
         )['total'] or Decimal('0.00')
 
-
-
     @property
-
     def total_facturado_ramos(self):
 
         """Retorna el total facturado de todos los ramos"""
@@ -1390,10 +1175,7 @@ class Poliza(models.Model):
 
         )['total'] or Decimal('0.00')
 
-
-
     @property
-
     def total_valor_por_pagar_ramos(self):
 
         """Retorna el valor total por pagar de todos los ramos"""
@@ -1404,10 +1186,7 @@ class Poliza(models.Model):
 
         )['total'] or Decimal('0.00')
 
-
-
     @property
-
     def total_retenciones_ramos(self):
 
         """Retorna el total de retenciones de todos los ramos"""
@@ -1422,17 +1201,12 @@ class Poliza(models.Model):
 
         return (totales['prima'] or Decimal('0.00')) + (totales['iva'] or Decimal('0.00'))
 
-
-
     @property
-
     def cantidad_ramos(self):
 
         """Retorna la cantidad de ramos asociados"""
 
         return self.detalles_ramo.count()
-
-
 
     def calcular_deducible_aplicable(self, monto_siniestro):
 
@@ -1450,8 +1224,6 @@ class Poliza(models.Model):
 
         minimo = self.deducible_minimo or Decimal('0.00')
 
-        
-
         if porcentaje > 0:
 
             deducible_porcentaje = (porcentaje / 100) * monto_siniestro
@@ -1462,13 +1234,7 @@ class Poliza(models.Model):
 
             return max(deducible_fijo, deducible_porcentaje)
 
-        
-
         return deducible_fijo
-
-
-
-
 
 class Factura(models.Model):
 
@@ -1486,15 +1252,11 @@ class Factura(models.Model):
 
     ]
 
-
-
     # Relación con póliza
 
-    poliza = models.ForeignKey(Poliza, on_delete=models.PROTECT, 
+    poliza = models.ForeignKey(Poliza, on_delete=models.PROTECT,
 
                               related_name='facturas', verbose_name="Póliza")
-
-    
 
     # Información de la factura
 
@@ -1504,11 +1266,9 @@ class Factura(models.Model):
 
     fecha_vencimiento = models.DateField(verbose_name="Fecha de Vencimiento")
 
-    
-
     # Montos
 
-    subtotal = models.DecimalField(max_digits=15, decimal_places=2, 
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2,
 
                                   validators=[MinValueValidator(Decimal('0.01'))],
 
@@ -1518,13 +1278,13 @@ class Factura(models.Model):
 
                              verbose_name="IVA")
 
-    contribucion_superintendencia = models.DecimalField(max_digits=15, decimal_places=2, 
+    contribucion_superintendencia = models.DecimalField(max_digits=15, decimal_places=2,
 
                                                        default=Decimal('0.00'),
 
                                                        verbose_name="Contribución Superintendencia (3.5%)")
 
-    contribucion_seguro_campesino = models.DecimalField(max_digits=15, decimal_places=2, 
+    contribucion_seguro_campesino = models.DecimalField(max_digits=15, decimal_places=2,
 
                                                        default=Decimal('0.00'),
 
@@ -1538,19 +1298,15 @@ class Factura(models.Model):
 
                                                verbose_name="Descuento por Pronto Pago")
 
-    monto_total = models.DecimalField(max_digits=15, decimal_places=2, 
+    monto_total = models.DecimalField(max_digits=15, decimal_places=2,
 
                                      validators=[MinValueValidator(Decimal('0.01'))],
 
                                      verbose_name="Monto Total")
 
-    
-
     # Estado
 
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente', verbose_name="Estado")
-
-    
 
     # Auditoría
 
@@ -1558,11 +1314,9 @@ class Factura(models.Model):
 
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
 
-    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, 
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
 
                                   related_name='facturas_creadas', verbose_name="Creado por")
-
-    
 
     # Historial de cambios
 
@@ -1574,13 +1328,9 @@ class Factura(models.Model):
 
     )
 
-
-
     # Manager personalizado (centraliza reglas de negocio)
 
     objects = FacturaManager()
-
-
 
     class Meta:
 
@@ -1598,13 +1348,9 @@ class Factura(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"Factura {self.numero_factura} - {self.poliza.numero_poliza}"
-
-
 
     def _calcular_total_pagado(self):
 
@@ -1614,22 +1360,15 @@ class Factura(models.Model):
 
             return Decimal('0.00')
 
-        
-
         total = self.pagos.filter(estado='aprobado').aggregate(
 
             total=models.Sum('monto')
 
         )['total']
 
-        
-
         return total if total is not None else Decimal('0.00')
 
-
-
     @property
-
     def saldo_pendiente(self):
 
         """
@@ -1642,18 +1381,13 @@ class Factura(models.Model):
 
             return Decimal('0.00')
 
-        
-
         total_pagado = self._calcular_total_pagado()
 
         saldo = self.monto_total - total_pagado
 
         return saldo if saldo > Decimal('0.00') else Decimal('0.00')
 
-
-
     @property
-
     def puede_aplicar_descuento(self):
 
         try:
@@ -1661,8 +1395,6 @@ class Factura(models.Model):
             if not self.fecha_emision or self.estado == 'pagada':
 
                 return False
-
-            
 
             hoy = timezone.now().date()
 
@@ -1676,10 +1408,7 @@ class Factura(models.Model):
 
             return False
 
-    
-
     @property
-
     def dias_para_vencimiento(self):
 
         try:
@@ -1687,8 +1416,6 @@ class Factura(models.Model):
             if not self.fecha_vencimiento:
 
                 return 0
-
-            
 
             hoy = timezone.now().date()
 
@@ -1702,10 +1429,7 @@ class Factura(models.Model):
 
             return 0
 
-    
-
     @property
-
     def esta_vencida(self):
 
         try:
@@ -1719,10 +1443,6 @@ class Factura(models.Model):
         except (TypeError, AttributeError):
 
             return False
-
-
-
-
 
 class Pago(models.Model):
 
@@ -1738,8 +1458,6 @@ class Pago(models.Model):
 
     ]
 
-
-
     FORMA_PAGO_CHOICES = [
 
         ('transferencia', 'Transferencia Bancaria'),
@@ -1752,55 +1470,45 @@ class Pago(models.Model):
 
     ]
 
-
-
     # Relación con factura
 
-    factura = models.ForeignKey(Factura, on_delete=models.PROTECT, 
+    factura = models.ForeignKey(Factura, on_delete=models.PROTECT,
 
                                related_name='pagos', verbose_name="Factura")
-
-    
 
     # Información del pago
 
     fecha_pago = models.DateField(verbose_name="Fecha de Pago")
 
-    monto = models.DecimalField(max_digits=15, decimal_places=2, 
+    monto = models.DecimalField(max_digits=15, decimal_places=2,
 
                                validators=[MinValueValidator(Decimal('0.01'))],
 
                                verbose_name="Monto Pagado")
 
-    forma_pago = models.CharField(max_length=20, choices=FORMA_PAGO_CHOICES, 
+    forma_pago = models.CharField(max_length=20, choices=FORMA_PAGO_CHOICES,
 
                                  verbose_name="Forma de Pago")
 
-    referencia = models.CharField(max_length=200, blank=True, 
+    referencia = models.CharField(max_length=200, blank=True,
 
                                  verbose_name="Número de Referencia/Comprobante")
 
-    
-
     # Estado
 
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente', 
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente',
 
                             verbose_name="Estado")
 
     observaciones = models.TextField(blank=True, verbose_name="Observaciones")
 
-    
-
     # Auditoría
 
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
 
-    registrado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, 
+    registrado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
 
                                       related_name='pagos_registrados', verbose_name="Registrado por")
-
-    
 
     # Historial de cambios
 
@@ -1812,8 +1520,6 @@ class Pago(models.Model):
 
     )
 
-
-
     class Meta:
 
         verbose_name = "Pago"
@@ -1822,17 +1528,9 @@ class Pago(models.Model):
 
         ordering = ['-fecha_pago']
 
-
-
     def __str__(self):
 
         return f"Pago {self.referencia} - ${self.monto} ({self.fecha_pago})"
-
-
-
-
-
-
 
 class TipoSiniestro(models.Model):
 
@@ -1858,17 +1556,13 @@ class TipoSiniestro(models.Model):
 
     ]
 
-
-
-    nombre = models.CharField(max_length=50, choices=TIPO_CHOICES, unique=True, 
+    nombre = models.CharField(max_length=50, choices=TIPO_CHOICES, unique=True,
 
                             verbose_name="Tipo de Siniestro")
 
     descripcion = models.TextField(blank=True, verbose_name="Descripción")
 
     activo = models.BooleanField(default=True, verbose_name="Activo")
-
-
 
     class Meta:
 
@@ -1878,15 +1572,9 @@ class TipoSiniestro(models.Model):
 
         ordering = ['nombre']
 
-
-
     def __str__(self):
 
         return self.get_nombre_display()
-
-
-
-
 
 class Siniestro(models.Model):
 
@@ -1912,8 +1600,6 @@ class Siniestro(models.Model):
 
     ]
 
-
-
     # Relación principal con Bien Asegurado (nuevo modelo relacional)
 
     bien_asegurado = models.ForeignKey('BienAsegurado', on_delete=models.PROTECT,
@@ -1924,11 +1610,9 @@ class Siniestro(models.Model):
 
                                        help_text="Bien específico afectado por el siniestro")
 
-    
-
     # Relación con póliza (mantener para compatibilidad, se obtiene del bien_asegurado si existe)
 
-    poliza = models.ForeignKey(Poliza, on_delete=models.PROTECT, 
+    poliza = models.ForeignKey(Poliza, on_delete=models.PROTECT,
 
                               related_name='siniestros', verbose_name="Póliza",
 
@@ -1936,23 +1620,19 @@ class Siniestro(models.Model):
 
                               help_text="Póliza asociada (se obtiene automáticamente del bien asegurado)")
 
-    
-
     # Información del siniestro
 
-    numero_siniestro = models.CharField(max_length=100, unique=True, 
+    numero_siniestro = models.CharField(max_length=100, unique=True,
 
                                        verbose_name="Número de Siniestro")
 
-    tipo_siniestro = models.ForeignKey(TipoSiniestro, on_delete=models.PROTECT, 
+    tipo_siniestro = models.ForeignKey(TipoSiniestro, on_delete=models.PROTECT,
 
                                       related_name='siniestros', verbose_name="Tipo de Siniestro")
 
     fecha_siniestro = models.DateTimeField(verbose_name="Fecha y Hora del Siniestro")
 
     fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
-
-    
 
     # Información del bien asegurado (campos legacy, se obtienen del bien_asegurado si existe)
 
@@ -1970,8 +1650,6 @@ class Siniestro(models.Model):
 
     bien_codigo_activo = models.CharField(max_length=100, blank=True, verbose_name="Código de Activo")
 
-    
-
     # Detalles del siniestro
 
     responsable_custodio = models.ForeignKey(ResponsableCustodio, on_delete=models.PROTECT,
@@ -1986,8 +1664,6 @@ class Siniestro(models.Model):
 
     descripcion_detallada = models.TextField(verbose_name="Descripción Detallada")
 
-    
-
     # Montos
 
     monto_estimado = models.DecimalField(max_digits=15, decimal_places=2,
@@ -1999,8 +1675,6 @@ class Siniestro(models.Model):
     monto_indemnizado = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True,
 
                                            verbose_name="Monto Indemnizado")
-
-
 
     # Campos de valoración del siniestro
 
@@ -2022,15 +1696,11 @@ class Siniestro(models.Model):
 
                                               verbose_name="Suma Asegurada del Bien")
 
-
-
     # Datos del broker para este siniestro
 
     email_broker = models.EmailField(blank=True, verbose_name="Email del Broker",
 
                                      help_text="Email específico para este siniestro")
-
-
 
     # Estado y fechas de gestión
 
@@ -2047,8 +1717,6 @@ class Siniestro(models.Model):
                                                   verbose_name="Fecha de Respuesta de Aseguradora")
 
     fecha_liquidacion = models.DateField(null=True, blank=True, verbose_name="Fecha de Liquidación")
-
-
 
     # Nuevas fechas de gestión mejorada
 
@@ -2072,8 +1740,6 @@ class Siniestro(models.Model):
 
                                              verbose_name="Fecha Límite de Depósito (72h)")
 
-
-
     # Datos de pago
 
     valor_pagado = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True,
@@ -2082,13 +1748,9 @@ class Siniestro(models.Model):
 
     fecha_pago = models.DateField(null=True, blank=True, verbose_name="Fecha de Pago")
 
-
-
     # Observaciones
 
     observaciones = models.TextField(blank=True, verbose_name="Observaciones")
-
-
 
     # Auditoría
 
@@ -2097,8 +1759,6 @@ class Siniestro(models.Model):
                                   related_name='siniestros_creados', verbose_name="Creado por")
 
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
-
-
 
     # Historial de cambios
 
@@ -2110,13 +1770,9 @@ class Siniestro(models.Model):
 
     )
 
-
-
     # Manager personalizado (centraliza reglas de negocio)
 
     objects = SiniestroManager()
-
-
 
     class Meta:
 
@@ -2136,15 +1792,11 @@ class Siniestro(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         nombre_bien = self.get_nombre_bien()
 
         return f"{self.numero_siniestro} - {nombre_bien}"
-
-
 
     def get_nombre_bien(self):
 
@@ -2156,8 +1808,6 @@ class Siniestro(models.Model):
 
         return self.bien_nombre or "Sin bien especificado"
 
-
-
     def get_poliza(self):
 
         """Obtiene la póliza, priorizando la del bien_asegurado"""
@@ -2168,20 +1818,14 @@ class Siniestro(models.Model):
 
         return self.poliza
 
-
-
     @property
-
     def poliza_efectiva(self):
 
         """Propiedad para obtener la póliza efectiva"""
 
         return self.get_poliza()
 
-
-
     @property
-
     def clasificacion_bien(self):
 
         """Obtiene la clasificación del bien si usa bien_asegurado"""
@@ -2192,10 +1836,7 @@ class Siniestro(models.Model):
 
         return None
 
-
-
     @property
-
     def deducible_calculado(self):
 
         """Calcula el deducible desde la póliza según el monto del siniestro"""
@@ -2208,10 +1849,7 @@ class Siniestro(models.Model):
 
         return Decimal('0.00')
 
-
-
     @property
-
     def monto_a_indemnizar(self):
 
         """
@@ -2228,16 +1866,11 @@ class Siniestro(models.Model):
 
         depreciacion = self.depreciacion or Decimal('0.00')
 
-        
-
         resultado = monto - deducible - depreciacion
 
         return max(resultado, Decimal('0.00'))
 
-
-
     @property
-
     def dias_desde_registro(self):
 
         try:
@@ -2254,10 +1887,7 @@ class Siniestro(models.Model):
 
             return 0
 
-
-
     @property
-
     def requiere_alerta_documentacion(self):
 
         try:
@@ -2266,7 +1896,7 @@ class Siniestro(models.Model):
 
             return (
 
-                self.dias_desde_registro > dias_alerta and 
+                self.dias_desde_registro > dias_alerta and
 
                 self.estado == 'documentacion_pendiente'
 
@@ -2276,10 +1906,7 @@ class Siniestro(models.Model):
 
             return False
 
-
-
     @property
-
     def dias_espera_respuesta(self):
 
         try:
@@ -2296,10 +1923,7 @@ class Siniestro(models.Model):
 
             return 0
 
-
-
     @property
-
     def requiere_alerta_respuesta(self):
 
         try:
@@ -2308,7 +1932,7 @@ class Siniestro(models.Model):
 
             return (
 
-                self.dias_espera_respuesta > dias_alerta and 
+                self.dias_espera_respuesta > dias_alerta and
 
                 self.estado == 'enviado_aseguradora'
 
@@ -2318,10 +1942,7 @@ class Siniestro(models.Model):
 
             return False
 
-    
-
     @property
-
     def tiempo_total_gestion(self):
 
         try:
@@ -2336,10 +1957,7 @@ class Siniestro(models.Model):
 
             return 0
 
-    
-
     @property
-
     def porcentaje_indemnizado(self):
 
         try:
@@ -2354,10 +1972,7 @@ class Siniestro(models.Model):
 
             return 0
 
-
-
     @property
-
     def dias_gestion(self):
 
         """Calcula los días totales de gestión del siniestro"""
@@ -2384,10 +1999,7 @@ class Siniestro(models.Model):
 
             return 0
 
-
-
     @property
-
     def alerta_respuesta_aseguradora(self):
 
         """
@@ -2414,10 +2026,7 @@ class Siniestro(models.Model):
 
             return False
 
-
-
     @property
-
     def alerta_notificar_responsable(self):
 
         """
@@ -2442,10 +2051,7 @@ class Siniestro(models.Model):
 
             return False
 
-
-
     @property
-
     def alerta_deposito_pendiente(self):
 
         """
@@ -2470,10 +2076,7 @@ class Siniestro(models.Model):
 
             return False
 
-
-
     @property
-
     def valor_indemnizacion_calculado(self):
 
         """Calcula el valor de indemnización: valor_reclamo - deducible - depreciación"""
@@ -2491,10 +2094,6 @@ class Siniestro(models.Model):
         except (TypeError, AttributeError):
 
             return Decimal('0.00')
-
-
-
-
 
 class Documento(models.Model):
 
@@ -2522,13 +2121,9 @@ class Documento(models.Model):
 
     ]
 
-    
-
     # Tamaño máximo de archivo: 10MB
 
     MAX_FILE_SIZE = 10 * 1024 * 1024
-
-
 
     # Relaciones opcionales
 
@@ -2544,11 +2139,9 @@ class Documento(models.Model):
 
                                related_name='documentos', verbose_name="Factura")
 
-    
-
     # Información del documento
 
-    tipo_documento = models.CharField(max_length=30, choices=TIPO_DOCUMENTO_CHOICES, 
+    tipo_documento = models.CharField(max_length=30, choices=TIPO_DOCUMENTO_CHOICES,
 
                                      verbose_name="Tipo de Documento")
 
@@ -2558,7 +2151,7 @@ class Documento(models.Model):
 
     archivo = models.FileField(
 
-        upload_to='documentos/%Y/%m/', 
+        upload_to='documentos/%Y/%m/',
 
         verbose_name="Archivo",
 
@@ -2568,17 +2161,13 @@ class Documento(models.Model):
 
     )
 
-    
-
     # Auditoría
 
     fecha_subida = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Subida")
 
-    subido_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, 
+    subido_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
 
                                   related_name='documentos_subidos', verbose_name="Subido por")
-
-    
 
     # Historial de cambios
 
@@ -2592,8 +2181,6 @@ class Documento(models.Model):
 
     )
 
-
-
     class Meta:
 
         verbose_name = "Documento"
@@ -2602,16 +2189,11 @@ class Documento(models.Model):
 
         ordering = ['-fecha_subida']
 
-
-
     def __str__(self):
 
         return f"{self.nombre} ({self.get_tipo_documento_display()})"
 
-    
-
     @property
-
     def extension(self):
 
         """Retorna la extensión del archivo."""
@@ -2624,10 +2206,7 @@ class Documento(models.Model):
 
         return ''
 
-    
-
     @property
-
     def tamanio_formateado(self):
 
         """Retorna el tamaño del archivo formateado."""
@@ -2646,10 +2225,7 @@ class Documento(models.Model):
 
         return 'N/A'
 
-    
-
     @property
-
     def entidad_relacionada(self):
 
         """Retorna la entidad principal a la que está relacionado el documento."""
@@ -2668,12 +2244,7 @@ class Documento(models.Model):
 
         return "Sin relación"
 
-
-
-
-
 # ==================== MODELOS DE CHECKLIST Y ADJUNTOS DE SINIESTRO ====================
-
 
 
 class ChecklistSiniestroConfig(models.Model):
@@ -2704,8 +2275,6 @@ class ChecklistSiniestroConfig(models.Model):
 
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
 
-
-
     class Meta:
 
         verbose_name = "Configuración de Checklist de Siniestro"
@@ -2716,15 +2285,9 @@ class ChecklistSiniestroConfig(models.Model):
 
         unique_together = ['tipo_siniestro', 'nombre']
 
-
-
     def __str__(self):
 
         return f"{self.tipo_siniestro.get_nombre_display()} - {self.nombre}"
-
-
-
-
 
 class ChecklistSiniestro(models.Model):
 
@@ -2766,8 +2329,6 @@ class ChecklistSiniestro(models.Model):
 
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
 
-
-
     class Meta:
 
         verbose_name = "Item de Checklist de Siniestro"
@@ -2778,15 +2339,11 @@ class ChecklistSiniestro(models.Model):
 
         unique_together = ['siniestro', 'config_item']
 
-
-
     def __str__(self):
 
         estado = "✓" if self.completado else "○"
 
         return f"{estado} {self.config_item.nombre}"
-
-
 
     def marcar_completado(self, usuario):
 
@@ -2799,10 +2356,6 @@ class ChecklistSiniestro(models.Model):
         self.completado_por = usuario
 
         self.save()
-
-
-
-
 
 class AdjuntoSiniestro(models.Model):
 
@@ -2838,8 +2391,6 @@ class AdjuntoSiniestro(models.Model):
 
     ]
 
-
-
     siniestro = models.ForeignKey(Siniestro, on_delete=models.CASCADE,
 
                                   related_name='adjuntos',
@@ -2860,17 +2411,15 @@ class AdjuntoSiniestro(models.Model):
 
                                validators=[validate_document])
 
-    
-
     # Vinculación con checklist
 
     checklist_item = models.ForeignKey(
 
-        'ChecklistSiniestro', 
+        'ChecklistSiniestro',
 
         on_delete=models.SET_NULL,
 
-        null=True, 
+        null=True,
 
         blank=True,
 
@@ -2879,8 +2428,6 @@ class AdjuntoSiniestro(models.Model):
         verbose_name="Item del Checklist"
 
     )
-
-
 
     # Firma electrónica (para documentos que requieren firma)
 
@@ -2904,8 +2451,6 @@ class AdjuntoSiniestro(models.Model):
 
                                             verbose_name="IP de Firma")
 
-
-
     # Auditoría
 
     fecha_subida = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Subida")
@@ -2918,8 +2463,6 @@ class AdjuntoSiniestro(models.Model):
 
                                    verbose_name="Subido por")
 
-
-
     class Meta:
 
         verbose_name = "Adjunto de Siniestro"
@@ -2928,13 +2471,9 @@ class AdjuntoSiniestro(models.Model):
 
         ordering = ['siniestro', 'tipo_adjunto', '-fecha_subida']
 
-
-
     def __str__(self):
 
         return f"{self.get_tipo_adjunto_display()} - {self.nombre}"
-
-
 
     def aplicar_firma(self, usuario, ip=None):
 
@@ -2942,13 +2481,9 @@ class AdjuntoSiniestro(models.Model):
 
         import hashlib
 
-
-
         if not self.archivo:
 
             raise ValidationError("No se puede firmar un documento sin archivo.")
-
-
 
         # Generar hash del archivo
 
@@ -2957,8 +2492,6 @@ class AdjuntoSiniestro(models.Model):
         for chunk in self.archivo.chunks():
 
             hasher.update(chunk)
-
-
 
         self.hash_firma = hasher.hexdigest()
 
@@ -2972,10 +2505,7 @@ class AdjuntoSiniestro(models.Model):
 
         self.save()
 
-
-
     @property
-
     def extension(self):
 
         """Retorna la extensión del archivo"""
@@ -2987,10 +2517,6 @@ class AdjuntoSiniestro(models.Model):
             return os.path.splitext(self.archivo.name)[1].lower()
 
         return ''
-
-
-
-
 
 class Alerta(models.Model):
 
@@ -3010,8 +2536,6 @@ class Alerta(models.Model):
 
     ]
 
-
-
     ESTADO_CHOICES = [
 
         ('pendiente', 'Pendiente'),
@@ -3023,8 +2547,6 @@ class Alerta(models.Model):
         ('atendida', 'Atendida'),
 
     ]
-
-
 
     # Relaciones opcionales
 
@@ -3040,11 +2562,9 @@ class Alerta(models.Model):
 
                                  related_name='alertas', verbose_name="Siniestro")
 
-    
-
     # Información de la alerta
 
-    tipo_alerta = models.CharField(max_length=30, choices=TIPO_ALERTA_CHOICES, 
+    tipo_alerta = models.CharField(max_length=30, choices=TIPO_ALERTA_CHOICES,
 
                                   verbose_name="Tipo de Alerta")
 
@@ -3052,19 +2572,15 @@ class Alerta(models.Model):
 
     mensaje = models.TextField(verbose_name="Mensaje")
 
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente', 
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente',
 
                             verbose_name="Estado")
 
-    
-
     # Destinatarios
 
-    destinatarios = models.ManyToManyField(User, related_name='alertas_recibidas', 
+    destinatarios = models.ManyToManyField(User, related_name='alertas_recibidas',
 
                                           verbose_name="Destinatarios")
-
-    
 
     # Auditoría
 
@@ -3074,8 +2590,6 @@ class Alerta(models.Model):
 
     fecha_lectura = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Lectura")
 
-
-
     class Meta:
 
         verbose_name = "Alerta"
@@ -3084,13 +2598,9 @@ class Alerta(models.Model):
 
         ordering = ['-fecha_creacion']
 
-
-
     def __str__(self):
 
         return f"{self.titulo} - {self.estado}"
-
-
 
     def marcar_como_enviada(self):
 
@@ -3102,8 +2612,6 @@ class Alerta(models.Model):
 
         self.save()
 
-
-
     def marcar_como_leida(self):
 
         """Marca la alerta como leída"""
@@ -3114,12 +2622,7 @@ class Alerta(models.Model):
 
         self.save()
 
-
-
-
-
 # ==================== MODELO NOTIFICACIÓN EMAIL ====================
-
 
 
 class NotificacionEmail(models.Model):
@@ -3154,8 +2657,6 @@ class NotificacionEmail(models.Model):
 
     ]
 
-
-
     ESTADO_CHOICES = [
 
         ('pendiente', 'Pendiente'),
@@ -3167,8 +2668,6 @@ class NotificacionEmail(models.Model):
         ('rebotado', 'Rebotado'),
 
     ]
-
-
 
     tipo = models.CharField(max_length=30, choices=TIPO_NOTIFICACION_CHOICES,
 
@@ -3183,8 +2682,6 @@ class NotificacionEmail(models.Model):
     contenido = models.TextField(verbose_name="Contenido del Email")
 
     contenido_html = models.TextField(blank=True, verbose_name="Contenido HTML")
-
-
 
     # Relaciones opcionales
 
@@ -3212,8 +2709,6 @@ class NotificacionEmail(models.Model):
 
                                 verbose_name="Factura")
 
-
-
     # Estado y tracking
 
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES,
@@ -3228,8 +2723,6 @@ class NotificacionEmail(models.Model):
 
     error_mensaje = models.TextField(blank=True, verbose_name="Mensaje de Error")
 
-
-
     # Auditoría
 
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL,
@@ -3241,8 +2734,6 @@ class NotificacionEmail(models.Model):
                                    verbose_name="Creado por")
 
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
-
-
 
     class Meta:
 
@@ -3260,13 +2751,9 @@ class NotificacionEmail(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"{self.get_tipo_display()} - {self.destinatario}"
-
-
 
     def marcar_como_enviado(self):
 
@@ -3279,8 +2766,6 @@ class NotificacionEmail(models.Model):
         self.fecha_envio = timezone.now()
 
         self.save()
-
-
 
     def registrar_error(self, mensaje):
 
@@ -3296,12 +2781,7 @@ class NotificacionEmail(models.Model):
 
         self.save()
 
-
-
-
-
 # ==================== MODELO NOTA DE CRÉDITO ====================
-
 
 
 class NotaCredito(models.Model):
@@ -3321,8 +2801,6 @@ class NotaCredito(models.Model):
         ('anulada', 'Anulada'),
 
     ]
-
-
 
     factura = models.ForeignKey(Factura, on_delete=models.PROTECT,
 
@@ -3348,8 +2826,6 @@ class NotaCredito(models.Model):
 
                              default='emitida', verbose_name="Estado")
 
-
-
     # Documento adjunto
 
     documento = models.FileField(upload_to='notas_credito/%Y/%m/',
@@ -3357,8 +2833,6 @@ class NotaCredito(models.Model):
                                 null=True, blank=True,
 
                                 verbose_name="Documento")
-
-
 
     # Auditoría
 
@@ -3378,8 +2852,6 @@ class NotaCredito(models.Model):
 
                                               verbose_name="Fecha de Modificación")
 
-
-
     # Historial
 
     history = HistoricalRecords(
@@ -3390,8 +2862,6 @@ class NotaCredito(models.Model):
 
     )
 
-
-
     class Meta:
 
         verbose_name = "Nota de Crédito"
@@ -3400,20 +2870,11 @@ class NotaCredito(models.Model):
 
         ordering = ['-fecha_emision']
 
-
-
     def __str__(self):
 
         return f"NC-{self.numero} - ${self.monto}"
 
-
-
-
-
-
-
 # ==================== NUEVOS MODELOS (Código en inglés, interfaz en español) ====================
-
 
 
 class Quote(models.Model):
@@ -3444,8 +2905,6 @@ class Quote(models.Model):
 
     ]
 
-    
-
     PRIORITY_CHOICES = [
 
         ('low', 'Baja'),
@@ -3458,23 +2917,17 @@ class Quote(models.Model):
 
     ]
 
-
-
     # Identificación
 
     quote_number = models.CharField(max_length=100, unique=True, verbose_name="Número de Cotización")
 
     title = models.CharField(max_length=200, verbose_name="Título/Descripción")
 
-    
-
     # Tipo de seguro solicitado
 
     policy_type = models.ForeignKey(TipoPoliza, on_delete=models.PROTECT,
 
                                     related_name='quotes', verbose_name="Tipo de Póliza")
-
-    
 
     # Valores
 
@@ -3486,8 +2939,6 @@ class Quote(models.Model):
 
     coverage_details = models.TextField(verbose_name="Detalle de Coberturas Solicitadas")
 
-    
-
     # Fechas
 
     request_date = models.DateField(verbose_name="Fecha de Solicitud")
@@ -3497,8 +2948,6 @@ class Quote(models.Model):
     desired_start_date = models.DateField(verbose_name="Fecha de Inicio Deseada")
 
     desired_end_date = models.DateField(verbose_name="Fecha de Fin Deseada")
-
-    
 
     # Estado y prioridad
 
@@ -3510,23 +2959,17 @@ class Quote(models.Model):
 
                                 verbose_name="Prioridad")
 
-    
-
     # Relación con póliza resultante (si se convierte)
 
     resulting_policy = models.ForeignKey(Poliza, on_delete=models.SET_NULL, null=True, blank=True,
 
                                          related_name='source_quote', verbose_name="Póliza Resultante")
 
-    
-
     # Notas y observaciones
 
     notes = models.TextField(blank=True, verbose_name="Notas Internas")
 
     rejection_reason = models.TextField(blank=True, verbose_name="Motivo de Rechazo")
-
-    
 
     # Auditoría
 
@@ -3538,8 +2981,6 @@ class Quote(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
 
-    
-
     # Historial
 
     history = HistoricalRecords(
@@ -3549,8 +2990,6 @@ class Quote(models.Model):
         verbose_name_plural="Historial de cambios"
 
     )
-
-
 
     class Meta:
 
@@ -3568,26 +3007,18 @@ class Quote(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"{self.quote_number} - {self.title}"
 
-    
-
     @property
-
     def is_expired(self):
 
         """Verifica si la cotización ha expirado"""
 
         return timezone.now().date() > self.valid_until
 
-    
-
     @property
-
     def days_until_expiry(self):
 
         """Días restantes hasta que expire"""
@@ -3600,17 +3031,12 @@ class Quote(models.Model):
 
         return 0
 
-    
-
     @property
-
     def best_option(self):
 
         """Retorna la opción con mejor precio"""
 
         return self.options.filter(is_recommended=True).first() or self.options.order_by('premium_amount').first()
-
-    
 
     def convert_to_policy(self, option, user):
 
@@ -3619,8 +3045,6 @@ class Quote(models.Model):
         if self.status == 'converted':
 
             raise ValidationError('Esta cotización ya fue convertida a póliza.')
-
-        
 
         policy = Poliza.objects.create(
 
@@ -3646,21 +3070,13 @@ class Quote(models.Model):
 
         )
 
-        
-
         self.resulting_policy = policy
 
         self.status = 'converted'
 
         self.save()
 
-        
-
         return policy
-
-
-
-
 
 class QuoteOption(models.Model):
 
@@ -3678,8 +3094,6 @@ class QuoteOption(models.Model):
 
                               related_name='options', verbose_name="Cotización")
 
-    
-
     # Aseguradora y corredor
 
     insurer = models.ForeignKey(CompaniaAseguradora, on_delete=models.PROTECT,
@@ -3689,8 +3103,6 @@ class QuoteOption(models.Model):
     broker = models.ForeignKey(CorredorSeguros, on_delete=models.PROTECT,
 
                                related_name='quote_options', verbose_name="Corredor")
-
-    
 
     # Valores ofertados
 
@@ -3704,8 +3116,6 @@ class QuoteOption(models.Model):
 
                                      verbose_name="Deducible")
 
-    
-
     # Cobertura ofrecida
 
     coverage_offered = models.TextField(verbose_name="Coberturas Ofrecidas")
@@ -3714,15 +3124,11 @@ class QuoteOption(models.Model):
 
     conditions = models.TextField(blank=True, verbose_name="Condiciones Especiales")
 
-    
-
     # Documento de propuesta
 
     proposal_document = models.FileField(upload_to='quotes/proposals/%Y/%m/', null=True, blank=True,
 
                                          verbose_name="Documento de Propuesta")
-
-    
 
     # Evaluación
 
@@ -3736,23 +3142,17 @@ class QuoteOption(models.Model):
 
     evaluation_notes = models.TextField(blank=True, verbose_name="Notas de Evaluación")
 
-    
-
     # Fechas
 
     received_date = models.DateField(verbose_name="Fecha de Recepción")
 
     valid_until = models.DateField(verbose_name="Válida Hasta")
 
-    
-
     # Auditoría
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
 
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
-
-
 
     class Meta:
 
@@ -3762,16 +3162,11 @@ class QuoteOption(models.Model):
 
         ordering = ['premium_amount']
 
-
-
     def __str__(self):
 
         return f"{self.insurer.nombre} - ${self.premium_amount}"
 
-    
-
     @property
-
     def premium_per_thousand(self):
 
         """Calcula la prima por cada mil de suma asegurada"""
@@ -3781,10 +3176,6 @@ class QuoteOption(models.Model):
             return (self.premium_amount / self.quote.sum_insured) * 1000
 
         return 0
-
-
-
-
 
 class PolicyRenewal(models.Model):
 
@@ -3814,8 +3205,6 @@ class PolicyRenewal(models.Model):
 
     ]
 
-    
-
     DECISION_CHOICES = [
 
         ('renew_same', 'Renovar con Misma Aseguradora'),
@@ -3828,15 +3217,11 @@ class PolicyRenewal(models.Model):
 
     ]
 
-
-
     # Póliza a renovar
 
     original_policy = models.ForeignKey(Poliza, on_delete=models.PROTECT,
 
                                         related_name='renewals', verbose_name="Póliza Original")
-
-    
 
     # Nueva póliza (si se completa la renovación)
 
@@ -3844,21 +3229,15 @@ class PolicyRenewal(models.Model):
 
                                    related_name='renewal_source', verbose_name="Nueva Póliza")
 
-    
-
     # Cotización asociada (opcional)
 
     quote = models.ForeignKey(Quote, on_delete=models.SET_NULL, null=True, blank=True,
 
                               related_name='renewals', verbose_name="Cotización Asociada")
 
-    
-
     # Identificación
 
     renewal_number = models.CharField(max_length=100, unique=True, verbose_name="Número de Renovación")
-
-    
 
     # Fechas del proceso
 
@@ -3869,8 +3248,6 @@ class PolicyRenewal(models.Model):
     decision_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Decisión")
 
     completion_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Completado")
-
-    
 
     # Valores comparativos
 
@@ -3886,13 +3263,9 @@ class PolicyRenewal(models.Model):
 
                                         verbose_name="Prima Final")
 
-    
-
     # Cambios en cobertura
 
     coverage_changes = models.TextField(blank=True, verbose_name="Cambios en Coberturas")
-
-    
 
     # Estado y decisión
 
@@ -3906,21 +3279,15 @@ class PolicyRenewal(models.Model):
 
     decision_reason = models.TextField(blank=True, verbose_name="Justificación de Decisión")
 
-    
-
     # Notificaciones
 
     reminder_sent = models.BooleanField(default=False, verbose_name="Recordatorio Enviado")
 
     reminder_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Recordatorio")
 
-    
-
     # Notas
 
     notes = models.TextField(blank=True, verbose_name="Notas")
-
-    
 
     # Auditoría
 
@@ -3936,8 +3303,6 @@ class PolicyRenewal(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
 
-    
-
     # Historial
 
     history = HistoricalRecords(
@@ -3947,8 +3312,6 @@ class PolicyRenewal(models.Model):
         verbose_name_plural="Historial de cambios"
 
     )
-
-
 
     class Meta:
 
@@ -3968,16 +3331,11 @@ class PolicyRenewal(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"{self.renewal_number} - {self.original_policy.numero_poliza}"
 
-    
-
     @property
-
     def days_until_due(self):
 
         """Días restantes hasta la fecha límite"""
@@ -3990,20 +3348,14 @@ class PolicyRenewal(models.Model):
 
         return 0
 
-    
-
     @property
-
     def is_overdue(self):
 
         """Verifica si la renovación está vencida"""
 
         return self.days_until_due < 0 and self.status not in ['completed', 'cancelled']
 
-    
-
     @property
-
     def premium_change_percentage(self):
 
         """Calcula el porcentaje de cambio en la prima"""
@@ -4013,8 +3365,6 @@ class PolicyRenewal(models.Model):
             return ((self.proposed_premium - self.original_premium) / self.original_premium) * 100
 
         return 0
-
-    
 
     def complete_renewal(self, new_policy, user):
 
@@ -4033,10 +3383,6 @@ class PolicyRenewal(models.Model):
         )['total'] or self.proposed_premium
 
         self.save()
-
-
-
-
 
 class PaymentApproval(models.Model):
 
@@ -4060,8 +3406,6 @@ class PaymentApproval(models.Model):
 
     ]
 
-    
-
     APPROVAL_LEVEL_CHOICES = [
 
         ('level_1', 'Nivel 1 - Operativo'),
@@ -4074,15 +3418,11 @@ class PaymentApproval(models.Model):
 
     ]
 
-
-
     # Relación con el pago
 
     payment = models.ForeignKey(Pago, on_delete=models.CASCADE,
 
                                 related_name='approvals', verbose_name="Pago")
-
-    
 
     # Nivel de aprobación
 
@@ -4094,15 +3434,11 @@ class PaymentApproval(models.Model):
 
                                       verbose_name="Nivel Requerido")
 
-    
-
     # Estado
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending',
 
                               verbose_name="Estado")
-
-    
 
     # Aprobador
 
@@ -4110,15 +3446,11 @@ class PaymentApproval(models.Model):
 
                                  related_name='payment_approvals', verbose_name="Aprobador")
 
-    
-
     # Fechas
 
     requested_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Solicitud")
 
     decided_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Decisión")
-
-    
 
     # Comentarios
 
@@ -4126,15 +3458,11 @@ class PaymentApproval(models.Model):
 
     decision_notes = models.TextField(blank=True, verbose_name="Notas de Decisión")
 
-    
-
     # Firma digital (checkbox de confirmación)
 
-    digital_signature = models.BooleanField(default=False, 
+    digital_signature = models.BooleanField(default=False,
 
                                             verbose_name="Firma Digital/Confirmación")
-
-
 
     class Meta:
 
@@ -4152,16 +3480,11 @@ class PaymentApproval(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"Aprobación {self.payment} - {self.get_status_display()}"
 
-    
-
     @classmethod
-
     def get_required_level(cls, amount):
 
         """Determina el nivel de aprobación requerido según el monto"""
@@ -4182,8 +3505,6 @@ class PaymentApproval(models.Model):
 
         return 'level_1'
 
-    
-
     def approve(self, user, notes=''):
 
         """Aprueba el pago"""
@@ -4200,8 +3521,6 @@ class PaymentApproval(models.Model):
 
         self.save()
 
-        
-
         # Aprobar el pago si tiene todas las aprobaciones necesarias
 
         if self._all_approvals_complete():
@@ -4209,8 +3528,6 @@ class PaymentApproval(models.Model):
             self.payment.estado = 'aprobado'
 
             self.payment.save()
-
-    
 
     def reject(self, user, notes=''):
 
@@ -4226,15 +3543,11 @@ class PaymentApproval(models.Model):
 
         self.save()
 
-        
-
         # Rechazar el pago
 
         self.payment.estado = 'rechazado'
 
         self.payment.save()
-
-    
 
     def _all_approvals_complete(self):
 
@@ -4250,12 +3563,7 @@ class PaymentApproval(models.Model):
 
         return not pending
 
-
-
-
-
 # ==================== MODELOS DE CATÁLOGO DE RAMOS (JERARQUÍA) ====================
-
 
 
 class TipoRamo(models.Model):
@@ -4284,8 +3592,6 @@ class TipoRamo(models.Model):
 
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
 
-
-
     class Meta:
 
         verbose_name = "Tipo de Ramo"
@@ -4302,13 +3608,9 @@ class TipoRamo(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"{self.codigo} - {self.nombre}"
-
-
 
     def delete(self, *args, **kwargs):
 
@@ -4317,10 +3619,6 @@ class TipoRamo(models.Model):
             raise ValidationError("No se puede eliminar un tipo de ramo predefinido.")
 
         super().delete(*args, **kwargs)
-
-
-
-
 
 class GrupoRamo(models.Model):
 
@@ -4358,8 +3656,6 @@ class GrupoRamo(models.Model):
 
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
 
-
-
     class Meta:
 
         verbose_name = "Grupo de Ramo"
@@ -4378,13 +3674,9 @@ class GrupoRamo(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"{self.codigo} - {self.nombre}"
-
-
 
     def delete(self, *args, **kwargs):
 
@@ -4393,10 +3685,6 @@ class GrupoRamo(models.Model):
             raise ValidationError("No se puede eliminar un grupo de ramo predefinido.")
 
         super().delete(*args, **kwargs)
-
-
-
-
 
 class SubgrupoRamo(models.Model):
 
@@ -4434,8 +3722,6 @@ class SubgrupoRamo(models.Model):
 
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
 
-
-
     class Meta:
 
         verbose_name = "Subgrupo de Ramo"
@@ -4454,13 +3740,9 @@ class SubgrupoRamo(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"{self.grupo_ramo.codigo}/{self.codigo} - {self.nombre}"
-
-
 
     def delete(self, *args, **kwargs):
 
@@ -4470,19 +3752,12 @@ class SubgrupoRamo(models.Model):
 
         super().delete(*args, **kwargs)
 
-
-
     @property
-
     def nombre_completo(self):
 
         """Retorna la ruta completa: Tipo > Grupo > Subgrupo"""
 
         return f"{self.grupo_ramo.tipo_ramo.nombre} > {self.grupo_ramo.nombre} > {self.nombre}"
-
-
-
-
 
 # Alias para compatibilidad con código existente (deprecado)
 
@@ -4491,11 +3766,7 @@ Ramo = GrupoRamo
 SubtipoRamo = SubgrupoRamo
 
 
-
-
-
 # ==================== MODELO BIEN ASEGURADO ====================
-
 
 
 class BienAsegurado(models.Model):
@@ -4506,13 +3777,9 @@ class BienAsegurado(models.Model):
 
     Actúa como pivote entre la Póliza (contrato) y el SubgrupoRamo (clasificación).
 
-    
-
     El siniestro se relaciona con el BienAsegurado, no directamente con la Póliza,
 
     porque el evento de pérdida ocurre sobre un objeto específico.
-
-    
 
     NOTA: Este modelo unifica BienAsegurado + InsuredAsset (deprecado).
 
@@ -4534,8 +3801,6 @@ class BienAsegurado(models.Model):
 
     ]
 
-    
-
     CONDICION_CHOICES = [
 
         ('excelente', 'Excelente'),
@@ -4548,8 +3813,6 @@ class BienAsegurado(models.Model):
 
     ]
 
-
-
     # Relación con Póliza (contrato al que pertenece)
 
     poliza = models.ForeignKey('Poliza', on_delete=models.PROTECT,
@@ -4558,8 +3821,6 @@ class BienAsegurado(models.Model):
 
                                verbose_name="Póliza")
 
-    
-
     # Relación con SubgrupoRamo (clasificación específica del bien)
 
     subgrupo_ramo = models.ForeignKey(SubgrupoRamo, on_delete=models.PROTECT,
@@ -4567,8 +3828,6 @@ class BienAsegurado(models.Model):
                                       related_name='bienes_asegurados',
 
                                       verbose_name="Subgrupo de Ramo")
-
-    
 
     # Identificación del bien
 
@@ -4584,8 +3843,6 @@ class BienAsegurado(models.Model):
 
                                  help_text="Categoría del bien (ej: Equipos de Cómputo, Vehículos)")
 
-    
-
     # Características del bien
 
     marca = models.CharField(max_length=100, blank=True, verbose_name="Marca")
@@ -4598,11 +3855,9 @@ class BienAsegurado(models.Model):
 
                                      help_text="Código institucional del activo fijo")
 
-    anio_fabricacion = models.PositiveIntegerField(null=True, blank=True, 
+    anio_fabricacion = models.PositiveIntegerField(null=True, blank=True,
 
                                                     verbose_name="Año de Fabricación")
-
-    
 
     # Ubicación detallada
 
@@ -4614,8 +3869,6 @@ class BienAsegurado(models.Model):
 
     departamento = models.CharField(max_length=100, blank=True, verbose_name="Departamento/Área")
 
-    
-
     # Responsable
 
     responsable_custodio = models.ForeignKey('ResponsableCustodio', on_delete=models.SET_NULL,
@@ -4625,8 +3878,6 @@ class BienAsegurado(models.Model):
                                              related_name='bienes_asegurados',
 
                                              verbose_name="Responsable/Custodio")
-
-    
 
     # Valores financieros
 
@@ -4660,11 +3911,9 @@ class BienAsegurado(models.Model):
 
                                           verbose_name="Valor Comercial")
 
-    
-
     # Estado y condición
 
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, 
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES,
 
                               default='activo', verbose_name="Estado")
 
@@ -4672,15 +3921,11 @@ class BienAsegurado(models.Model):
 
                                  default='bueno', verbose_name="Condición Física")
 
-    
-
     # Fechas
 
     fecha_adquisicion = models.DateField(null=True, blank=True, verbose_name="Fecha de Adquisición")
 
     fecha_garantia = models.DateField(null=True, blank=True, verbose_name="Vencimiento de Garantía")
-
-    
 
     # Imagen y QR
 
@@ -4692,13 +3937,9 @@ class BienAsegurado(models.Model):
 
                                  help_text="Código QR para identificación rápida")
 
-    
-
     # Observaciones
 
     observaciones = models.TextField(blank=True, verbose_name="Observaciones")
-
-    
 
     # Grupo de bienes (opcional, para agrupar bienes relacionados)
 
@@ -4709,8 +3950,6 @@ class BienAsegurado(models.Model):
                                      related_name='bienes_asegurados',
 
                                      verbose_name="Grupo de Bienes")
-
-    
 
     # Auditoría
 
@@ -4724,8 +3963,6 @@ class BienAsegurado(models.Model):
 
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
 
-
-
     # Historial de cambios
 
     history = HistoricalRecords(
@@ -4736,13 +3973,9 @@ class BienAsegurado(models.Model):
 
     )
 
-
-
     # Manager personalizado (centraliza reglas de negocio)
 
     objects = BienAseguradoManager()
-
-
 
     class Meta:
 
@@ -4764,45 +3997,30 @@ class BienAsegurado(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"{self.codigo_bien} - {self.nombre}"
 
-
-
     @property
-
     def clasificacion_completa(self):
 
         """Retorna la clasificación completa del bien: Tipo > Grupo > Subgrupo"""
 
         return self.subgrupo_ramo.nombre_completo
 
-
-
     @property
-
     def tiene_siniestros(self):
 
         """Verifica si el bien tiene siniestros asociados"""
 
         return self.siniestros.exists()
 
-
-
     @property
-
     def total_siniestros(self):
 
         """Retorna el número total de siniestros del bien"""
 
         return self.siniestros.count()
-
-
-
-
 
 class DetallePolizaRamo(models.Model):
 
@@ -4828,15 +4046,11 @@ class DetallePolizaRamo(models.Model):
 
                                       related_name='detalles_poliza', verbose_name="Subgrupo de Ramo")
 
-
-
     # Información de facturación
 
     numero_factura = models.CharField(max_length=100, blank=True, verbose_name="N° Factura")
 
     documento_contable = models.CharField(max_length=100, blank=True, verbose_name="Doc. Contable")
-
-
 
     # Valores financieros base
 
@@ -4855,8 +4069,6 @@ class DetallePolizaRamo(models.Model):
                                       default=Decimal('0.00'),
 
                                       verbose_name="Prima Total")
-
-
 
     # Contribuciones (calculadas automáticamente)
 
@@ -4878,8 +4090,6 @@ class DetallePolizaRamo(models.Model):
 
                                            verbose_name="Seguro Campesino (0.5%)")
 
-
-
     # Base imponible e IVA
 
     base_imponible = models.DecimalField(max_digits=15, decimal_places=2,
@@ -4900,8 +4110,6 @@ class DetallePolizaRamo(models.Model):
 
                                           verbose_name="Total Facturado")
 
-
-
     # Retenciones (aplican si es gran contribuyente)
 
     retencion_prima = models.DecimalField(max_digits=15, decimal_places=2,
@@ -4916,8 +4124,6 @@ class DetallePolizaRamo(models.Model):
 
                                         verbose_name="Retención IVA (100%)")
 
-
-
     # Valor final
 
     valor_por_pagar = models.DecimalField(max_digits=15, decimal_places=2,
@@ -4926,21 +4132,15 @@ class DetallePolizaRamo(models.Model):
 
                                           verbose_name="Valor por Pagar")
 
-
-
     # Observaciones
 
     observaciones = models.TextField(blank=True, verbose_name="Observaciones")
-
-
 
     # Auditoría
 
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
 
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
-
-
 
     # Historial
 
@@ -4951,8 +4151,6 @@ class DetallePolizaRamo(models.Model):
         verbose_name_plural="Historial de cambios"
 
     )
-
-
 
     class Meta:
 
@@ -4968,13 +4166,9 @@ class DetallePolizaRamo(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"{self.poliza.numero_poliza} - {self.grupo_ramo.nombre}"
-
-
 
     def save(self, *args, **kwargs):
 
@@ -4984,10 +4178,7 @@ class DetallePolizaRamo(models.Model):
 
         super().save(*args, **kwargs)
 
-
-
     @staticmethod
-
     def calcular_derechos_emision(valor_prima: Decimal) -> Decimal:
 
         """
@@ -4995,8 +4186,6 @@ class DetallePolizaRamo(models.Model):
         Calcula los derechos de emisión según tabla escalonada.
 
         Cálculo puro sin dependencias de servicios.
-
-        
 
         La tabla se obtiene de ConfiguracionSistema (TABLA_TASAS_EMISION).
 
@@ -5019,8 +4208,6 @@ class DetallePolizaRamo(models.Model):
         # Intentar obtener tabla de configuración
 
         tabla_config = ConfiguracionSistema.get_config('TABLA_TASAS_EMISION', None)
-
-        
 
         if tabla_config and isinstance(tabla_config, list):
 
@@ -5046,27 +4233,19 @@ class DetallePolizaRamo(models.Model):
 
             ]
 
-        
-
         for rango in tabla:
 
             limite = rango.get('limite')
 
             tasa = Decimal(str(rango.get('tasa', '0')))
 
-            
-
             if limite is None or valor_prima <= Decimal(str(limite)):
 
                 return tasa
 
-        
-
         # Fallback al último valor
 
         return Decimal(str(tabla[-1].get('tasa', '9.00')))
-
-
 
     def calcular_valores(self):
 
@@ -5078,21 +4257,15 @@ class DetallePolizaRamo(models.Model):
 
         pct_campesino = ConfiguracionSistema.get_config('PORCENTAJE_SEGURO_CAMPESINO', Decimal('0.005'))
 
-
-
         # Calcular contribuciones sobre la prima
 
         self.contribucion_superintendencia = self.total_prima * pct_super
 
         self.seguro_campesino = self.total_prima * pct_campesino
 
-
-
         # Calcular derechos de emisión según tabla escalonada
 
         self.emision = self.calcular_derechos_emision(self.total_prima)
-
-
 
         # Calcular base imponible (Prima + Contribuciones + Emisión)
 
@@ -5108,19 +4281,13 @@ class DetallePolizaRamo(models.Model):
 
         )
 
-
-
         # Calcular IVA (15%)
 
         self.iva = self.base_imponible * Decimal('0.15')
 
-
-
         # Calcular total facturado
 
         self.total_facturado = self.base_imponible + self.iva
-
-
 
         # Calcular retenciones (solo si la póliza es de gran contribuyente)
 
@@ -5136,18 +4303,11 @@ class DetallePolizaRamo(models.Model):
 
             self.retencion_iva = Decimal('0.00')
 
-
-
         # Calcular valor por pagar
 
         self.valor_por_pagar = self.total_facturado - self.retencion_prima - self.retencion_iva
 
-
-
-
-
 # ==================== MODELO GRUPO DE BIENES ====================
-
 
 
 class GrupoBienes(models.Model):
@@ -5196,8 +4356,6 @@ class GrupoBienes(models.Model):
 
                                    related_name='grupos_bienes_creados', verbose_name="Creado por")
 
-
-
     class Meta:
 
         verbose_name = "Grupo de Bienes"
@@ -5214,26 +4372,18 @@ class GrupoBienes(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return self.nombre
 
-
-
     @property
-
     def total_bienes(self):
 
         """Retorna el total de bienes en el grupo"""
 
         return self.bienes.count()
 
-
-
     @property
-
     def valor_total(self):
 
         """Retorna el valor total de los bienes del grupo"""
@@ -5243,10 +4393,6 @@ class GrupoBienes(models.Model):
             total=models.Sum('current_value')
 
         )['total'] or Decimal('0.00')
-
-
-
-
 
 class CalendarEvent(models.Model):
 
@@ -5278,8 +4424,6 @@ class CalendarEvent(models.Model):
 
     ]
 
-    
-
     PRIORITY_CHOICES = [
 
         ('low', 'Baja'),
@@ -5291,8 +4435,6 @@ class CalendarEvent(models.Model):
         ('critical', 'Crítica'),
 
     ]
-
-
 
     # Información del evento
 
@@ -5308,8 +4450,6 @@ class CalendarEvent(models.Model):
 
                                 verbose_name="Prioridad")
 
-    
-
     # Fechas
 
     start_date = models.DateField(verbose_name="Fecha de Inicio")
@@ -5321,8 +4461,6 @@ class CalendarEvent(models.Model):
     start_time = models.TimeField(null=True, blank=True, verbose_name="Hora de Inicio")
 
     end_time = models.TimeField(null=True, blank=True, verbose_name="Hora de Fin")
-
-    
 
     # Relaciones opcionales (para eventos automáticos)
 
@@ -5346,8 +4484,6 @@ class CalendarEvent(models.Model):
 
                               related_name='calendar_events', verbose_name="Cotización")
 
-    
-
     # Notificaciones
 
     reminder_days = models.PositiveIntegerField(default=7,
@@ -5356,15 +4492,11 @@ class CalendarEvent(models.Model):
 
     reminder_sent = models.BooleanField(default=False, verbose_name="Recordatorio Enviado")
 
-    
-
     # Estado
 
     is_completed = models.BooleanField(default=False, verbose_name="Completado")
 
     is_auto_generated = models.BooleanField(default=False, verbose_name="Generado Automáticamente")
-
-    
 
     # Auditoría
 
@@ -5375,8 +4507,6 @@ class CalendarEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
 
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
-
-
 
     class Meta:
 
@@ -5396,16 +4526,11 @@ class CalendarEvent(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"{self.title} - {self.start_date}"
 
-    
-
     @property
-
     def days_until(self):
 
         """Días hasta el evento"""
@@ -5414,20 +4539,14 @@ class CalendarEvent(models.Model):
 
         return delta
 
-    
-
     @property
-
     def is_overdue(self):
 
         """Verifica si el evento ya pasó"""
 
         return self.start_date < timezone.now().date() and not self.is_completed
 
-    
-
     @property
-
     def color(self):
 
         """Retorna el color del evento según tipo y prioridad"""
@@ -5454,10 +4573,7 @@ class CalendarEvent(models.Model):
 
         return colors.get(self.event_type, '#6b7280')
 
-    
-
     @classmethod
-
     def generate_policy_events(cls, policy):
 
         """Genera eventos de calendario para una póliza"""
@@ -5488,12 +4604,7 @@ class CalendarEvent(models.Model):
 
         return event
 
-
-
-
-
 # ==================== MODELO SINIESTRO EMAIL ====================
-
 
 
 class SiniestroEmail(models.Model):
@@ -5518,8 +4629,6 @@ class SiniestroEmail(models.Model):
 
     ]
 
-
-
     # Información del correo
 
     email_id = models.CharField(max_length=100, verbose_name="ID del Correo")
@@ -5532,8 +4641,6 @@ class SiniestroEmail(models.Model):
 
     email_body = models.TextField(blank=True, verbose_name="Cuerpo del Correo")
 
-
-
     # Datos extraídos del reporte
 
     responsable_nombre = models.CharField(max_length=300, verbose_name="Nombre del Responsable")
@@ -5543,8 +4650,6 @@ class SiniestroEmail(models.Model):
     problema = models.TextField(verbose_name="Descripción del Problema")
 
     causa = models.TextField(verbose_name="Causa del Daño")
-
-
 
     # Datos del equipo
 
@@ -5558,15 +4663,13 @@ class SiniestroEmail(models.Model):
 
     codigo_activo = models.CharField(max_length=200, blank=True, verbose_name="Código de Activo")
 
-
-
     # Estado del procesamiento
 
     estado_procesamiento = models.CharField(
 
-        max_length=20, 
+        max_length=20,
 
-        choices=ESTADO_PROCESAMIENTO_CHOICES, 
+        choices=ESTADO_PROCESAMIENTO_CHOICES,
 
         default='pendiente',
 
@@ -5576,15 +4679,13 @@ class SiniestroEmail(models.Model):
 
     mensaje_procesamiento = models.TextField(blank=True, verbose_name="Mensaje de Procesamiento")
 
-
-
     # Relaciones (se llenan si se puede procesar automáticamente)
 
     activo_encontrado = models.ForeignKey(
 
-        'BienAsegurado', 
+        'BienAsegurado',
 
-        on_delete=models.SET_NULL, 
+        on_delete=models.SET_NULL,
 
         null=True, blank=True,
 
@@ -5596,9 +4697,9 @@ class SiniestroEmail(models.Model):
 
     siniestro_creado = models.ForeignKey(
 
-        'Siniestro', 
+        'Siniestro',
 
-        on_delete=models.SET_NULL, 
+        on_delete=models.SET_NULL,
 
         null=True, blank=True,
 
@@ -5610,9 +4711,9 @@ class SiniestroEmail(models.Model):
 
     responsable_encontrado = models.ForeignKey(
 
-        'ResponsableCustodio', 
+        'ResponsableCustodio',
 
-        on_delete=models.SET_NULL, 
+        on_delete=models.SET_NULL,
 
         null=True, blank=True,
 
@@ -5622,8 +4723,6 @@ class SiniestroEmail(models.Model):
 
     )
 
-
-
     # Auditoría
 
     fecha_recepcion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Recepción")
@@ -5632,9 +4731,9 @@ class SiniestroEmail(models.Model):
 
     procesado_por = models.ForeignKey(
 
-        User, 
+        User,
 
-        on_delete=models.SET_NULL, 
+        on_delete=models.SET_NULL,
 
         null=True, blank=True,
 
@@ -5643,8 +4742,6 @@ class SiniestroEmail(models.Model):
         verbose_name="Procesado por"
 
     )
-
-
 
     class Meta:
 
@@ -5664,13 +4761,9 @@ class SiniestroEmail(models.Model):
 
         ]
 
-
-
     def __str__(self):
 
         return f"Email: {self.email_subject[:50]} - {self.get_estado_procesamiento_display()}"
-
-
 
     def buscar_activo_por_serie(self):
 
@@ -5679,8 +4772,6 @@ class SiniestroEmail(models.Model):
         if not self.serie:
 
             return None
-
-        
 
         try:
 
@@ -5696,8 +4787,6 @@ class SiniestroEmail(models.Model):
 
             return None
 
-
-
     def buscar_responsable(self):
 
         """Busca un responsable por nombre (búsqueda parcial)."""
@@ -5705,8 +4794,6 @@ class SiniestroEmail(models.Model):
         if not self.responsable_nombre:
 
             return None
-
-        
 
         try:
 
@@ -5718,8 +4805,6 @@ class SiniestroEmail(models.Model):
 
             ).first()
 
-            
-
             if not responsable:
 
                 # Buscar coincidencia parcial
@@ -5730,23 +4815,17 @@ class SiniestroEmail(models.Model):
 
                 ).first()
 
-            
-
             return responsable
 
         except Exception:
 
             return None
 
-
-
     def crear_siniestro_automatico(self):
 
         """
 
         Intenta crear un siniestro automáticamente si se encuentra el activo.
-
-        
 
         Returns:
 
@@ -5758,15 +4837,11 @@ class SiniestroEmail(models.Model):
 
         from datetime import datetime
 
-        
-
         # Buscar activo
 
         activo = self.buscar_activo_por_serie()
 
         self.activo_encontrado = activo
-
-        
 
         if not activo:
 
@@ -5783,8 +4858,6 @@ class SiniestroEmail(models.Model):
             self.save()
 
             return None, self.mensaje_procesamiento
-
-        
 
         # Verificar que el activo tenga póliza
 
@@ -5804,15 +4877,11 @@ class SiniestroEmail(models.Model):
 
             return None, self.mensaje_procesamiento
 
-        
-
         # Buscar o usar el custodio del activo
 
         responsable = self.buscar_responsable() or activo.responsable_custodio
 
         self.responsable_encontrado = responsable
-
-        
 
         # Buscar tipo de siniestro "daño" por defecto
 
@@ -5821,8 +4890,6 @@ class SiniestroEmail(models.Model):
         if not tipo_siniestro:
 
             tipo_siniestro = TipoSiniestro.objects.first()
-
-        
 
         if not tipo_siniestro:
 
@@ -5833,8 +4900,6 @@ class SiniestroEmail(models.Model):
             self.save()
 
             return None, self.mensaje_procesamiento
-
-        
 
         # Parsear fecha del reporte
 
@@ -5854,8 +4919,6 @@ class SiniestroEmail(models.Model):
 
                 pass  # Usar fecha actual si no se puede parsear
 
-        
-
         # Generar número de siniestro
 
         from django.db.models import Max
@@ -5863,8 +4926,6 @@ class SiniestroEmail(models.Model):
         ultimo = Siniestro.objects.aggregate(Max('id'))['id__max'] or 0
 
         numero_siniestro = f"SIN-EMAIL-{timezone.now().year}-{str(ultimo + 1).zfill(5)}"
-
-        
 
         try:
 
@@ -5906,8 +4967,6 @@ class SiniestroEmail(models.Model):
 
             )
 
-            
-
             self.siniestro_creado = siniestro
 
             self.estado_procesamiento = 'procesado'
@@ -5924,11 +4983,7 @@ class SiniestroEmail(models.Model):
 
             self.save()
 
-            
-
             return siniestro, self.mensaje_procesamiento
-
-            
 
         except Exception as e:
 
@@ -5940,12 +4995,7 @@ class SiniestroEmail(models.Model):
 
             return None, self.mensaje_procesamiento
 
-
-
-
-
 # ==================== SISTEMA DE RESPALDOS ====================
-
 
 
 class BackupRegistro(models.Model):
@@ -5972,8 +5022,6 @@ class BackupRegistro(models.Model):
 
     ]
 
-    
-
     ESTADO_CHOICES = [
 
         ('en_progreso', 'En Progreso'),
@@ -5986,8 +5034,6 @@ class BackupRegistro(models.Model):
 
     ]
 
-    
-
     FRECUENCIA_CHOICES = [
 
         ('manual', 'Manual'),
@@ -5999,8 +5045,6 @@ class BackupRegistro(models.Model):
         ('mensual', 'Mensual'),
 
     ]
-
-    
 
     nombre = models.CharField(max_length=255, verbose_name="Nombre del Archivo")
 
@@ -6018,8 +5062,6 @@ class BackupRegistro(models.Model):
 
     frecuencia = models.CharField(max_length=20, choices=FRECUENCIA_CHOICES, default='manual', verbose_name="Frecuencia")
 
-    
-
     # Metadatos
 
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
@@ -6034,23 +5076,17 @@ class BackupRegistro(models.Model):
 
     )
 
-    
-
     # Información adicional
 
     notas = models.TextField(blank=True, verbose_name="Notas")
 
     error_mensaje = models.TextField(blank=True, verbose_name="Mensaje de Error")
 
-    
-
     # Estadísticas
 
     duracion_segundos = models.IntegerField(default=0, verbose_name="Duración (segundos)")
 
     registros_respaldados = models.IntegerField(default=0, verbose_name="Registros Respaldados")
-
-    
 
     class Meta:
 
@@ -6068,16 +5104,11 @@ class BackupRegistro(models.Model):
 
         ]
 
-    
-
     def __str__(self):
 
         return f"{self.nombre} ({self.get_tipo_display()}) - {self.fecha_creacion.strftime('%Y-%m-%d %H:%M')}"
 
-    
-
     @property
-
     def tamaño_legible(self):
 
         """Retorna el tamaño en formato legible."""
@@ -6094,10 +5125,7 @@ class BackupRegistro(models.Model):
 
         return f'{size:.2f} TB'
 
-    
-
     @property
-
     def archivo_existe(self):
 
         """Verifica si el archivo de backup existe."""
@@ -6106,10 +5134,7 @@ class BackupRegistro(models.Model):
 
         return Path(self.ruta).exists()
 
-    
-
     @classmethod
-
     def limpiar_antiguos(cls, dias_retener=30):
 
         """
@@ -6124,11 +5149,7 @@ class BackupRegistro(models.Model):
 
         from pathlib import Path
 
-        
-
         fecha_limite = timezone.now() - timedelta(days=dias_retener)
-
-        
 
         # Obtener backups antiguos (excepto los últimos 5)
 
@@ -6144,8 +5165,6 @@ class BackupRegistro(models.Model):
 
         )
 
-        
-
         eliminados = 0
 
         for backup in backups_antiguos:
@@ -6160,8 +5179,6 @@ class BackupRegistro(models.Model):
 
                     archivo.unlink()
 
-                
-
                 # Marcar como eliminado
 
                 backup.estado = 'eliminado'
@@ -6174,21 +5191,14 @@ class BackupRegistro(models.Model):
 
                 pass
 
-        
-
         return eliminados
 
-    
-
     @classmethod
-
     def obtener_estadisticas(cls):
 
         """Obtiene estadísticas de backups."""
 
         from django.db.models import Sum, Avg, Count
-
-        
 
         return {
 
@@ -6206,7 +5216,7 @@ class BackupRegistro(models.Model):
 
             'ultimo_backup': cls.objects.filter(
 
-                estado='completado', 
+                estado='completado',
 
                 tipo__in=['base_datos', 'completo', 'automatico']
 
@@ -6223,10 +5233,6 @@ class BackupRegistro(models.Model):
             )['promedio'] or 0,
 
         }
-
-
-
-
 
 class ConfiguracionBackup(models.Model):
 
@@ -6304,24 +5310,17 @@ class ConfiguracionBackup(models.Model):
 
     )
 
-    
-
     class Meta:
 
         verbose_name = "Configuración de Backup"
 
         verbose_name_plural = "Configuraciones de Backup"
 
-    
-
     def __str__(self):
 
         return f"Configuración de Backup ({'Activo' if self.activo else 'Inactivo'})"
 
-    
-
     @classmethod
-
     def get_config(cls):
 
         """Obtiene o crea la configuración de backup."""
@@ -6329,4 +5328,3 @@ class ConfiguracionBackup(models.Model):
         config, _ = cls.objects.get_or_create(pk=1)
 
         return config
-

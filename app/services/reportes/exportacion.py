@@ -17,9 +17,6 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 
-
-
-
 def make_naive(dt):
 
     """
@@ -43,20 +40,13 @@ def make_naive(dt):
     return dt
 
 
-
-
-
 class ExportacionService:
-
-    
 
     HEADER_FILL = PatternFill(start_color='1a365d', end_color='1a365d', fill_type='solid')
 
     HEADER_FONT = Font(bold=True, color='FFFFFF', size=11)
 
     HEADER_ALIGNMENT = Alignment(horizontal='center', vertical='center', wrap_text=True)
-
-    
 
     THIN_BORDER = Border(
 
@@ -70,10 +60,7 @@ class ExportacionService:
 
     )
 
-    
-
     @classmethod
-
     def exportar_polizas_csv(cls, queryset):
 
         response = HttpResponse(content_type='text/csv; charset=utf-8')
@@ -81,8 +68,6 @@ class ExportacionService:
         response['Content-Disposition'] = f'attachment; filename="polizas_{timezone.now().strftime("%Y%m%d_%H%M")}.csv"'
 
         response.write('\ufeff')
-
-        
 
         writer = csv.writer(response)
 
@@ -93,8 +78,6 @@ class ExportacionService:
             'Suma Asegurada', 'Fecha Inicio', 'Fecha Fin', 'Estado', 'Días para Vencer'
 
         ])
-
-        
 
         for poliza in queryset:
 
@@ -120,14 +103,9 @@ class ExportacionService:
 
             ])
 
-        
-
         return response
 
-    
-
     @classmethod
-
     def exportar_polizas_excel(cls, queryset):
 
         wb = openpyxl.Workbook()
@@ -136,8 +114,6 @@ class ExportacionService:
 
         ws.title = "Pólizas"
 
-        
-
         headers = [
 
             'Número de Póliza', 'Compañía Aseguradora', 'Corredor', 'Tipo',
@@ -145,8 +121,6 @@ class ExportacionService:
             'Suma Asegurada', 'Fecha Inicio', 'Fecha Fin', 'Estado', 'Días para Vencer'
 
         ]
-
-        
 
         for col, header in enumerate(headers, start=1):
 
@@ -160,8 +134,6 @@ class ExportacionService:
 
             cell.border = cls.THIN_BORDER
 
-        
-
         estado_colors = {
 
             'vigente': 'C6F6D5',
@@ -173,8 +145,6 @@ class ExportacionService:
             'cancelada': 'E2E8F0'
 
         }
-
-        
 
         for row_num, poliza in enumerate(queryset, start=2):
 
@@ -200,15 +170,11 @@ class ExportacionService:
 
             ]
 
-            
-
             for col, value in enumerate(data, start=1):
 
                 cell = ws.cell(row=row_num, column=col, value=value)
 
                 cell.border = cls.THIN_BORDER
-
-                
 
                 if col == 5:
 
@@ -224,19 +190,13 @@ class ExportacionService:
 
                     cell.fill = PatternFill(start_color=color, end_color=color, fill_type='solid')
 
-        
-
         for col in range(1, len(headers) + 1):
 
             ws.column_dimensions[get_column_letter(col)].width = 18
 
-        
-
         ws.auto_filter.ref = ws.dimensions
 
         ws.freeze_panes = 'A2'
-
-        
 
         response = HttpResponse(
 
@@ -248,14 +208,9 @@ class ExportacionService:
 
         wb.save(response)
 
-        
-
         return response
 
-    
-
     @classmethod
-
     def exportar_facturas_csv(cls, queryset):
 
         response = HttpResponse(content_type='text/csv; charset=utf-8')
@@ -263,8 +218,6 @@ class ExportacionService:
         response['Content-Disposition'] = f'attachment; filename="facturas_{timezone.now().strftime("%Y%m%d_%H%M")}.csv"'
 
         response.write('\ufeff')
-
-        
 
         writer = csv.writer(response)
 
@@ -275,8 +228,6 @@ class ExportacionService:
             'Fecha Vencimiento', 'Subtotal', 'IVA', 'Contribuciones', 'Total', 'Estado'
 
         ])
-
-        
 
         for factura in queryset:
 
@@ -306,14 +257,9 @@ class ExportacionService:
 
             ])
 
-        
-
         return response
 
-    
-
     @classmethod
-
     def exportar_facturas_excel(cls, queryset):
 
         wb = openpyxl.Workbook()
@@ -322,8 +268,6 @@ class ExportacionService:
 
         ws.title = "Facturas"
 
-        
-
         headers = [
 
             'Número de Factura', 'Póliza', 'Compañía', 'Fecha Emisión',
@@ -331,8 +275,6 @@ class ExportacionService:
             'Fecha Vencimiento', 'Subtotal', 'IVA', 'Contribuciones', 'Total', 'Saldo', 'Estado'
 
         ]
-
-        
 
         for col, header in enumerate(headers, start=1):
 
@@ -346,8 +288,6 @@ class ExportacionService:
 
             cell.border = cls.THIN_BORDER
 
-        
-
         estado_colors = {
 
             'pendiente': 'FEFCBF',
@@ -359,8 +299,6 @@ class ExportacionService:
             'vencida': 'FED7D7'
 
         }
-
-        
 
         for row_num, factura in enumerate(queryset, start=2):
 
@@ -392,15 +330,11 @@ class ExportacionService:
 
             ]
 
-            
-
             for col, value in enumerate(data, start=1):
 
                 cell = ws.cell(row=row_num, column=col, value=value)
 
                 cell.border = cls.THIN_BORDER
-
-                
 
                 if col in [6, 7, 8, 9, 10]:
 
@@ -416,19 +350,13 @@ class ExportacionService:
 
                     cell.fill = PatternFill(start_color=color, end_color=color, fill_type='solid')
 
-        
-
         for col in range(1, len(headers) + 1):
 
             ws.column_dimensions[get_column_letter(col)].width = 16
 
-        
-
         ws.auto_filter.ref = ws.dimensions
 
         ws.freeze_panes = 'A2'
-
-        
 
         response = HttpResponse(
 
@@ -440,14 +368,9 @@ class ExportacionService:
 
         wb.save(response)
 
-        
-
         return response
 
-    
-
     @classmethod
-
     def exportar_siniestros_csv(cls, queryset):
 
         response = HttpResponse(content_type='text/csv; charset=utf-8')
@@ -455,8 +378,6 @@ class ExportacionService:
         response['Content-Disposition'] = f'attachment; filename="siniestros_{timezone.now().strftime("%Y%m%d_%H%M")}.csv"'
 
         response.write('\ufeff')
-
-        
 
         writer = csv.writer(response)
 
@@ -467,8 +388,6 @@ class ExportacionService:
             'Monto Estimado', 'Monto Indemnizado', 'Estado', 'Días en Gestión'
 
         ])
-
-        
 
         for siniestro in queryset:
 
@@ -496,14 +415,9 @@ class ExportacionService:
 
             ])
 
-        
-
         return response
 
-    
-
     @classmethod
-
     def exportar_siniestros_excel(cls, queryset):
 
         wb = openpyxl.Workbook()
@@ -512,8 +426,6 @@ class ExportacionService:
 
         ws.title = "Siniestros"
 
-        
-
         headers = [
 
             'Número', 'Póliza', 'Compañía', 'Tipo', 'Fecha', 'Bien',
@@ -521,8 +433,6 @@ class ExportacionService:
             'Monto Estimado', 'Monto Indemnizado', 'Estado', 'Días en Gestión'
 
         ]
-
-        
 
         for col, header in enumerate(headers, start=1):
 
@@ -535,8 +445,6 @@ class ExportacionService:
             cell.alignment = cls.HEADER_ALIGNMENT
 
             cell.border = cls.THIN_BORDER
-
-        
 
         estado_colors = {
 
@@ -557,8 +465,6 @@ class ExportacionService:
             'cerrado': 'E2E8F0'
 
         }
-
-        
 
         for row_num, siniestro in enumerate(queryset, start=2):
 
@@ -586,15 +492,11 @@ class ExportacionService:
 
             ]
 
-            
-
             for col, value in enumerate(data, start=1):
 
                 cell = ws.cell(row=row_num, column=col, value=value)
 
                 cell.border = cls.THIN_BORDER
-
-                
 
                 if col in [7, 8]:
 
@@ -610,19 +512,13 @@ class ExportacionService:
 
                     cell.fill = PatternFill(start_color=color, end_color=color, fill_type='solid')
 
-        
-
         for col in range(1, len(headers) + 1):
 
             ws.column_dimensions[get_column_letter(col)].width = 18
 
-        
-
         ws.auto_filter.ref = ws.dimensions
 
         ws.freeze_panes = 'A2'
-
-        
 
         response = HttpResponse(
 
@@ -634,7 +530,4 @@ class ExportacionService:
 
         wb.save(response)
 
-        
-
         return response
-

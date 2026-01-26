@@ -33,7 +33,6 @@ from django.db import transaction
 from decimal import Decimal
 
 
-
 from .models import (
 
     Poliza, Factura, Siniestro, Alerta, CompaniaAseguradora, TipoPoliza,
@@ -56,7 +55,7 @@ from .models import (
 
 from .forms import (
 
-    PolizaForm, DetallePolizaRamoFormSet, 
+    PolizaForm, DetallePolizaRamoFormSet,
 
     TipoRamoForm, GrupoRamoForm, SubgrupoRamoForm,
 
@@ -93,11 +92,7 @@ from .services import (
 from .services.reportes import PDFReportesService
 
 
-
-
-
 @login_required
-
 def dashboard(request):
 
     """
@@ -110,43 +105,36 @@ def dashboard(request):
 
     import json
 
-    
 
     # Parsear filtros desde la request
 
     filters = DashboardFiltersService.parse_filters_from_request(request)
 
-    
 
     # Obtener filtros disponibles para los selectores
 
     available_filters = DashboardFiltersService.get_available_filters()
 
-    
 
     # Obtener estadísticas filtradas
 
     filtered_stats = DashboardFiltersService.get_filtered_stats(filters)
 
-    
 
     # Obtener datos para gráficos filtrados
 
     chart_data = DashboardFiltersService.get_chart_data(filters)
 
-    
 
     # Obtener listas de registros
 
     lists_data = DashboardFiltersService.get_lists_data(filters)
 
-    
 
     # Estadísticas globales (sin filtros) para KPIs generales
 
     kpis = EstadisticasService.get_kpis()
 
-    
 
     # Datos comparativos y tendencias (usando el sistema anterior para compatibilidad)
 
@@ -156,7 +144,6 @@ def dashboard(request):
 
         period_type = DashboardAnalyticsService.PERIOD_MONTH
 
-    
 
     comparative_data = DashboardAnalyticsService.get_comparative_stats(period_type)
 
@@ -164,7 +151,6 @@ def dashboard(request):
 
     quick_actions = DashboardAnalyticsService.get_quick_actions_data()
 
-    
 
     context = {
 
@@ -176,7 +162,6 @@ def dashboard(request):
 
         'date_presets': DateRangePresets.CHOICES,
 
-        
 
         # Estadísticas filtradas
 
@@ -184,7 +169,6 @@ def dashboard(request):
 
         'chart_data': json.dumps(chart_data),
 
-        
 
         # Listas de registros
 
@@ -194,13 +178,11 @@ def dashboard(request):
 
         'active_claims': lists_data['active_claims'],
 
-        
 
         # KPIs globales
 
         'kpis': kpis,
 
-        
 
         # Datos comparativos
 
@@ -216,16 +198,11 @@ def dashboard(request):
 
     }
 
-    
 
     return render(request, 'app/dashboard/index.html', context)
 
 
-
-
-
 @login_required
-
 def polizas_lista(request):
 
     polizas = Poliza.objects.select_related(
@@ -234,7 +211,6 @@ def polizas_lista(request):
 
     ).order_by('-fecha_inicio')
 
-    
 
     query = request.GET.get('q', '').strip()
 
@@ -250,7 +226,6 @@ def polizas_lista(request):
 
         )
 
-    
 
     estado = request.GET.get('estado')
 
@@ -258,7 +233,6 @@ def polizas_lista(request):
 
         polizas = polizas.filter(estado=estado)
 
-    
 
     compania = request.GET.get('compania')
 
@@ -266,7 +240,6 @@ def polizas_lista(request):
 
         polizas = polizas.filter(compania_aseguradora_id=compania)
 
-    
 
     paginator = Paginator(polizas, 15)
 
@@ -274,11 +247,9 @@ def polizas_lista(request):
 
     polizas_page = paginator.get_page(page)
 
-    
 
     companias = CompaniaAseguradora.objects.filter(activo=True).order_by('nombre')
 
-    
 
     context = {
 
@@ -296,23 +267,17 @@ def polizas_lista(request):
 
     }
 
-    
 
     return render(request, 'app/polizas/lista.html', context)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def polizas_exportar(request):
 
     formato = request.GET.get('formato', 'excel')
 
-    
 
     polizas = Poliza.objects.select_related(
 
@@ -320,7 +285,6 @@ def polizas_exportar(request):
 
     )
 
-    
 
     estado = request.GET.get('estado')
 
@@ -328,7 +292,6 @@ def polizas_exportar(request):
 
         polizas = polizas.filter(estado=estado)
 
-    
 
     if formato == 'csv':
 
@@ -337,18 +300,13 @@ def polizas_exportar(request):
     return ExportacionService.exportar_polizas_excel(polizas)
 
 
-
-
-
 @login_required
-
 def desglose_ramos_lista(request):
 
     """Vista para el módulo de Desglose por Ramos con filtros avanzados"""
 
     from django.db.models import Sum
 
-    
 
     detalles = DetallePolizaRamo.objects.select_related(
 
@@ -356,7 +314,6 @@ def desglose_ramos_lista(request):
 
     ).order_by('-poliza__fecha_inicio', 'grupo_ramo__nombre')
 
-    
 
     # Filtro de búsqueda
 
@@ -374,7 +331,6 @@ def desglose_ramos_lista(request):
 
         )
 
-    
 
     # Filtro por compañía
 
@@ -384,7 +340,6 @@ def desglose_ramos_lista(request):
 
         detalles = detalles.filter(poliza__compania_aseguradora_id=compania)
 
-    
 
     # Filtro por grupo de ramo
 
@@ -394,7 +349,6 @@ def desglose_ramos_lista(request):
 
         detalles = detalles.filter(grupo_ramo_id=ramo)
 
-    
 
     # Filtro por póliza
 
@@ -404,7 +358,6 @@ def desglose_ramos_lista(request):
 
         detalles = detalles.filter(poliza_id=poliza)
 
-    
 
     # Filtro por estado de póliza
 
@@ -414,7 +367,6 @@ def desglose_ramos_lista(request):
 
         detalles = detalles.filter(poliza__estado=estado)
 
-    
 
     # Filtro por fechas (fecha inicio de póliza)
 
@@ -424,7 +376,6 @@ def desglose_ramos_lista(request):
 
         detalles = detalles.filter(poliza__fecha_inicio__gte=fecha_desde)
 
-    
 
     fecha_hasta = request.GET.get('fecha_hasta')
 
@@ -432,7 +383,6 @@ def desglose_ramos_lista(request):
 
         detalles = detalles.filter(poliza__fecha_inicio__lte=fecha_hasta)
 
-    
 
     # Calcular totales antes de paginar
 
@@ -464,7 +414,6 @@ def desglose_ramos_lista(request):
 
     totales['retenciones'] = (totales.get('retencion_prima') or 0) + (totales.get('retencion_iva') or 0)
 
-    
 
     # Optimización: Pre-calcular total_retenciones con annotate() en lugar de loop
 
@@ -476,13 +425,12 @@ def desglose_ramos_lista(request):
 
     detalles = detalles.annotate(
 
-        total_retenciones=Coalesce(F('retencion_prima'), Value(Decimal('0')), output_field=DecimalField()) + 
+        total_retenciones=Coalesce(F('retencion_prima'), Value(Decimal('0')), output_field=DecimalField()) +
 
                           Coalesce(F('retencion_iva'), Value(Decimal('0')), output_field=DecimalField())
 
     )
 
-    
 
     # Paginación
 
@@ -492,7 +440,6 @@ def desglose_ramos_lista(request):
 
     detalles_page = paginator.get_page(page)
 
-    
 
     # Datos para filtros
 
@@ -502,7 +449,6 @@ def desglose_ramos_lista(request):
 
     polizas_lista = Poliza.objects.order_by('-fecha_inicio')[:100]  # Limitar para rendimiento
 
-    
 
     context = {
 
@@ -534,16 +480,11 @@ def desglose_ramos_lista(request):
 
     }
 
-    
 
     return render(request, 'app/desglose_ramos/lista.html', context)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def desglose_ramos_exportar(request):
@@ -558,11 +499,9 @@ def desglose_ramos_exportar(request):
 
     import csv
 
-    
 
     formato = request.GET.get('formato', 'excel')
 
-    
 
     detalles = DetallePolizaRamo.objects.select_related(
 
@@ -570,7 +509,6 @@ def desglose_ramos_exportar(request):
 
     ).order_by('-poliza__fecha_inicio', 'grupo_ramo__nombre')
 
-    
 
     # Aplicar mismos filtros que la vista
 
@@ -588,7 +526,6 @@ def desglose_ramos_exportar(request):
 
         )
 
-    
 
     compania = request.GET.get('compania')
 
@@ -596,7 +533,6 @@ def desglose_ramos_exportar(request):
 
         detalles = detalles.filter(poliza__compania_aseguradora_id=compania)
 
-    
 
     ramo = request.GET.get('ramo')
 
@@ -604,7 +540,6 @@ def desglose_ramos_exportar(request):
 
         detalles = detalles.filter(grupo_ramo_id=ramo)
 
-    
 
     poliza = request.GET.get('poliza')
 
@@ -612,7 +547,6 @@ def desglose_ramos_exportar(request):
 
         detalles = detalles.filter(poliza_id=poliza)
 
-    
 
     estado = request.GET.get('estado')
 
@@ -620,7 +554,6 @@ def desglose_ramos_exportar(request):
 
         detalles = detalles.filter(poliza__estado=estado)
 
-    
 
     fecha_desde = request.GET.get('fecha_desde')
 
@@ -628,7 +561,6 @@ def desglose_ramos_exportar(request):
 
         detalles = detalles.filter(poliza__fecha_inicio__gte=fecha_desde)
 
-    
 
     fecha_hasta = request.GET.get('fecha_hasta')
 
@@ -636,7 +568,6 @@ def desglose_ramos_exportar(request):
 
         detalles = detalles.filter(poliza__fecha_inicio__lte=fecha_hasta)
 
-    
 
     if formato == 'csv':
 
@@ -646,7 +577,6 @@ def desglose_ramos_exportar(request):
 
         response.write('\ufeff')  # BOM para Excel
 
-        
 
         writer = csv.writer(response)
 
@@ -662,7 +592,6 @@ def desglose_ramos_exportar(request):
 
         ])
 
-        
 
         for d in detalles:
 
@@ -702,11 +631,9 @@ def desglose_ramos_exportar(request):
 
             ])
 
-        
 
         return response
 
-    
 
     # Excel
 
@@ -716,7 +643,6 @@ def desglose_ramos_exportar(request):
 
     ws.title = "Desglose por Ramos"
 
-    
 
     # Estilos
 
@@ -736,7 +662,6 @@ def desglose_ramos_exportar(request):
 
     )
 
-    
 
     # Encabezados
 
@@ -752,7 +677,6 @@ def desglose_ramos_exportar(request):
 
     ]
 
-    
 
     for col, header in enumerate(headers, 1):
 
@@ -766,7 +690,6 @@ def desglose_ramos_exportar(request):
 
         cell.alignment = Alignment(horizontal='center')
 
-    
 
     # Datos
 
@@ -804,7 +727,6 @@ def desglose_ramos_exportar(request):
 
         ws.cell(row=row, column=16, value=float(d.valor_por_pagar)).border = border
 
-        
 
         # Formato numérico
 
@@ -812,7 +734,6 @@ def desglose_ramos_exportar(request):
 
             ws.cell(row=row, column=col).number_format = '#,##0.00'
 
-    
 
     # Ajustar anchos
 
@@ -822,7 +743,6 @@ def desglose_ramos_exportar(request):
 
         ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = width
 
-    
 
     response = HttpResponse(
 
@@ -834,16 +754,11 @@ def desglose_ramos_exportar(request):
 
     wb.save(response)
 
-    
 
     return response
 
 
-
-
-
 @login_required
-
 def facturas_lista(request):
 
     facturas = Factura.objects.select_related(
@@ -852,7 +767,6 @@ def facturas_lista(request):
 
     ).order_by('-fecha_emision')
 
-    
 
     query = request.GET.get('q', '').strip()
 
@@ -868,7 +782,6 @@ def facturas_lista(request):
 
         )
 
-    
 
     estado = request.GET.get('estado')
 
@@ -876,7 +789,6 @@ def facturas_lista(request):
 
         facturas = facturas.filter(estado=estado)
 
-    
 
     paginator = Paginator(facturas, 15)
 
@@ -884,7 +796,6 @@ def facturas_lista(request):
 
     facturas_page = paginator.get_page(page)
 
-    
 
     context = {
 
@@ -898,23 +809,17 @@ def facturas_lista(request):
 
     }
 
-    
 
     return render(request, 'app/facturas/lista.html', context)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def facturas_exportar(request):
 
     formato = request.GET.get('formato', 'excel')
 
-    
 
     facturas = Factura.objects.select_related(
 
@@ -922,7 +827,6 @@ def facturas_exportar(request):
 
     )
 
-    
 
     estado = request.GET.get('estado')
 
@@ -930,7 +834,6 @@ def facturas_exportar(request):
 
         facturas = facturas.filter(estado=estado)
 
-    
 
     if formato == 'csv':
 
@@ -939,11 +842,7 @@ def facturas_exportar(request):
     return ExportacionService.exportar_facturas_excel(facturas)
 
 
-
-
-
 @login_required
-
 def siniestros_lista(request):
 
     siniestros = Siniestro.objects.select_related(
@@ -952,7 +851,6 @@ def siniestros_lista(request):
 
     ).order_by('-fecha_siniestro')
 
-    
 
     query = request.GET.get('q', '').strip()
 
@@ -968,7 +866,6 @@ def siniestros_lista(request):
 
         )
 
-    
 
     estado = request.GET.get('estado')
 
@@ -976,7 +873,6 @@ def siniestros_lista(request):
 
         siniestros = siniestros.filter(estado=estado)
 
-    
 
     tipo = request.GET.get('tipo')
 
@@ -984,7 +880,6 @@ def siniestros_lista(request):
 
         siniestros = siniestros.filter(tipo_siniestro_id=tipo)
 
-    
 
     paginator = Paginator(siniestros, 15)
 
@@ -992,11 +887,9 @@ def siniestros_lista(request):
 
     siniestros_page = paginator.get_page(page)
 
-    
 
     tipos = TipoSiniestro.objects.filter(activo=True)
 
-    
 
     context = {
 
@@ -1014,23 +907,17 @@ def siniestros_lista(request):
 
     }
 
-    
 
     return render(request, 'app/siniestros/lista.html', context)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def siniestros_exportar(request):
 
     formato = request.GET.get('formato', 'excel')
 
-    
 
     siniestros = Siniestro.objects.select_related(
 
@@ -1038,7 +925,6 @@ def siniestros_exportar(request):
 
     )
 
-    
 
     estado = request.GET.get('estado')
 
@@ -1046,7 +932,6 @@ def siniestros_exportar(request):
 
         siniestros = siniestros.filter(estado=estado)
 
-    
 
     if formato == 'csv':
 
@@ -1055,18 +940,13 @@ def siniestros_exportar(request):
     return ExportacionService.exportar_siniestros_excel(siniestros)
 
 
-
-
-
 @login_required
-
 def reportes_dashboard(request):
 
     stats = EstadisticasService.get_dashboard_stats()
 
     kpis = EstadisticasService.get_kpis()
 
-    
 
     graficos_polizas = ReportesService.get_datos_graficos_polizas()
 
@@ -1074,7 +954,6 @@ def reportes_dashboard(request):
 
     graficos_siniestros = ReportesService.get_datos_graficos_siniestros_mensual()
 
-    
 
     polizas_por_compania = EstadisticasService.get_polizas_por_compania()
 
@@ -1082,7 +961,6 @@ def reportes_dashboard(request):
 
     siniestros_por_tipo = EstadisticasService.get_siniestros_por_tipo()
 
-    
 
     context = {
 
@@ -1104,16 +982,11 @@ def reportes_dashboard(request):
 
     }
 
-    
 
     return render(request, 'app/reportes/dashboard.html', context)
 
 
-
-
-
 @login_required
-
 def reportes_polizas(request):
 
     filtros = {
@@ -1130,15 +1003,12 @@ def reportes_polizas(request):
 
     }
 
-    
 
     filtros = {k: v for k, v in filtros.items() if v}
 
-    
 
     reporte = ReportesService.generar_reporte_polizas(filtros)
 
-    
 
     paginator = Paginator(reporte['queryset'], 20)
 
@@ -1146,13 +1016,11 @@ def reportes_polizas(request):
 
     polizas_page = paginator.get_page(page)
 
-    
 
     companias = CompaniaAseguradora.objects.filter(activo=True)
 
     tipos = TipoPoliza.objects.filter(activo=True)
 
-    
 
     context = {
 
@@ -1172,16 +1040,11 @@ def reportes_polizas(request):
 
     }
 
-    
 
     return render(request, 'app/reportes/polizas.html', context)
 
 
-
-
-
 @login_required
-
 def reportes_siniestros(request):
 
     filtros = {
@@ -1196,15 +1059,12 @@ def reportes_siniestros(request):
 
     }
 
-    
 
     filtros = {k: v for k, v in filtros.items() if v}
 
-    
 
     reporte = ReportesService.generar_reporte_siniestros(filtros)
 
-    
 
     paginator = Paginator(reporte['queryset'], 20)
 
@@ -1212,11 +1072,9 @@ def reportes_siniestros(request):
 
     siniestros_page = paginator.get_page(page)
 
-    
 
     tipos = TipoSiniestro.objects.filter(activo=True)
 
-    
 
     context = {
 
@@ -1234,16 +1092,11 @@ def reportes_siniestros(request):
 
     }
 
-    
 
     return render(request, 'app/reportes/siniestros.html', context)
 
 
-
-
-
 @login_required
-
 def reportes_polizas_pdf(request):
 
     """Exporta el reporte de pólizas en formato PDF."""
@@ -1262,11 +1115,9 @@ def reportes_polizas_pdf(request):
 
     }
 
-    
 
     filtros = {k: v for k, v in filtros.items() if v}
 
-    
 
     # Construir texto de filtros para el reporte
 
@@ -1308,11 +1159,9 @@ def reportes_polizas_pdf(request):
 
         filtros_texto.append(f"Hasta: {filtros['fecha_hasta']}")
 
-    
 
     reporte = ReportesService.generar_reporte_polizas(filtros)
 
-    
 
     return PDFReportesService.generar_reporte_polizas_pdf(
 
@@ -1323,11 +1172,7 @@ def reportes_polizas_pdf(request):
     )
 
 
-
-
-
 @login_required
-
 def reportes_siniestros_pdf(request):
 
     """Exporta el reporte de siniestros en formato PDF."""
@@ -1344,11 +1189,9 @@ def reportes_siniestros_pdf(request):
 
     }
 
-    
 
     filtros = {k: v for k, v in filtros.items() if v}
 
-    
 
     # Construir texto de filtros para el reporte
 
@@ -1378,11 +1221,9 @@ def reportes_siniestros_pdf(request):
 
         filtros_texto.append(f"Hasta: {filtros['fecha_hasta']}")
 
-    
 
     reporte = ReportesService.generar_reporte_siniestros(filtros)
 
-    
 
     return PDFReportesService.generar_reporte_siniestros_pdf(
 
@@ -1393,11 +1234,7 @@ def reportes_siniestros_pdf(request):
     )
 
 
-
-
-
 @login_required
-
 def reportes_facturas_pdf(request):
 
     """Exporta el reporte de facturas en formato PDF."""
@@ -1412,11 +1249,9 @@ def reportes_facturas_pdf(request):
 
     }
 
-    
 
     filtros = {k: v for k, v in filtros.items() if v}
 
-    
 
     # Construir texto de filtros para el reporte
 
@@ -1434,11 +1269,9 @@ def reportes_facturas_pdf(request):
 
         filtros_texto.append(f"Hasta: {filtros['fecha_hasta']}")
 
-    
 
     reporte = ReportesService.generar_reporte_facturas(filtros)
 
-    
 
     return PDFReportesService.generar_reporte_facturas_pdf(
 
@@ -1449,11 +1282,7 @@ def reportes_facturas_pdf(request):
     )
 
 
-
-
-
 @login_required
-
 def reportes_ejecutivo_pdf(request):
 
     """Genera un reporte ejecutivo general en PDF."""
@@ -1462,7 +1291,6 @@ def reportes_ejecutivo_pdf(request):
 
     kpis = EstadisticasService.get_kpis()
 
-    
 
     dashboard_data = {
 
@@ -1472,16 +1300,11 @@ def reportes_ejecutivo_pdf(request):
 
     }
 
-    
 
     return PDFReportesService.generar_reporte_ejecutivo_pdf(dashboard_data)
 
 
-
-
-
 @login_required
-
 def alertas_lista(request):
 
     alertas = Alerta.objects.select_related(
@@ -1490,7 +1313,6 @@ def alertas_lista(request):
 
     ).prefetch_related('destinatarios').order_by('-fecha_creacion')
 
-    
 
     estado = request.GET.get('estado')
 
@@ -1498,7 +1320,6 @@ def alertas_lista(request):
 
         alertas = alertas.filter(estado=estado)
 
-    
 
     tipo = request.GET.get('tipo')
 
@@ -1506,7 +1327,6 @@ def alertas_lista(request):
 
         alertas = alertas.filter(tipo_alerta=tipo)
 
-    
 
     paginator = Paginator(alertas, 20)
 
@@ -1514,7 +1334,6 @@ def alertas_lista(request):
 
     alertas_page = paginator.get_page(page)
 
-    
 
     context = {
 
@@ -1526,16 +1345,11 @@ def alertas_lista(request):
 
     }
 
-    
 
     return render(request, 'app/alertas/lista.html', context)
 
 
-
-
-
 @login_required
-
 @require_POST
 
 def alerta_marcar_leida(request, pk):
@@ -1544,7 +1358,6 @@ def alerta_marcar_leida(request, pk):
 
     alerta.marcar_como_leida()
 
-    
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
 
@@ -1553,11 +1366,7 @@ def alerta_marcar_leida(request, pk):
     return redirect('alertas_lista')
 
 
-
-
-
 @login_required
-
 def api_stats(request):
 
     stats = EstadisticasService.get_dashboard_stats()
@@ -1565,11 +1374,7 @@ def api_stats(request):
     return JsonResponse(stats)
 
 
-
-
-
 @login_required
-
 def api_kpis(request):
 
     kpis = EstadisticasService.get_kpis()
@@ -1585,15 +1390,11 @@ def api_kpis(request):
     return JsonResponse(kpis_serializable)
 
 
-
-
-
 # ============================================================================
 
 # DOCUMENTOS
 
 # ============================================================================
-
 
 
 from .models import Documento
@@ -1605,11 +1406,7 @@ import mimetypes
 import os
 
 
-
-
-
 @login_required
-
 def documentos_lista(request):
 
     documentos = Documento.objects.select_related(
@@ -1618,7 +1415,6 @@ def documentos_lista(request):
 
     ).order_by('-fecha_subida')
 
-    
 
     # Filtros
 
@@ -1628,7 +1424,6 @@ def documentos_lista(request):
 
         documentos = documentos.filter(tipo_documento=tipo)
 
-    
 
     query = request.GET.get('q')
 
@@ -1648,7 +1443,6 @@ def documentos_lista(request):
 
         )
 
-    
 
     # Paginación
 
@@ -1658,7 +1452,6 @@ def documentos_lista(request):
 
     documentos = paginator.get_page(page)
 
-    
 
     context = {
 
@@ -1674,21 +1467,15 @@ def documentos_lista(request):
 
     }
 
-    
 
     return render(request, 'app/documentos/lista.html', context)
 
 
-
-
-
 @login_required
-
 def documento_ver(request, pk):
 
     documento = get_object_or_404(Documento, pk=pk)
 
-    
 
     # Obtener información del archivo
 
@@ -1698,13 +1485,11 @@ def documento_ver(request, pk):
 
     file_ext = os.path.splitext(file_name)[1].lower()
 
-    
 
     # Determinar el tipo de contenido
 
     content_type, _ = mimetypes.guess_type(file_path)
 
-    
 
     # Categorizar el tipo de archivo para el template
 
@@ -1732,7 +1517,6 @@ def documento_ver(request, pk):
 
         file_type = 'other'
 
-    
 
     context = {
 
@@ -1746,21 +1530,15 @@ def documento_ver(request, pk):
 
     }
 
-    
 
     return render(request, 'app/documentos/ver.html', context)
 
 
-
-
-
 @login_required
-
 def documento_descargar(request, pk):
 
     documento = get_object_or_404(Documento, pk=pk)
 
-    
 
     file_path = documento.archivo.path
 
@@ -1768,7 +1546,6 @@ def documento_descargar(request, pk):
 
     content_type, _ = mimetypes.guess_type(file_path)
 
-    
 
     response = FileResponse(
 
@@ -1780,12 +1557,8 @@ def documento_descargar(request, pk):
 
     response['Content-Disposition'] = f'attachment; filename="{file_name}"'
 
-    
 
     return response
-
-
-
 
 
 # ============================================================================
@@ -1795,22 +1568,16 @@ def documento_descargar(request, pk):
 # ============================================================================
 
 
-
 from django.contrib import messages
 
 from itertools import chain
 
 
-
-
-
 @login_required
-
 def busqueda_global(request):
 
     query = request.GET.get('q', '').strip()
 
-    
 
     polizas = []
 
@@ -1818,7 +1585,6 @@ def busqueda_global(request):
 
     siniestros = []
 
-    
 
     if query:
 
@@ -1836,7 +1602,6 @@ def busqueda_global(request):
 
         ).select_related('compania_aseguradora', 'corredor_seguros', 'tipo_poliza')[:20]
 
-        
 
         facturas = Factura.objects.filter(
 
@@ -1846,7 +1611,6 @@ def busqueda_global(request):
 
         ).select_related('poliza')[:20]
 
-        
 
         siniestros = Siniestro.objects.filter(
 
@@ -1860,7 +1624,6 @@ def busqueda_global(request):
 
         ).select_related('poliza', 'tipo_siniestro')[:20]
 
-    
 
     context = {
 
@@ -1876,23 +1639,17 @@ def busqueda_global(request):
 
     }
 
-    
 
     return render(request, 'app/busqueda/resultados.html', context)
 
 
-
-
-
 @login_required
-
 def api_buscar(request):
 
     query = request.GET.get('q', '').strip()
 
     results = []
 
-    
 
     if len(query) >= 2:
 
@@ -1910,7 +1667,6 @@ def api_buscar(request):
 
             ).select_related('tipo_poliza', 'compania_aseguradora')[:5]
 
-            
 
             for p in polizas:
 
@@ -1926,7 +1682,6 @@ def api_buscar(request):
 
                 })
 
-            
 
             # Buscar facturas
 
@@ -1938,7 +1693,6 @@ def api_buscar(request):
 
             ).select_related('poliza')[:5]
 
-            
 
             for f in facturas:
 
@@ -1956,7 +1710,6 @@ def api_buscar(request):
 
                 })
 
-            
 
             # Buscar siniestros
 
@@ -1969,7 +1722,6 @@ def api_buscar(request):
                 Q(poliza__numero_poliza__icontains=query)
 
             ).select_related('poliza')[:5]
-
 
 
             for s in siniestros:
@@ -1988,18 +1740,13 @@ def api_buscar(request):
 
                 })
 
-                
 
         except Exception as e:
 
             return JsonResponse({'results': [], 'error': str(e)}, status=200)
 
-    
 
     return JsonResponse({'results': results})
-
-
-
 
 
 # ============================================================================
@@ -2009,9 +1756,7 @@ def api_buscar(request):
 # ============================================================================
 
 
-
 @login_required
-
 @require_GET
 
 def api_dashboard_summary(request):
@@ -2032,18 +1777,13 @@ def api_dashboard_summary(request):
 
         period_type = DashboardAnalyticsService.PERIOD_MONTH
 
-    
 
     summary = DashboardAnalyticsService.get_dashboard_summary(period_type)
 
     return JsonResponse(summary)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_dashboard_comparative(request):
@@ -2064,18 +1804,13 @@ def api_dashboard_comparative(request):
 
         period_type = DashboardAnalyticsService.PERIOD_MONTH
 
-    
 
     data = DashboardAnalyticsService.get_comparative_stats(period_type)
 
     return JsonResponse(data)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_dashboard_trend(request):
@@ -2098,7 +1833,6 @@ def api_dashboard_trend(request):
 
         period_type = DashboardAnalyticsService.PERIOD_MONTH
 
-    
 
     try:
 
@@ -2110,18 +1844,13 @@ def api_dashboard_trend(request):
 
         periods_count = 12
 
-    
 
     data = DashboardAnalyticsService.get_trend_data(period_type, periods_count)
 
     return JsonResponse(data)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_dashboard_year_comparison(request):
@@ -2137,11 +1866,7 @@ def api_dashboard_year_comparison(request):
     return JsonResponse(data)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_dashboard_filters(request):
@@ -2159,11 +1884,7 @@ def api_dashboard_filters(request):
     return JsonResponse(filters)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_dashboard_filtered_stats(request):
@@ -2183,11 +1904,7 @@ def api_dashboard_filtered_stats(request):
     return JsonResponse(stats)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_dashboard_filtered_charts(request):
@@ -2205,11 +1922,7 @@ def api_dashboard_filtered_charts(request):
     return JsonResponse(charts)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_dashboard_filtered_lists(request):
@@ -2226,7 +1939,6 @@ def api_dashboard_filtered_lists(request):
 
     filters = DashboardFiltersService.parse_filters_from_request(request)
 
-    
 
     try:
 
@@ -2238,18 +1950,13 @@ def api_dashboard_filtered_lists(request):
 
         limit = 5
 
-    
 
     lists = DashboardFiltersService.get_lists_data(filters, limit)
 
     return JsonResponse(lists)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_dashboard_export(request):
@@ -2266,7 +1973,6 @@ def api_dashboard_export(request):
 
     export_data = DashboardFiltersService.export_filtered_data(filters)
 
-    
 
     response = JsonResponse(export_data)
 
@@ -2275,16 +1981,11 @@ def api_dashboard_export(request):
     return response
 
 
-
-
-
 # Vista personalizada de Login para manejar redirecciones inteligentes
 
 class CustomLoginView(DjangoLoginView):
 
     template_name = 'registration/login.html'
-
-    
 
     def get_success_url(self):
 
@@ -2304,23 +2005,17 @@ class CustomLoginView(DjangoLoginView):
 
         next_url = self.request.GET.get('next', '')
 
-        
-
         # Si hay un 'next' y es del admin, redirigir al admin
 
         if next_url and ('/admin/' in next_url or next_url.startswith('/admin')):
 
             return '/admin/'
 
-        
-
         # Si hay un 'next' y no es del admin, usar ese
 
         if next_url and not next_url.startswith('/admin'):
 
             return next_url
-
-        
 
         # Si no hay 'next', verificar el referer
 
@@ -2330,20 +2025,13 @@ class CustomLoginView(DjangoLoginView):
 
             return '/admin/'
 
-        
-
         # Por defecto, redirigir al dashboard
 
         return reverse('dashboard')
 
-
-
-
-
 # Vista personalizada de Logout que acepta GET
 
 @login_required
-
 def custom_logout(request):
 
     """
@@ -2359,9 +2047,6 @@ def custom_logout(request):
     return redirect('login')
 
 
-
-
-
 # =============================================================================
 
 # VISTAS PARA NUEVOS MÓDULOS (Código en inglés, interfaz en español)
@@ -2369,13 +2054,10 @@ def custom_logout(request):
 # =============================================================================
 
 
-
 # --- RENOVACIONES DE PÓLIZAS ---
 
 
-
 @login_required
-
 def renewals_list(request):
 
     """Lista de renovaciones de pólizas con filtros"""
@@ -2388,7 +2070,6 @@ def renewals_list(request):
 
     ).order_by('-due_date')
 
-    
 
     # Filtros
 
@@ -2404,7 +2085,6 @@ def renewals_list(request):
 
         )
 
-    
 
     status = request.GET.get('status')
 
@@ -2412,7 +2092,6 @@ def renewals_list(request):
 
         renewals = renewals.filter(status=status)
 
-    
 
     decision = request.GET.get('decision')
 
@@ -2420,7 +2099,6 @@ def renewals_list(request):
 
         renewals = renewals.filter(decision=decision)
 
-    
 
     # Paginación
 
@@ -2430,7 +2108,6 @@ def renewals_list(request):
 
     renewals_page = paginator.get_page(page)
 
-    
 
     # Estadísticas
 
@@ -2452,7 +2129,6 @@ def renewals_list(request):
 
     }
 
-    
 
     context = {
 
@@ -2472,20 +2148,14 @@ def renewals_list(request):
 
     }
 
-    
 
     return render(request, 'app/renewals/list.html', context)
-
-
-
 
 
 # --- COTIZACIONES ---
 
 
-
 @login_required
-
 def quotes_list(request):
 
     """Lista de cotizaciones con filtros"""
@@ -2496,7 +2166,6 @@ def quotes_list(request):
 
     ).prefetch_related('options').order_by('-request_date')
 
-    
 
     # Filtros
 
@@ -2512,7 +2181,6 @@ def quotes_list(request):
 
         )
 
-    
 
     status = request.GET.get('status')
 
@@ -2520,7 +2188,6 @@ def quotes_list(request):
 
         quotes = quotes.filter(status=status)
 
-    
 
     priority = request.GET.get('priority')
 
@@ -2528,7 +2195,6 @@ def quotes_list(request):
 
         quotes = quotes.filter(priority=priority)
 
-    
 
     # Paginación
 
@@ -2538,7 +2204,6 @@ def quotes_list(request):
 
     quotes_page = paginator.get_page(page)
 
-    
 
     # Estadísticas
 
@@ -2556,7 +2221,6 @@ def quotes_list(request):
 
     }
 
-    
 
     context = {
 
@@ -2576,33 +2240,26 @@ def quotes_list(request):
 
     }
 
-    
 
     return render(request, 'app/quotes/list.html', context)
-
-
-
 
 
 # --- BIENES ASEGURADOS ---
 
 
-
 @login_required
-
 def assets_list(request):
 
     """Lista de bienes asegurados con filtros (usa modelo unificado BienAsegurado)"""
 
     assets = BienAsegurado.objects.select_related(
 
-        'poliza', 'poliza__compania_aseguradora', 'responsable_custodio', 
+        'poliza', 'poliza__compania_aseguradora', 'responsable_custodio',
 
         'subgrupo_ramo', 'creado_por'
 
     ).order_by('nombre')
 
-    
 
     # Filtros
 
@@ -2622,7 +2279,6 @@ def assets_list(request):
 
         )
 
-    
 
     status = request.GET.get('status')
 
@@ -2630,7 +2286,6 @@ def assets_list(request):
 
         assets = assets.filter(estado=status)
 
-    
 
     category = request.GET.get('category')
 
@@ -2638,7 +2293,6 @@ def assets_list(request):
 
         assets = assets.filter(categoria=category)
 
-    
 
     covered = request.GET.get('covered')
 
@@ -2650,7 +2304,6 @@ def assets_list(request):
 
         assets = assets.filter(poliza__isnull=True)
 
-    
 
     # Paginación
 
@@ -2660,7 +2313,6 @@ def assets_list(request):
 
     assets_page = paginator.get_page(page)
 
-    
 
     # Estadísticas
 
@@ -2680,13 +2332,11 @@ def assets_list(request):
 
     }
 
-    
 
     # Categorías únicas para el filtro
 
     categories = BienAsegurado.objects.values_list('categoria', flat=True).distinct().order_by('categoria')
 
-    
 
     context = {
 
@@ -2708,20 +2358,14 @@ def assets_list(request):
 
     }
 
-    
 
     return render(request, 'app/assets/list.html', context)
-
-
-
 
 
 # --- CALENDARIO ---
 
 
-
 @login_required
-
 def calendar_view(request):
 
     """Vista del calendario interactivo"""
@@ -2732,11 +2376,9 @@ def calendar_view(request):
 
     import json
 
-    
 
     today = timezone.now().date()
 
-    
 
     # Obtener eventos del mes actual y próximo
 
@@ -2744,7 +2386,6 @@ def calendar_view(request):
 
     end_range = (today.replace(day=28) + timedelta(days=35)).replace(day=1) + timedelta(days=6)
 
-    
 
     events = CalendarEvent.objects.filter(
 
@@ -2754,7 +2395,6 @@ def calendar_view(request):
 
     ).select_related('policy', 'invoice', 'renewal', 'claim', 'quote')
 
-    
 
     # Convertir eventos a formato para FullCalendar
 
@@ -2802,7 +2442,6 @@ def calendar_view(request):
 
         events_json.append(event_data)
 
-    
 
     # Próximos eventos (lista)
 
@@ -2814,7 +2453,6 @@ def calendar_view(request):
 
     ).order_by('start_date', 'start_time')[:10]
 
-    
 
     # Eventos vencidos sin completar
 
@@ -2826,7 +2464,6 @@ def calendar_view(request):
 
     ).order_by('-start_date')[:5]
 
-    
 
     context = {
 
@@ -2844,16 +2481,11 @@ def calendar_view(request):
 
     }
 
-    
 
     return render(request, 'app/calendar/view.html', context)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_calendar_events(request):
@@ -2864,17 +2496,14 @@ def api_calendar_events(request):
 
     from datetime import datetime
 
-    
 
     start = request.GET.get('start')
 
     end = request.GET.get('end')
 
-    
 
     events = CalendarEvent.objects.all()
 
-    
 
     if start:
 
@@ -2882,7 +2511,6 @@ def api_calendar_events(request):
 
         events = events.filter(start_date__gte=start_date)
 
-    
 
     if end:
 
@@ -2890,7 +2518,6 @@ def api_calendar_events(request):
 
         events = events.filter(start_date__lte=end_date)
 
-    
 
     events_data = []
 
@@ -2926,16 +2553,11 @@ def api_calendar_events(request):
 
         events_data.append(event_data)
 
-    
 
     return JsonResponse(events_data, safe=False)
 
 
-
-
-
 @login_required
-
 def generate_calendar_events(request):
 
     """Genera eventos automáticos del calendario basados en datos existentes"""
@@ -2944,13 +2566,11 @@ def generate_calendar_events(request):
 
     from django.utils import timezone
 
-    
 
     today = timezone.now().date()
 
     created_count = 0
 
-    
 
     # Generar eventos para pólizas por vencer
 
@@ -2964,7 +2584,6 @@ def generate_calendar_events(request):
 
     )
 
-    
 
     for policy in expiring_policies:
 
@@ -2994,7 +2613,6 @@ def generate_calendar_events(request):
 
             created_count += 1
 
-    
 
     # Generar eventos para facturas por vencer
 
@@ -3008,7 +2626,6 @@ def generate_calendar_events(request):
 
     )
 
-    
 
     for invoice in pending_invoices:
 
@@ -3038,7 +2655,6 @@ def generate_calendar_events(request):
 
             created_count += 1
 
-    
 
     # Generar eventos para renovaciones pendientes
 
@@ -3052,7 +2668,6 @@ def generate_calendar_events(request):
 
     )
 
-    
 
     for renewal in pending_renewals:
 
@@ -3082,22 +2697,16 @@ def generate_calendar_events(request):
 
             created_count += 1
 
-    
 
     messages.success(request, f'Se generaron {created_count} eventos automáticos.')
 
     return redirect('calendar_view')
 
 
-
-
-
 # --- APROBACIONES DE PAGO ---
 
 
-
 @login_required
-
 def payment_approvals_list(request):
 
     """Lista de aprobaciones de pago pendientes"""
@@ -3108,7 +2717,6 @@ def payment_approvals_list(request):
 
     ).order_by('-requested_at')
 
-    
 
     # Filtros
 
@@ -3124,7 +2732,6 @@ def payment_approvals_list(request):
 
         approvals = approvals.filter(status='pending')
 
-    
 
     level = request.GET.get('level')
 
@@ -3132,7 +2739,6 @@ def payment_approvals_list(request):
 
         approvals = approvals.filter(required_level=level)
 
-    
 
     # Paginación
 
@@ -3142,7 +2748,6 @@ def payment_approvals_list(request):
 
     approvals_page = paginator.get_page(page)
 
-    
 
     # Estadísticas
 
@@ -3168,7 +2773,6 @@ def payment_approvals_list(request):
 
     }
 
-    
 
     context = {
 
@@ -3186,16 +2790,11 @@ def payment_approvals_list(request):
 
     }
 
-    
 
     return render(request, 'app/approvals/list.html', context)
 
 
-
-
-
 @login_required
-
 @require_POST
 
 def approve_payment(request, pk):
@@ -3204,11 +2803,9 @@ def approve_payment(request, pk):
 
     from django.contrib import messages
 
-    
 
     approval = get_object_or_404(PaymentApproval, pk=pk)
 
-    
 
     if approval.status != 'pending':
 
@@ -3216,24 +2813,18 @@ def approve_payment(request, pk):
 
         return redirect('payment_approvals_list')
 
-    
 
     notes = request.POST.get('notes', '')
 
     approval.approve(request.user, notes)
 
-    
 
     messages.success(request, f'Pago aprobado correctamente.')
 
     return redirect('payment_approvals_list')
 
 
-
-
-
 @login_required
-
 @require_POST
 
 def reject_payment(request, pk):
@@ -3242,11 +2833,9 @@ def reject_payment(request, pk):
 
     from django.contrib import messages
 
-    
 
     approval = get_object_or_404(PaymentApproval, pk=pk)
 
-    
 
     if approval.status != 'pending':
 
@@ -3254,7 +2843,6 @@ def reject_payment(request, pk):
 
         return redirect('payment_approvals_list')
 
-    
 
     notes = request.POST.get('notes', '')
 
@@ -3264,18 +2852,13 @@ def reject_payment(request, pk):
 
         return redirect('payment_approvals_list')
 
-    
 
     approval.reject(request.user, notes)
 
-    
 
     messages.warning(request, f'Pago rechazado.')
 
     return redirect('payment_approvals_list')
-
-
-
 
 
 # =============================================================================
@@ -3285,9 +2868,7 @@ def reject_payment(request, pk):
 # =============================================================================
 
 
-
 @login_required
-
 def analytics_dashboard(request):
 
     """
@@ -3304,7 +2885,6 @@ def analytics_dashboard(request):
 
     import json
 
-    
 
     # Obtener datos del servicio
 
@@ -3320,7 +2900,6 @@ def analytics_dashboard(request):
 
     insurer_performance = AdvancedAnalyticsService.get_insurer_performance()
 
-    
 
     context = {
 
@@ -3340,16 +2919,11 @@ def analytics_dashboard(request):
 
     }
 
-    
 
     return render(request, 'app/analytics/dashboard.html', context)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_analytics_loss_ratio(request):
@@ -3361,11 +2935,7 @@ def api_analytics_loss_ratio(request):
     return JsonResponse({'data': data})
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_analytics_trend(request):
@@ -3379,11 +2949,7 @@ def api_analytics_trend(request):
     return JsonResponse(data)
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_analytics_locations(request):
@@ -3395,11 +2961,7 @@ def api_analytics_locations(request):
     return JsonResponse({'data': data})
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_analytics_insurers(request):
@@ -3411,15 +2973,11 @@ def api_analytics_insurers(request):
     return JsonResponse({'data': data})
 
 
-
-
-
 # =============================================================================
 
 # VISTAS BASADAS EN CLASES - RAMOS
 
 # =============================================================================
-
 
 
 class RamoListView(LoginRequiredMixin, ListView):
@@ -3433,8 +2991,6 @@ class RamoListView(LoginRequiredMixin, ListView):
     context_object_name = 'ramos'
 
     paginate_by = 20
-
-
 
     def get_queryset(self):
 
@@ -3452,8 +3008,6 @@ class RamoListView(LoginRequiredMixin, ListView):
 
         return queryset
 
-
-
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
@@ -3461,10 +3015,6 @@ class RamoListView(LoginRequiredMixin, ListView):
         context['query'] = self.request.GET.get('q', '')
 
         return context
-
-
-
-
 
 class RamoCreateView(LoginRequiredMixin, CreateView):
 
@@ -3478,17 +3028,11 @@ class RamoCreateView(LoginRequiredMixin, CreateView):
 
     success_url = reverse_lazy('ramos_lista')
 
-
-
     def form_valid(self, form):
 
         messages.success(self.request, 'Ramo creado exitosamente.')
 
         return super().form_valid(form)
-
-
-
-
 
 class RamoUpdateView(LoginRequiredMixin, UpdateView):
 
@@ -3502,24 +3046,17 @@ class RamoUpdateView(LoginRequiredMixin, UpdateView):
 
     success_url = reverse_lazy('ramos_lista')
 
-
-
     def form_valid(self, form):
 
         messages.success(self.request, 'Ramo actualizado exitosamente.')
 
         return super().form_valid(form)
 
-
-
-
-
 # =============================================================================
 
 # VISTAS RÁPIDAS - CREAR ENTIDADES BASE (popup/modal)
 
 # =============================================================================
-
 
 
 class CompaniaAseguradoraCreateView(LoginRequiredMixin, CreateView):
@@ -3531,8 +3068,6 @@ class CompaniaAseguradoraCreateView(LoginRequiredMixin, CreateView):
     form_class = CompaniaAseguradoraForm
 
     template_name = 'app/components/crear_rapido.html'
-
-
 
     def get_context_data(self, **kwargs):
 
@@ -3546,8 +3081,6 @@ class CompaniaAseguradoraCreateView(LoginRequiredMixin, CreateView):
 
         return context
 
-
-
     def get_success_url(self):
 
         next_url = self.request.GET.get('next')
@@ -3558,8 +3091,6 @@ class CompaniaAseguradoraCreateView(LoginRequiredMixin, CreateView):
 
         return reverse_lazy('poliza_crear')
 
-
-
     def form_valid(self, form):
 
         response = super().form_valid(form)
@@ -3567,10 +3098,6 @@ class CompaniaAseguradoraCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, f'Compañía aseguradora "{self.object.nombre}" creada exitosamente.')
 
         return response
-
-
-
-
 
 class CorredorSegurosCreateView(LoginRequiredMixin, CreateView):
 
@@ -3581,8 +3108,6 @@ class CorredorSegurosCreateView(LoginRequiredMixin, CreateView):
     form_class = CorredorSegurosForm
 
     template_name = 'app/components/crear_rapido.html'
-
-
 
     def get_initial(self):
 
@@ -3597,8 +3122,6 @@ class CorredorSegurosCreateView(LoginRequiredMixin, CreateView):
             initial['compania_aseguradora'] = compania_id
 
         return initial
-
-
 
     def get_context_data(self, **kwargs):
 
@@ -3628,8 +3151,6 @@ class CorredorSegurosCreateView(LoginRequiredMixin, CreateView):
 
         return context
 
-
-
     def get_success_url(self):
 
         next_url = self.request.GET.get('next')
@@ -3640,8 +3161,6 @@ class CorredorSegurosCreateView(LoginRequiredMixin, CreateView):
 
         return reverse_lazy('poliza_crear')
 
-
-
     def form_valid(self, form):
 
         response = super().form_valid(form)
@@ -3649,10 +3168,6 @@ class CorredorSegurosCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, f'Corredor de seguros "{self.object.nombre}" creado exitosamente.')
 
         return response
-
-
-
-
 
 class TipoSiniestroCreateView(LoginRequiredMixin, CreateView):
 
@@ -3663,8 +3178,6 @@ class TipoSiniestroCreateView(LoginRequiredMixin, CreateView):
     form_class = TipoSiniestroForm
 
     template_name = 'app/components/crear_rapido.html'
-
-
 
     def get_context_data(self, **kwargs):
 
@@ -3678,8 +3191,6 @@ class TipoSiniestroCreateView(LoginRequiredMixin, CreateView):
 
         return context
 
-
-
     def get_success_url(self):
 
         next_url = self.request.GET.get('next')
@@ -3690,8 +3201,6 @@ class TipoSiniestroCreateView(LoginRequiredMixin, CreateView):
 
         return reverse_lazy('siniestro_crear')
 
-
-
     def form_valid(self, form):
 
         response = super().form_valid(form)
@@ -3699,10 +3208,6 @@ class TipoSiniestroCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, f'Tipo de siniestro "{self.object.nombre}" creado exitosamente.')
 
         return response
-
-
-
-
 
 class ResponsableCustodioCreateView(LoginRequiredMixin, CreateView):
 
@@ -3713,8 +3218,6 @@ class ResponsableCustodioCreateView(LoginRequiredMixin, CreateView):
     form_class = ResponsableCustodioForm
 
     template_name = 'app/components/crear_rapido.html'
-
-
 
     def get_context_data(self, **kwargs):
 
@@ -3728,8 +3231,6 @@ class ResponsableCustodioCreateView(LoginRequiredMixin, CreateView):
 
         return context
 
-
-
     def get_success_url(self):
 
         next_url = self.request.GET.get('next')
@@ -3740,8 +3241,6 @@ class ResponsableCustodioCreateView(LoginRequiredMixin, CreateView):
 
         return reverse_lazy('siniestro_crear')
 
-
-
     def form_valid(self, form):
 
         response = super().form_valid(form)
@@ -3750,16 +3249,11 @@ class ResponsableCustodioCreateView(LoginRequiredMixin, CreateView):
 
         return response
 
-
-
-
-
 # =============================================================================
 
 # VISTAS BASADAS EN CLASES - PÓLIZAS (CRUD Completo)
 
 # =============================================================================
-
 
 
 class PolizaCreateView(LoginRequiredMixin, CreateView):
@@ -3771,8 +3265,6 @@ class PolizaCreateView(LoginRequiredMixin, CreateView):
     form_class = PolizaForm
 
     template_name = 'app/polizas/crear.html'
-
-
 
     def get_context_data(self, **kwargs):
 
@@ -3788,15 +3280,11 @@ class PolizaCreateView(LoginRequiredMixin, CreateView):
 
         return context
 
-
-
     def form_valid(self, form):
 
         context = self.get_context_data()
 
         detalles_formset = context['detalles_formset']
-
-
 
         with transaction.atomic():
 
@@ -3816,8 +3304,6 @@ class PolizaCreateView(LoginRequiredMixin, CreateView):
 
             self.object = form.save()
 
-
-
             if detalles_formset.is_valid():
 
                 detalles_formset.instance = self.object
@@ -3828,15 +3314,9 @@ class PolizaCreateView(LoginRequiredMixin, CreateView):
 
                 return self.form_invalid(form)
 
-
-
         messages.success(self.request, f'Póliza {self.object.numero_poliza} creada exitosamente.')
 
         return redirect('poliza_detalle', pk=self.object.pk)
-
-
-
-
 
 class PolizaUpdateView(LoginRequiredMixin, UpdateView):
 
@@ -3847,8 +3327,6 @@ class PolizaUpdateView(LoginRequiredMixin, UpdateView):
     form_class = PolizaForm
 
     template_name = 'app/polizas/editar.html'
-
-
 
     def get_context_data(self, **kwargs):
 
@@ -3868,21 +3346,15 @@ class PolizaUpdateView(LoginRequiredMixin, UpdateView):
 
         return context
 
-
-
     def form_valid(self, form):
 
         context = self.get_context_data()
 
         detalles_formset = context['detalles_formset']
 
-
-
         with transaction.atomic():
 
             self.object = form.save()
-
-
 
             if detalles_formset.is_valid():
 
@@ -3892,15 +3364,9 @@ class PolizaUpdateView(LoginRequiredMixin, UpdateView):
 
                 return self.form_invalid(form)
 
-
-
         messages.success(self.request, f'Póliza {self.object.numero_poliza} actualizada exitosamente.')
 
         return redirect('poliza_detalle', pk=self.object.pk)
-
-
-
-
 
 class PolizaDetailView(LoginRequiredMixin, DetailView):
 
@@ -3911,8 +3377,6 @@ class PolizaDetailView(LoginRequiredMixin, DetailView):
     template_name = 'app/polizas/detalle.html'
 
     context_object_name = 'poliza'
-
-
 
     def get_queryset(self):
 
@@ -3925,8 +3389,6 @@ class PolizaDetailView(LoginRequiredMixin, DetailView):
             total_prima_calculado=Sum('detalles_ramo__total_prima')
 
         )
-
-
 
     def get_context_data(self, **kwargs):
 
@@ -3958,16 +3420,11 @@ class PolizaDetailView(LoginRequiredMixin, DetailView):
 
         return context
 
-
-
-
-
 # =============================================================================
 
 # VISTAS BASADAS EN CLASES - SINIESTROS (CRUD Completo)
 
 # =============================================================================
-
 
 
 class SiniestroCreateView(LoginRequiredMixin, CreateView):
@@ -3979,8 +3436,6 @@ class SiniestroCreateView(LoginRequiredMixin, CreateView):
     form_class = SiniestroForm
 
     template_name = 'app/siniestros/crear.html'
-
-
 
     def get_context_data(self, **kwargs):
 
@@ -4000,23 +3455,17 @@ class SiniestroCreateView(LoginRequiredMixin, CreateView):
 
         return context
 
-
-
     def form_valid(self, form):
 
         context = self.get_context_data()
 
         adjuntos_formset = context['adjuntos_formset']
 
-
-
         with transaction.atomic():
 
             form.instance.creado_por = self.request.user
 
             self.object = form.save()
-
-
 
             if adjuntos_formset.is_valid():
 
@@ -4034,19 +3483,13 @@ class SiniestroCreateView(LoginRequiredMixin, CreateView):
 
                         adjunto.save()
 
-
-
             # Crear checklist inicial basado en tipo de siniestro
 
             self._crear_checklist_inicial()
 
-
-
         messages.success(self.request, f'Siniestro {self.object.numero_siniestro} registrado exitosamente.')
 
         return redirect('siniestro_detalle', pk=self.object.pk)
-
-
 
     def _crear_checklist_inicial(self):
 
@@ -4074,10 +3517,6 @@ class SiniestroCreateView(LoginRequiredMixin, CreateView):
 
                 )
 
-
-
-
-
 class SiniestroUpdateView(LoginRequiredMixin, UpdateView):
 
     """Editar siniestro"""
@@ -4087,8 +3526,6 @@ class SiniestroUpdateView(LoginRequiredMixin, UpdateView):
     form_class = SiniestroForm
 
     template_name = 'app/siniestros/editar.html'
-
-
 
     def get_context_data(self, **kwargs):
 
@@ -4116,8 +3553,6 @@ class SiniestroUpdateView(LoginRequiredMixin, UpdateView):
 
         return context
 
-
-
     def form_valid(self, form):
 
         context = self.get_context_data()
@@ -4126,13 +3561,9 @@ class SiniestroUpdateView(LoginRequiredMixin, UpdateView):
 
         gestion_form = context['gestion_form']
 
-
-
         with transaction.atomic():
 
             self.object = form.save()
-
-            
 
             # Guardar campos de gestión
 
@@ -4143,8 +3574,6 @@ class SiniestroUpdateView(LoginRequiredMixin, UpdateView):
                     setattr(self.object, field, gestion_form.cleaned_data[field])
 
                 self.object.save()
-
-
 
             if adjuntos_formset.is_valid():
 
@@ -4168,15 +3597,9 @@ class SiniestroUpdateView(LoginRequiredMixin, UpdateView):
 
                             adjunto.save()
 
-
-
         messages.success(self.request, f'Siniestro {self.object.numero_siniestro} actualizado exitosamente.')
 
         return redirect('siniestro_detalle', pk=self.object.pk)
-
-
-
-
 
 class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
@@ -4187,8 +3610,6 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
     template_name = 'app/siniestros/detalle.html'
 
     context_object_name = 'siniestro'
-
-    
 
     # Mapeo de estados a índice numérico para la barra de progreso
 
@@ -4210,13 +3631,9 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
     }
 
-
-
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
-
-        
 
         # Adjuntos
 
@@ -4224,13 +3641,9 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
         context['adjuntos'] = adjuntos
 
-        
-
         # Checklist con adjuntos vinculados
 
         checklist_items = list(self.object.checklist_items.select_related('config_item', 'completado_por'))
-
-        
 
         # Vincular adjuntos a items del checklist (usar nombre diferente al related_name)
 
@@ -4238,11 +3651,7 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
             item.adjuntos_del_item = list(adjuntos.filter(checklist_item=item))
 
-        
-
         context['checklist'] = checklist_items
-
-        
 
         # Estadísticas del checklist
 
@@ -4256,8 +3665,6 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
         obligatorios_pendientes = len(obligatorios) - obligatorios_completados
 
-        
-
         context['checklist_total'] = total_items
 
         context['checklist_completados'] = completados
@@ -4268,13 +3675,9 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
         context['checklist_completo'] = obligatorios_pendientes == 0 and len(obligatorios) > 0
 
-        
-
         # Timeline
 
         context['timeline'] = self._generar_timeline()
-
-        
 
         # Alertas
 
@@ -4288,17 +3691,11 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
         }
 
-        
-
         # Índice del estado actual para la barra de progreso
 
         context['estado_index'] = self.ESTADO_INDEX.get(self.object.estado, 1)
 
-        
-
         return context
-
-
 
     def _generar_timeline(self):
 
@@ -4307,8 +3704,6 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
         from datetime import datetime, date
 
         from django.utils import timezone
-
-        
 
         def to_datetime(d):
 
@@ -4334,13 +3729,9 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
             return d
 
-        
-
         timeline = []
 
         s = self.object
-
-
 
         if s.fecha_registro:
 
@@ -4356,8 +3747,6 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
             })
 
-
-
         if s.fecha_notificacion_broker:
 
             timeline.append({
@@ -4371,8 +3760,6 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
                 'icono': 'send',
 
             })
-
-
 
         if s.fecha_envio_aseguradora:
 
@@ -4388,8 +3775,6 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
             })
 
-
-
         if s.fecha_respuesta_aseguradora:
 
             timeline.append({
@@ -4403,8 +3788,6 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
                 'icono': 'check-circle',
 
             })
-
-
 
         if s.fecha_liquidacion:
 
@@ -4420,8 +3803,6 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
             })
 
-
-
         if s.fecha_firma_indemnizacion:
 
             timeline.append({
@@ -4435,8 +3816,6 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
                 'icono': 'edit',
 
             })
-
-
 
         if s.fecha_pago:
 
@@ -4452,20 +3831,13 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 
             })
 
-
-
         return sorted(timeline, key=lambda x: x['fecha']) if timeline else []
-
-
-
-
 
 # =============================================================================
 
 # VISTAS BASADAS EN CLASES - GRUPOS DE BIENES
 
 # =============================================================================
-
 
 
 class GrupoBienesListView(LoginRequiredMixin, ListView):
@@ -4480,8 +3852,6 @@ class GrupoBienesListView(LoginRequiredMixin, ListView):
 
     paginate_by = 20
 
-
-
     def get_queryset(self):
 
         return GrupoBienes.objects.select_related(
@@ -4489,10 +3859,6 @@ class GrupoBienesListView(LoginRequiredMixin, ListView):
             'ramo', 'responsable', 'poliza'
 
         ).order_by('nombre')
-
-
-
-
 
 class GrupoBienesCreateView(LoginRequiredMixin, CreateView):
 
@@ -4506,8 +3872,6 @@ class GrupoBienesCreateView(LoginRequiredMixin, CreateView):
 
     success_url = reverse_lazy('grupos_bienes_lista')
 
-
-
     def form_valid(self, form):
 
         form.instance.creado_por = self.request.user
@@ -4515,10 +3879,6 @@ class GrupoBienesCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Grupo de bienes creado exitosamente.')
 
         return super().form_valid(form)
-
-
-
-
 
 class GrupoBienesDetailView(LoginRequiredMixin, DetailView):
 
@@ -4530,8 +3890,6 @@ class GrupoBienesDetailView(LoginRequiredMixin, DetailView):
 
     context_object_name = 'grupo'
 
-
-
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
@@ -4540,16 +3898,11 @@ class GrupoBienesDetailView(LoginRequiredMixin, DetailView):
 
         return context
 
-
-
-
-
 # =============================================================================
 
 # VISTAS BASADAS EN CLASES - BIENES ASEGURADOS (Modelo Unificado)
 
 # =============================================================================
-
 
 
 class BienAseguradoCreateView(LoginRequiredMixin, CreateView):
@@ -4564,8 +3917,6 @@ class BienAseguradoCreateView(LoginRequiredMixin, CreateView):
 
     success_url = reverse_lazy('assets_list')
 
-
-
     def form_valid(self, form):
 
         form.instance.creado_por = self.request.user
@@ -4573,10 +3924,6 @@ class BienAseguradoCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Bien asegurado creado exitosamente.')
 
         return super().form_valid(form)
-
-
-
-
 
 class BienAseguradoUpdateView(LoginRequiredMixin, UpdateView):
 
@@ -4590,17 +3937,11 @@ class BienAseguradoUpdateView(LoginRequiredMixin, UpdateView):
 
     success_url = reverse_lazy('assets_list')
 
-
-
     def form_valid(self, form):
 
         messages.success(self.request, 'Bien asegurado actualizado exitosamente.')
 
         return super().form_valid(form)
-
-
-
-
 
 class BienAseguradoDetailView(LoginRequiredMixin, DetailView):
 
@@ -4612,8 +3953,6 @@ class BienAseguradoDetailView(LoginRequiredMixin, DetailView):
 
     context_object_name = 'bien'
 
-    
-
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
@@ -4624,10 +3963,6 @@ class BienAseguradoDetailView(LoginRequiredMixin, DetailView):
 
         return context
 
-
-
-
-
 # =============================================================================
 
 # VISTAS DE REPORTES AVANZADOS
@@ -4635,9 +3970,7 @@ class BienAseguradoDetailView(LoginRequiredMixin, DetailView):
 # =============================================================================
 
 
-
 @login_required
-
 def reporte_siniestralidad(request):
 
     """Vista del reporte de siniestralidad"""
@@ -4645,11 +3978,9 @@ def reporte_siniestralidad(request):
     from datetime import timedelta
 
 
-
     fecha_hasta = timezone.now().date()
 
     fecha_desde = fecha_hasta - timedelta(days=365)
-
 
 
     if request.GET.get('fecha_desde'):
@@ -4665,9 +3996,7 @@ def reporte_siniestralidad(request):
         fecha_hasta = datetime.strptime(request.GET['fecha_hasta'], '%Y-%m-%d').date()
 
 
-
     compania_id = request.GET.get('compania')
-
 
 
     datos = ReportesAvanzadosService.calcular_siniestralidad(
@@ -4679,7 +4008,6 @@ def reporte_siniestralidad(request):
         compania_id=compania_id,
 
     )
-
 
 
     context = {
@@ -4697,15 +4025,10 @@ def reporte_siniestralidad(request):
     }
 
 
-
     return render(request, 'app/reportes/siniestralidad.html', context)
 
 
-
-
-
 @login_required
-
 def reporte_gasto_ramos(request):
 
     """Vista del reporte de gastos por ramos"""
@@ -4713,11 +4036,9 @@ def reporte_gasto_ramos(request):
     from datetime import timedelta
 
 
-
     fecha_hasta = timezone.now().date()
 
     fecha_desde = fecha_hasta - timedelta(days=365)
-
 
 
     if request.GET.get('fecha_desde'):
@@ -4731,7 +4052,6 @@ def reporte_gasto_ramos(request):
         from datetime import datetime
 
         fecha_hasta = datetime.strptime(request.GET['fecha_hasta'], '%Y-%m-%d').date()
-
 
 
     datos = ReportesAvanzadosService.reporte_gasto_por_ramos(
@@ -4743,7 +4063,6 @@ def reporte_gasto_ramos(request):
     )
 
 
-
     context = {
 
         'datos': datos,
@@ -4755,15 +4074,10 @@ def reporte_gasto_ramos(request):
     }
 
 
-
     return render(request, 'app/reportes/gasto_ramos.html', context)
 
 
-
-
-
 @login_required
-
 def reporte_dias_gestion(request):
 
     """Vista del reporte de días de gestión"""
@@ -4771,11 +4085,9 @@ def reporte_dias_gestion(request):
     from datetime import timedelta
 
 
-
     fecha_hasta = timezone.now().date()
 
     fecha_desde = fecha_hasta - timedelta(days=365)
-
 
 
     if request.GET.get('fecha_desde'):
@@ -4789,7 +4101,6 @@ def reporte_dias_gestion(request):
         from datetime import datetime
 
         fecha_hasta = datetime.strptime(request.GET['fecha_hasta'], '%Y-%m-%d').date()
-
 
 
     datos = ReportesAvanzadosService.reporte_dias_gestion_siniestros(
@@ -4801,7 +4112,6 @@ def reporte_dias_gestion(request):
     )
 
 
-
     context = {
 
         'datos': datos,
@@ -4813,15 +4123,10 @@ def reporte_dias_gestion(request):
     }
 
 
-
     return render(request, 'app/reportes/dias_gestion.html', context)
 
 
-
-
-
 @login_required
-
 def reporte_siniestros_dependencia(request):
 
     """Vista del reporte de siniestros por dependencia"""
@@ -4829,11 +4134,9 @@ def reporte_siniestros_dependencia(request):
     from datetime import timedelta
 
 
-
     fecha_hasta = timezone.now().date()
 
     fecha_desde = fecha_hasta - timedelta(days=365)
-
 
 
     if request.GET.get('fecha_desde'):
@@ -4849,7 +4152,6 @@ def reporte_siniestros_dependencia(request):
         fecha_hasta = datetime.strptime(request.GET['fecha_hasta'], '%Y-%m-%d').date()
 
 
-
     datos = ReportesAvanzadosService.reporte_siniestros_por_dependencia(
 
         fecha_desde=fecha_desde,
@@ -4857,7 +4159,6 @@ def reporte_siniestros_dependencia(request):
         fecha_hasta=fecha_hasta,
 
     )
-
 
 
     context = {
@@ -4871,11 +4172,7 @@ def reporte_siniestros_dependencia(request):
     }
 
 
-
     return render(request, 'app/reportes/siniestros_dependencia.html', context)
-
-
-
 
 
 # =============================================================================
@@ -4885,9 +4182,7 @@ def reporte_siniestros_dependencia(request):
 # =============================================================================
 
 
-
 @login_required
-
 @require_POST
 
 def siniestro_notificar_broker(request, pk):
@@ -4895,7 +4190,6 @@ def siniestro_notificar_broker(request, pk):
     """Notifica el siniestro al broker"""
 
     siniestro = get_object_or_404(Siniestro, pk=pk)
-
 
 
     try:
@@ -4909,15 +4203,10 @@ def siniestro_notificar_broker(request, pk):
         messages.error(request, f'Error al enviar notificación: {str(e)}')
 
 
-
     return redirect('siniestro_detalle', pk=pk)
 
 
-
-
-
 @login_required
-
 @require_POST
 
 def siniestro_marcar_checklist(request, siniestro_pk, item_pk):
@@ -4935,21 +4224,15 @@ def siniestro_marcar_checklist(request, siniestro_pk, item_pk):
     )
 
 
-
     checklist_item.marcar_completado(request.user)
 
     messages.success(request, f'Item "{checklist_item.config_item.nombre}" marcado como completado.')
 
 
-
     return redirect('siniestro_detalle', pk=siniestro_pk)
 
 
-
-
-
 @login_required
-
 def siniestro_descargar_carta(request, pk):
 
     """Descarga la carta formal del siniestro"""
@@ -4959,11 +4242,7 @@ def siniestro_descargar_carta(request, pk):
     return DocumentosService.descargar_carta_siniestro(siniestro)
 
 
-
-
-
 @login_required
-
 def siniestro_descargar_recibo(request, pk):
 
     """Descarga el recibo de indemnización"""
@@ -4973,11 +4252,7 @@ def siniestro_descargar_recibo(request, pk):
     return DocumentosService.descargar_recibo_indemnizacion(siniestro)
 
 
-
-
-
 @login_required
-
 @require_POST
 
 def adjunto_firmar(request, pk):
@@ -4985,7 +4260,6 @@ def adjunto_firmar(request, pk):
     """Aplica firma electrónica a un adjunto"""
 
     adjunto = get_object_or_404(AdjuntoSiniestro, pk=pk)
-
 
 
     try:
@@ -5001,15 +4275,10 @@ def adjunto_firmar(request, pk):
         messages.error(request, f'Error al firmar documento: {str(e)}')
 
 
-
     return redirect('siniestro_detalle', pk=adjunto.siniestro.pk)
 
 
-
-
-
 @login_required
-
 @require_POST
 
 def siniestro_subir_adjunto(request, pk):
@@ -5018,7 +4287,6 @@ def siniestro_subir_adjunto(request, pk):
 
     siniestro = get_object_or_404(Siniestro, pk=pk)
 
-    
 
     archivo = request.FILES.get('archivo')
 
@@ -5030,7 +4298,6 @@ def siniestro_subir_adjunto(request, pk):
 
     marcar_completado = request.POST.get('marcar_completado') == 'on'
 
-    
 
     if not archivo:
 
@@ -5038,7 +4305,6 @@ def siniestro_subir_adjunto(request, pk):
 
         return redirect('siniestro_detalle', pk=pk)
 
-    
 
     # Validar tamaño (máximo 10MB)
 
@@ -5048,7 +4314,6 @@ def siniestro_subir_adjunto(request, pk):
 
         return redirect('siniestro_detalle', pk=pk)
 
-    
 
     # Crear el adjunto
 
@@ -5062,7 +4327,6 @@ def siniestro_subir_adjunto(request, pk):
 
         ).first()
 
-    
 
     adjunto = AdjuntoSiniestro.objects.create(
 
@@ -5080,7 +4344,6 @@ def siniestro_subir_adjunto(request, pk):
 
     )
 
-    
 
     # Si tiene checklist_item y se pide marcar como completado
 
@@ -5094,16 +4357,11 @@ def siniestro_subir_adjunto(request, pk):
 
         messages.success(request, 'Documento subido exitosamente.')
 
-    
 
     return redirect('siniestro_detalle', pk=pk)
 
 
-
-
-
 @login_required
-
 @require_POST
 
 def siniestro_enviar_aseguradora(request, pk):
@@ -5114,11 +4372,9 @@ def siniestro_enviar_aseguradora(request, pk):
 
     from django.conf import settings
 
-    
 
     siniestro = get_object_or_404(Siniestro, pk=pk)
 
-    
 
     # Verificar que el checklist de obligatorios esté completo
 
@@ -5126,13 +4382,12 @@ def siniestro_enviar_aseguradora(request, pk):
 
     obligatorios_pendientes = [
 
-        item for item in checklist_items 
+        item for item in checklist_items
 
         if item.config_item.es_obligatorio and not item.completado
 
     ]
 
-    
 
     if obligatorios_pendientes:
 
@@ -5142,28 +4397,23 @@ def siniestro_enviar_aseguradora(request, pk):
 
         return redirect('siniestro_detalle', pk=pk)
 
-    
 
     # Obtener adjuntos
 
     adjuntos = siniestro.adjuntos.all()
 
-    
 
     # Preparar email
 
     asunto = f'Siniestro {siniestro.numero_siniestro} - {siniestro.poliza.numero_poliza}'
 
-    
 
     mensaje = f"""
 
 Estimados señores,
 
 
-
 Por medio de la presente, nos permitimos enviar la documentación correspondiente al siniestro:
-
 
 
 Número de Siniestro: {siniestro.numero_siniestro}
@@ -5179,27 +4429,22 @@ Bien Afectado: {siniestro.bien_nombre}
 Monto Estimado: ${siniestro.monto_estimado:,.2f}
 
 
-
 Causa: {siniestro.causa}
-
 
 
 Se adjuntan los siguientes documentos:
 
 """
 
-    
 
     for adjunto in adjuntos:
 
         mensaje += f"- {adjunto.nombre} ({adjunto.get_tipo_adjunto_display()})\n"
 
-    
 
     mensaje += """
 
 Quedamos atentos a su respuesta.
-
 
 
 Atentamente,
@@ -5208,7 +4453,6 @@ Gestión de Seguros
 
 """
 
-    
 
     try:
 
@@ -5216,7 +4460,6 @@ Gestión de Seguros
 
         email_destino = 'renataxdalej@gmail.com'
 
-        
 
         # Lista de destinatarios CC (usuario actual y broker si existe)
 
@@ -5230,7 +4473,6 @@ Gestión de Seguros
 
             cc_list.append(siniestro.poliza.corredor_seguros.email)
 
-        
 
         # Crear email con adjuntos
 
@@ -5248,7 +4490,6 @@ Gestión de Seguros
 
         )
 
-        
 
         # Adjuntar archivos
 
@@ -5258,11 +4499,9 @@ Gestión de Seguros
 
                 email.attach(adjunto.nombre, adjunto.archivo.read(), 'application/octet-stream')
 
-        
 
         email.send()
 
-        
 
         # Actualizar estado del siniestro
 
@@ -5272,7 +4511,6 @@ Gestión de Seguros
 
         siniestro.save()
 
-        
 
         messages.success(request, 'Siniestro enviado a la aseguradora exitosamente.')
 
@@ -5280,12 +4518,8 @@ Gestión de Seguros
 
         messages.error(request, f'Error al enviar el siniestro: {str(e)}')
 
-    
 
     return redirect('siniestro_detalle', pk=pk)
-
-
-
 
 
 # =============================================================================
@@ -5295,9 +4529,7 @@ Gestión de Seguros
 # =============================================================================
 
 
-
 @login_required
-
 @require_GET
 
 def api_subtipos_ramo(request):
@@ -5313,7 +4545,6 @@ def api_subtipos_ramo(request):
         return JsonResponse({'subtipos': [], 'subgrupos': []})
 
 
-
     subgrupos = SubgrupoRamo.objects.filter(
 
         grupo_ramo_id=grupo_ramo_id, activo=True
@@ -5321,17 +4552,12 @@ def api_subtipos_ramo(request):
     ).values('id', 'codigo', 'nombre').order_by('orden', 'nombre')
 
 
-
     resultado = list(subgrupos)
 
     return JsonResponse({'subtipos': resultado, 'subgrupos': resultado})
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_corredores_por_compania(request):
@@ -5345,7 +4571,6 @@ def api_corredores_por_compania(request):
         return JsonResponse({'corredores': []})
 
 
-
     corredores = CorredorSeguros.objects.filter(
 
         compania_aseguradora_id=compania_id, activo=True
@@ -5353,15 +4578,10 @@ def api_corredores_por_compania(request):
     ).values('id', 'nombre', 'email').order_by('nombre')
 
 
-
     return JsonResponse({'corredores': list(corredores)})
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_calcular_desglose_ramo(request):
@@ -5379,7 +4599,6 @@ def api_calcular_desglose_ramo(request):
         return JsonResponse({'error': 'Valores inválidos'}, status=400)
 
 
-
     # Calcular contribuciones sobre la prima
 
     contrib_super = prima * Decimal('0.035')
@@ -5387,11 +4606,9 @@ def api_calcular_desglose_ramo(request):
     seguro_camp = prima * Decimal('0.005')
 
 
-
     # Calcular derechos de emisión en backend (tabla escalonada)
 
     emision = DetallePolizaRamo.calcular_derechos_emision(prima)
-
 
 
     # Calcular base imponible, IVA y total
@@ -5401,7 +4618,6 @@ def api_calcular_desglose_ramo(request):
     iva = base_imponible * Decimal('0.15')
 
     total_facturado = base_imponible + iva
-
 
 
     if es_gran_contribuyente:
@@ -5417,9 +4633,7 @@ def api_calcular_desglose_ramo(request):
         ret_iva = Decimal('0')
 
 
-
     valor_por_pagar = total_facturado - ret_prima - ret_iva
-
 
 
     return JsonResponse({
@@ -5443,11 +4657,7 @@ def api_calcular_desglose_ramo(request):
     })
 
 
-
-
-
 @login_required
-
 @require_GET
 
 def api_reporte_siniestralidad(request):
@@ -5457,13 +4667,11 @@ def api_reporte_siniestralidad(request):
     from datetime import datetime
 
 
-
     fecha_desde = request.GET.get('fecha_desde')
 
     fecha_hasta = request.GET.get('fecha_hasta')
 
     compania_id = request.GET.get('compania_id')
-
 
 
     if fecha_desde:
@@ -5473,7 +4681,6 @@ def api_reporte_siniestralidad(request):
     if fecha_hasta:
 
         fecha_hasta = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
-
 
 
     datos = ReportesAvanzadosService.calcular_siniestralidad(
@@ -5487,15 +4694,10 @@ def api_reporte_siniestralidad(request):
     )
 
 
-
     return JsonResponse(datos)
 
 
-
-
-
 @login_required
-
 def inicializar_ramos_predefinidos(request):
 
     """Inicializa los ramos predefinidos del sistema"""
@@ -5507,15 +4709,11 @@ def inicializar_ramos_predefinidos(request):
     return redirect('ramos_lista')
 
 
-
-
-
 # ==========================================================================
 
 # VISTAS DE FACTURA - CRUD Completo
 
 # ==========================================================================
-
 
 
 class FacturaCreateView(LoginRequiredMixin, CreateView):
@@ -5530,8 +4728,6 @@ class FacturaCreateView(LoginRequiredMixin, CreateView):
 
     success_url = reverse_lazy('facturas_lista')
 
-
-
     def form_valid(self, form):
 
         form.instance.creado_por = self.request.user
@@ -5539,10 +4735,6 @@ class FacturaCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Factura creada exitosamente.')
 
         return super().form_valid(form)
-
-
-
-
 
 class FacturaDetailView(LoginRequiredMixin, DetailView):
 
@@ -5554,8 +4746,6 @@ class FacturaDetailView(LoginRequiredMixin, DetailView):
 
     context_object_name = 'factura'
 
-
-
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
@@ -5565,10 +4755,6 @@ class FacturaDetailView(LoginRequiredMixin, DetailView):
         context['documentos'] = self.object.documentos.all()
 
         return context
-
-
-
-
 
 class FacturaUpdateView(LoginRequiredMixin, UpdateView):
 
@@ -5580,13 +4766,9 @@ class FacturaUpdateView(LoginRequiredMixin, UpdateView):
 
     template_name = 'app/facturas/editar.html'
 
-
-
     def get_success_url(self):
 
         return reverse('factura_detalle', kwargs={'pk': self.object.pk})
-
-
 
     def form_valid(self, form):
 
@@ -5594,16 +4776,11 @@ class FacturaUpdateView(LoginRequiredMixin, UpdateView):
 
         return super().form_valid(form)
 
-
-
-
-
 # ==========================================================================
 
 # VISTAS DE DOCUMENTO - CRUD Completo
 
 # ==========================================================================
-
 
 
 class DocumentoCreateView(LoginRequiredMixin, CreateView):
@@ -5618,8 +4795,6 @@ class DocumentoCreateView(LoginRequiredMixin, CreateView):
 
     success_url = reverse_lazy('documentos_lista')
 
-
-
     def form_valid(self, form):
 
         form.instance.subido_por = self.request.user
@@ -5627,10 +4802,6 @@ class DocumentoCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Documento subido exitosamente.')
 
         return super().form_valid(form)
-
-
-
-
 
 class DocumentoUpdateView(LoginRequiredMixin, UpdateView):
 
@@ -5642,13 +4813,9 @@ class DocumentoUpdateView(LoginRequiredMixin, UpdateView):
 
     template_name = 'app/documentos/editar.html'
 
-
-
     def get_success_url(self):
 
         return reverse('documento_ver', kwargs={'pk': self.object.pk})
-
-
 
     def form_valid(self, form):
 
@@ -5656,16 +4823,11 @@ class DocumentoUpdateView(LoginRequiredMixin, UpdateView):
 
         return super().form_valid(form)
 
-
-
-
-
 # ==========================================================================
 
 # VISTAS DE PAGO - CRUD Completo
 
 # ==========================================================================
-
 
 
 class PagoCreateView(LoginRequiredMixin, CreateView):
@@ -5680,8 +4842,6 @@ class PagoCreateView(LoginRequiredMixin, CreateView):
 
     success_url = reverse_lazy('facturas_lista')
 
-
-
     def form_valid(self, form):
 
         form.instance.registrado_por = self.request.user
@@ -5689,8 +4849,6 @@ class PagoCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Pago registrado exitosamente.')
 
         return super().form_valid(form)
-
-
 
     def get_initial(self):
 
@@ -5704,10 +4862,6 @@ class PagoCreateView(LoginRequiredMixin, CreateView):
 
         return initial
 
-
-
-
-
 class PagoDetailView(LoginRequiredMixin, DetailView):
 
     """Vista de detalle de un pago"""
@@ -5717,10 +4871,6 @@ class PagoDetailView(LoginRequiredMixin, DetailView):
     template_name = 'app/pagos/detalle.html'
 
     context_object_name = 'pago'
-
-
-
-
 
 class PagoUpdateView(LoginRequiredMixin, UpdateView):
 
@@ -5732,23 +4882,15 @@ class PagoUpdateView(LoginRequiredMixin, UpdateView):
 
     template_name = 'app/pagos/editar.html'
 
-
-
     def get_success_url(self):
 
         return reverse('factura_detalle', kwargs={'pk': self.object.factura.pk})
-
-
 
     def form_valid(self, form):
 
         messages.success(self.request, 'Pago actualizado exitosamente.')
 
         return super().form_valid(form)
-
-
-
-
 
 # ==========================================================================
 
@@ -5757,15 +4899,10 @@ class PagoUpdateView(LoginRequiredMixin, UpdateView):
 # ==========================================================================
 
 
-
 from .models import SiniestroEmail
 
 
-
-
-
 @login_required
-
 def siniestros_email_pendientes(request):
 
     """
@@ -5782,7 +4919,6 @@ def siniestros_email_pendientes(request):
 
     ).order_by('-fecha_recepcion')
 
-    
 
     # Filtros
 
@@ -5804,7 +4940,6 @@ def siniestros_email_pendientes(request):
 
         )
 
-    
 
     estado = request.GET.get('estado')
 
@@ -5812,7 +4947,6 @@ def siniestros_email_pendientes(request):
 
         queryset = queryset.filter(estado_procesamiento=estado)
 
-    
 
     # Paginación
 
@@ -5822,7 +4956,6 @@ def siniestros_email_pendientes(request):
 
     pendientes = paginator.get_page(page)
 
-    
 
     # Estadísticas
 
@@ -5838,7 +4971,6 @@ def siniestros_email_pendientes(request):
 
     }
 
-    
 
     # Datos para el modal de completar
 
@@ -5848,7 +4980,6 @@ def siniestros_email_pendientes(request):
 
     responsables = ResponsableCustodio.objects.filter(activo=True).order_by('nombre')
 
-    
 
     context = {
 
@@ -5868,16 +4999,11 @@ def siniestros_email_pendientes(request):
 
     }
 
-    
 
     return render(request, 'app/siniestros/email_pendientes.html', context)
 
 
-
-
-
 @login_required
-
 def siniestro_email_procesar_auto(request, pk):
 
     """
@@ -5890,11 +5016,9 @@ def siniestro_email_procesar_auto(request, pk):
 
     from datetime import datetime
 
-    
 
     siniestro_email = get_object_or_404(SiniestroEmail, pk=pk)
 
-    
 
     # Verificar que esté pendiente
 
@@ -5904,7 +5028,6 @@ def siniestro_email_procesar_auto(request, pk):
 
         return redirect('siniestros_email_pendientes')
 
-    
 
     # Buscar el bien por número de serie (modelo unificado BienAsegurado)
 
@@ -5914,13 +5037,12 @@ def siniestro_email_procesar_auto(request, pk):
 
     ).select_related('poliza').first()
 
-    
 
     if not bien:
 
         messages.warning(
 
-            request, 
+            request,
 
             f'No se encontró un bien registrado con serie "{siniestro_email.serie}". '
 
@@ -5930,13 +5052,12 @@ def siniestro_email_procesar_auto(request, pk):
 
         return redirect('siniestros_email_pendientes')
 
-    
 
     if not bien.poliza:
 
         messages.warning(
 
-            request, 
+            request,
 
             f'El bien "{bien.nombre}" no tiene póliza asignada. '
 
@@ -5946,7 +5067,6 @@ def siniestro_email_procesar_auto(request, pk):
 
         return redirect('siniestros_email_pendientes')
 
-    
 
     # Buscar tipo de siniestro "daño" por defecto
 
@@ -5956,7 +5076,6 @@ def siniestro_email_procesar_auto(request, pk):
 
         tipo_siniestro = TipoSiniestro.objects.filter(activo=True).first()
 
-    
 
     if not tipo_siniestro:
 
@@ -5964,7 +5083,6 @@ def siniestro_email_procesar_auto(request, pk):
 
         return redirect('siniestros_email_pendientes')
 
-    
 
     # Parsear fecha del reporte
 
@@ -5984,7 +5102,6 @@ def siniestro_email_procesar_auto(request, pk):
 
             pass
 
-    
 
     # Generar número de siniestro
 
@@ -5994,7 +5111,6 @@ def siniestro_email_procesar_auto(request, pk):
 
     numero_siniestro = f"SIN-{timezone.now().year}-{str(ultimo + 1).zfill(5)}"
 
-    
 
     try:
 
@@ -6038,7 +5154,6 @@ def siniestro_email_procesar_auto(request, pk):
 
             )
 
-            
 
             # Crear checklist inicial
 
@@ -6062,7 +5177,6 @@ def siniestro_email_procesar_auto(request, pk):
 
                 )
 
-            
 
             # Actualizar el registro de email
 
@@ -6088,11 +5202,10 @@ def siniestro_email_procesar_auto(request, pk):
 
             siniestro_email.save()
 
-        
 
         messages.success(
 
-            request, 
+            request,
 
             f'✅ Siniestro {numero_siniestro} creado automáticamente. '
 
@@ -6102,7 +5215,6 @@ def siniestro_email_procesar_auto(request, pk):
 
         return redirect('siniestro_detalle', pk=siniestro.pk)
 
-        
 
     except Exception as e:
 
@@ -6111,11 +5223,7 @@ def siniestro_email_procesar_auto(request, pk):
         return redirect('siniestros_email_pendientes')
 
 
-
-
-
 @login_required
-
 @require_POST
 
 def siniestro_email_completar(request, pk):
@@ -6124,7 +5232,6 @@ def siniestro_email_completar(request, pk):
 
     Completa la información de un siniestro recibido por email manualmente.
 
-    
 
     La vista solo:
 
@@ -6134,7 +5241,6 @@ def siniestro_email_completar(request, pk):
 
     3. Maneja la respuesta HTTP
 
-    
 
     Toda la lógica de negocio está en SiniestroService.crear_desde_email()
 
@@ -6142,11 +5248,9 @@ def siniestro_email_completar(request, pk):
 
     from app.services.siniestro import SiniestroService
 
-    
 
     siniestro_email = get_object_or_404(SiniestroEmail, pk=pk)
 
-    
 
     # Verificar estado (validación de flujo HTTP, no de negocio)
 
@@ -6156,7 +5260,6 @@ def siniestro_email_completar(request, pk):
 
         return redirect('siniestros_email_pendientes')
 
-    
 
     # Extraer datos del request (responsabilidad de la vista)
 
@@ -6170,7 +5273,6 @@ def siniestro_email_completar(request, pk):
 
     responsable_id = request.POST.get('responsable_custodio')
 
-    
 
     # Validación básica de campos requeridos (nivel HTTP)
 
@@ -6180,7 +5282,6 @@ def siniestro_email_completar(request, pk):
 
         return redirect('siniestros_email_pendientes')
 
-    
 
     try:
 
@@ -6194,7 +5295,6 @@ def siniestro_email_completar(request, pk):
 
         responsable = ResponsableCustodio.objects.get(pk=responsable_id) if responsable_id else None
 
-        
 
         # Delegar TODA la lógica de negocio al servicio
 
@@ -6218,7 +5318,6 @@ def siniestro_email_completar(request, pk):
 
         )
 
-        
 
         # Manejar resultado
 
@@ -6236,7 +5335,6 @@ def siniestro_email_completar(request, pk):
 
             return redirect('siniestros_email_pendientes')
 
-        
 
     except Poliza.DoesNotExist:
 
@@ -6250,16 +5348,11 @@ def siniestro_email_completar(request, pk):
 
         messages.error(request, f'Error al crear el siniestro: {str(e)}')
 
-    
 
     return redirect('siniestros_email_pendientes')
 
 
-
-
-
 @login_required
-
 def siniestros_email_count(request):
 
     """API para obtener el conteo de siniestros email pendientes."""
@@ -6269,9 +5362,6 @@ def siniestros_email_count(request):
     return JsonResponse({'count': count})
 
 
-
-
-
 # ==============================================================================
 
 # VISTAS DE CONFIGURACIÓN DEL SISTEMA
@@ -6279,15 +5369,10 @@ def siniestros_email_count(request):
 # ==============================================================================
 
 
-
 from .forms import ConfiguracionSistemaForm, ConfiguracionBulkForm
 
 
-
-
-
 @login_required
-
 def configuracion_lista(request):
 
     """
@@ -6304,13 +5389,11 @@ def configuracion_lista(request):
 
         return redirect('dashboard')
 
-    
 
     # Inicializar valores default si no existen
 
     ConfiguracionSistema.inicializar_valores_default()
 
-    
 
     # Agrupar configuraciones por categoría
 
@@ -6318,7 +5401,6 @@ def configuracion_lista(request):
 
     categoria_labels = dict(ConfiguracionSistema._meta.get_field('categoria').choices)
 
-    
 
     for config in ConfiguracionSistema.objects.all():
 
@@ -6336,13 +5418,11 @@ def configuracion_lista(request):
 
         categorias[cat]['items'].append(config)
 
-    
 
     # Ordenar categorías
 
     categorias_ordenadas = dict(sorted(categorias.items()))
 
-    
 
     context = {
 
@@ -6352,16 +5432,11 @@ def configuracion_lista(request):
 
     }
 
-    
 
     return render(request, 'app/configuracion/lista.html', context)
 
 
-
-
-
 @login_required
-
 def configuracion_editar(request, pk):
 
     """
@@ -6378,11 +5453,9 @@ def configuracion_editar(request, pk):
 
         return redirect('dashboard')
 
-    
 
     config = get_object_or_404(ConfiguracionSistema, pk=pk)
 
-    
 
     if request.method == 'POST':
 
@@ -6406,7 +5479,6 @@ def configuracion_editar(request, pk):
 
         form = ConfiguracionSistemaForm(instance=config)
 
-    
 
     context = {
 
@@ -6418,16 +5490,11 @@ def configuracion_editar(request, pk):
 
     }
 
-    
 
     return render(request, 'app/configuracion/editar.html', context)
 
 
-
-
-
 @login_required
-
 def configuracion_categoria(request, categoria):
 
     """
@@ -6444,13 +5511,11 @@ def configuracion_categoria(request, categoria):
 
         return redirect('dashboard')
 
-    
 
     categoria_labels = dict(ConfiguracionSistema._meta.get_field('categoria').choices)
 
     categoria_nombre = categoria_labels.get(categoria, categoria)
 
-    
 
     if request.method == 'POST':
 
@@ -6466,7 +5531,7 @@ def configuracion_categoria(request, categoria):
 
                     messages.success(
 
-                        request, 
+                        request,
 
                         f'Se actualizaron {len(saved)} configuraciones: {", ".join(saved)}'
 
@@ -6486,7 +5551,6 @@ def configuracion_categoria(request, categoria):
 
         form = ConfiguracionBulkForm(categoria=categoria)
 
-    
 
     context = {
 
@@ -6500,16 +5564,11 @@ def configuracion_categoria(request, categoria):
 
     }
 
-    
 
     return render(request, 'app/configuracion/categoria.html', context)
 
 
-
-
-
 @login_required
-
 def configuracion_restablecer(request):
 
     """
@@ -6526,7 +5585,6 @@ def configuracion_restablecer(request):
 
         return redirect('configuracion_lista')
 
-    
 
     if request.method == 'POST':
 
@@ -6542,16 +5600,12 @@ def configuracion_restablecer(request):
 
         return redirect('configuracion_lista')
 
-    
 
     return render(request, 'app/configuracion/restablecer.html', {
 
         'titulo': 'Restablecer Configuración',
 
     })
-
-
-
 
 
 # ==============================================================================
@@ -6561,15 +5615,10 @@ def configuracion_restablecer(request):
 # ==============================================================================
 
 
-
 from .models import BackupRegistro, ConfiguracionBackup
 
 
-
-
-
 @login_required
-
 def backups_lista(request):
 
     """
@@ -6586,13 +5635,11 @@ def backups_lista(request):
 
         return redirect('dashboard')
 
-    
 
     # Obtener backups
 
     backups = BackupRegistro.objects.all()[:50]
 
-    
 
     # Filtros
 
@@ -6600,7 +5647,6 @@ def backups_lista(request):
 
     estado_filtro = request.GET.get('estado', '')
 
-    
 
     if tipo_filtro:
 
@@ -6610,7 +5656,6 @@ def backups_lista(request):
 
         backups = backups.filter(estado=estado_filtro)
 
-    
 
     # Estadísticas
 
@@ -6618,7 +5663,6 @@ def backups_lista(request):
 
     config = ConfiguracionBackup.get_config()
 
-    
 
     context = {
 
@@ -6640,16 +5684,11 @@ def backups_lista(request):
 
     }
 
-    
 
     return render(request, 'app/backups/lista.html', context)
 
 
-
-
-
 @login_required
-
 def backup_crear(request):
 
     """
@@ -6666,7 +5705,6 @@ def backup_crear(request):
 
         return redirect('backups_lista')
 
-    
 
     if request.method == 'POST':
 
@@ -6674,7 +5712,6 @@ def backup_crear(request):
 
         import time
 
-        
 
         incluir_media = request.POST.get('incluir_media') == 'on'
 
@@ -6682,7 +5719,6 @@ def backup_crear(request):
 
         notas = request.POST.get('notas', '')
 
-        
 
         # Crear registro
 
@@ -6706,13 +5742,11 @@ def backup_crear(request):
 
         )
 
-        
 
         try:
 
             inicio = time.time()
 
-            
 
             # Ejecutar backup usando StringIO para capturar salida
 
@@ -6720,7 +5754,6 @@ def backup_crear(request):
 
             out = StringIO()
 
-            
 
             # Construir argumentos
 
@@ -6742,13 +5775,11 @@ def backup_crear(request):
 
                 kwargs['include_media'] = True
 
-            
 
             call_command(*args, **kwargs)
 
             resultado = out.getvalue().strip()
 
-            
 
             # Actualizar registro
 
@@ -6758,7 +5789,6 @@ def backup_crear(request):
 
             backup_path = Path(resultado) if resultado else None
 
-            
 
             backup.estado = 'completado'
 
@@ -6774,17 +5804,15 @@ def backup_crear(request):
 
             backup.save()
 
-            
 
             messages.success(
 
-                request, 
+                request,
 
                 f'Backup creado exitosamente: {backup.nombre} ({backup.tamaño_legible})'
 
             )
 
-            
 
         except Exception as e:
 
@@ -6796,11 +5824,9 @@ def backup_crear(request):
 
             messages.error(request, f'Error al crear backup: {str(e)}')
 
-        
 
         return redirect('backups_lista')
 
-    
 
     context = {
 
@@ -6808,16 +5834,11 @@ def backup_crear(request):
 
     }
 
-    
 
     return render(request, 'app/backups/crear.html', context)
 
 
-
-
-
 @login_required
-
 def backup_descargar(request, pk):
 
     """
@@ -6834,17 +5855,14 @@ def backup_descargar(request, pk):
 
         return redirect('backups_lista')
 
-    
 
     from pathlib import Path
 
     from django.http import FileResponse
 
-    
 
     backup = get_object_or_404(BackupRegistro, pk=pk)
 
-    
 
     archivo = Path(backup.ruta)
 
@@ -6854,7 +5872,6 @@ def backup_descargar(request, pk):
 
         return redirect('backups_lista')
 
-    
 
     response = FileResponse(
 
@@ -6866,16 +5883,11 @@ def backup_descargar(request, pk):
 
     )
 
-    
 
     return response
 
 
-
-
-
 @login_required
-
 def backup_eliminar(request, pk):
 
     """
@@ -6892,17 +5904,14 @@ def backup_eliminar(request, pk):
 
         return redirect('backups_lista')
 
-    
 
     backup = get_object_or_404(BackupRegistro, pk=pk)
 
-    
 
     if request.method == 'POST':
 
         from pathlib import Path
 
-        
 
         # Eliminar archivo físico
 
@@ -6912,7 +5921,6 @@ def backup_eliminar(request, pk):
 
             archivo.unlink()
 
-        
 
         # Marcar como eliminado
 
@@ -6920,13 +5928,11 @@ def backup_eliminar(request, pk):
 
         backup.save()
 
-        
 
         messages.success(request, f'Backup "{backup.nombre}" eliminado correctamente.')
 
         return redirect('backups_lista')
 
-    
 
     return render(request, 'app/backups/eliminar.html', {
 
@@ -6937,11 +5943,7 @@ def backup_eliminar(request, pk):
     })
 
 
-
-
-
 @login_required
-
 def backup_restaurar(request, pk):
 
     """
@@ -6958,11 +5960,9 @@ def backup_restaurar(request, pk):
 
         return redirect('backups_lista')
 
-    
 
     backup = get_object_or_404(BackupRegistro, pk=pk)
 
-    
 
     if not backup.archivo_existe:
 
@@ -6970,13 +5970,11 @@ def backup_restaurar(request, pk):
 
         return redirect('backups_lista')
 
-    
 
     if request.method == 'POST':
 
         from django.core.management import call_command
 
-        
 
         confirmacion = request.POST.get('confirmacion', '')
 
@@ -6986,7 +5984,6 @@ def backup_restaurar(request, pk):
 
             return redirect('backup_restaurar', pk=pk)
 
-        
 
         try:
 
@@ -7006,7 +6003,6 @@ def backup_restaurar(request, pk):
 
             )
 
-            
 
             # Registrar restauración
 
@@ -7026,13 +6022,11 @@ def backup_restaurar(request, pk):
 
             )
 
-            
 
             messages.success(request, 'Sistema restaurado exitosamente.')
 
             return redirect('backups_lista')
 
-            
 
         except Exception as e:
 
@@ -7040,7 +6034,6 @@ def backup_restaurar(request, pk):
 
             return redirect('backup_restaurar', pk=pk)
 
-    
 
     context = {
 
@@ -7050,16 +6043,11 @@ def backup_restaurar(request, pk):
 
     }
 
-    
 
     return render(request, 'app/backups/restaurar.html', context)
 
 
-
-
-
 @login_required
-
 def backup_configuracion(request):
 
     """
@@ -7076,11 +6064,9 @@ def backup_configuracion(request):
 
         return redirect('backups_lista')
 
-    
 
     config = ConfiguracionBackup.get_config()
 
-    
 
     if request.method == 'POST':
 
@@ -7100,13 +6086,11 @@ def backup_configuracion(request):
 
         config.save()
 
-        
 
         messages.success(request, 'Configuración de backups actualizada.')
 
         return redirect('backups_lista')
 
-    
 
     context = {
 
@@ -7118,7 +6102,5 @@ def backup_configuracion(request):
 
     }
 
-    
 
     return render(request, 'app/backups/configuracion.html', context)
-

@@ -9,14 +9,9 @@ from django.utils import timezone
 from app.models import Alerta
 
 
-
-
-
 class Command(BaseCommand):
 
     help = 'Envía alertas pendientes por correo electrónico'
-
-
 
     def add_arguments(self, parser):
 
@@ -32,17 +27,11 @@ class Command(BaseCommand):
 
         )
 
-
-
     def handle(self, *args, **options):
 
         max_alertas = options['max']
 
-        
-
         self.stdout.write(self.style.SUCCESS('Enviando alertas por correo electrónico...'))
-
-        
 
         # Obtener alertas pendientes
 
@@ -52,21 +41,15 @@ class Command(BaseCommand):
 
         ).prefetch_related('destinatarios')[:max_alertas]
 
-        
-
         if not alertas_pendientes:
 
             self.stdout.write(self.style.WARNING('No hay alertas pendientes para enviar'))
 
             return
 
-        
-
         emails_enviados = 0
 
         emails_fallidos = 0
-
-        
 
         for alerta in alertas_pendientes:
 
@@ -78,13 +61,9 @@ class Command(BaseCommand):
 
                 mensaje = self.construir_mensaje(alerta)
 
-                
-
                 # Obtener destinatarios
 
                 destinatarios = [user.email for user in alerta.destinatarios.all() if user.email]
-
-                
 
                 if not destinatarios:
 
@@ -95,8 +74,6 @@ class Command(BaseCommand):
                     )
 
                     continue
-
-                
 
                 # Enviar correo
 
@@ -114,23 +91,17 @@ class Command(BaseCommand):
 
                 )
 
-                
-
                 # Marcar como enviada
 
                 alerta.marcar_como_enviada()
 
                 emails_enviados += 1
 
-                
-
                 self.stdout.write(
 
                     self.style.SUCCESS(f'  ✓ Alerta {alerta.id} enviada a {len(destinatarios)} destinatario(s)')
 
                 )
-
-                
 
             except Exception as e:
 
@@ -142,8 +113,6 @@ class Command(BaseCommand):
 
                 )
 
-        
-
         # Resumen
 
         self.stdout.write(self.style.SUCCESS(f'\n✓ Proceso completado:'))
@@ -151,8 +120,6 @@ class Command(BaseCommand):
         self.stdout.write(f'  - Emails enviados: {emails_enviados}')
 
         self.stdout.write(f'  - Emails fallidos: {emails_fallidos}')
-
-
 
     def construir_mensaje(self, alerta):
 
@@ -165,9 +132,7 @@ class Command(BaseCommand):
 {'=' * len(alerta.titulo)}
 
 
-
 {alerta.mensaje}
-
 
 
 ---
@@ -178,7 +143,6 @@ Fecha de Creación: {alerta.fecha_creacion.strftime('%d/%m/%Y %H:%M')}
 
 """
 
-        
 
         # Agregar información contextual según el tipo de alerta
 
@@ -196,7 +160,6 @@ Póliza Relacionada:
 
 """
 
-        
 
         if alerta.factura:
 
@@ -214,7 +177,6 @@ Factura Relacionada:
 
 """
 
-        
 
         if alerta.siniestro:
 
@@ -234,7 +196,6 @@ Siniestro Relacionado:
 
 """
 
-        
 
         mensaje += f"""
 
@@ -245,12 +206,9 @@ Este es un mensaje automático del Sistema de Gestión de Seguros - UTPL.
 Por favor, no responda a este correo.
 
 
-
 Para más información, acceda al sistema: {settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'http://localhost:8000'}
 
 """
 
-        
 
         return mensaje
-

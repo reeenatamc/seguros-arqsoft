@@ -3,20 +3,17 @@
 Data Transfer Objects (DTOs) para vistas de solo lectura.
 
 
-
 PROBLEMA (ISP):
 
     Cuando pasas un modelo completo (Poliza, Siniestro) a un template,
 
     estás exponiendo decenas de métodos y propiedades que no se usan.
 
-    
 
     # En views.py
 
     context = {'poliza': poliza}  # ← 50+ métodos/propiedades disponibles
 
-    
 
     # En el template solo usas 3:
 
@@ -27,19 +24,16 @@ PROBLEMA (ISP):
     {{ poliza.estado }}
 
 
-
 SOLUCIÓN:
 
     Usar DTOs (dataclasses ligeras) que solo contienen lo necesario.
 
-    
 
     # En views.py
 
     from app.dtos import PolizaResumen
 
     context = {'poliza': PolizaResumen.from_model(poliza)}  # ← solo 3 campos
-
 
 
 BENEFICIOS:
@@ -55,7 +49,6 @@ BENEFICIOS:
     - Serialización JSON más limpia para APIs
 
 
-
 USO:
 
     from app.dtos import (
@@ -68,26 +61,22 @@ USO:
 
     )
 
-    
 
     # Desde un modelo
 
     dto = PolizaResumen.from_model(poliza)
 
-    
 
     # Desde un queryset (optimizado)
 
     dtos = PolizaResumen.from_queryset(Poliza.objects.filter(estado='vigente'))
 
-    
 
     # En API responses
 
     return JsonResponse(dto.to_dict())
 
 """
-
 
 
 from dataclasses import dataclass, field, asdict
@@ -99,9 +88,6 @@ from decimal import Decimal
 from typing import Optional, List, Dict, Any
 
 
-
-
-
 # ==============================================================================
 
 # BASE DTO
@@ -109,14 +95,10 @@ from typing import Optional, List, Dict, Any
 # ==============================================================================
 
 
-
 @dataclass
-
 class BaseDTO:
 
     """Clase base para todos los DTOs."""
-
-    
 
     def to_dict(self) -> Dict[str, Any]:
 
@@ -148,10 +130,6 @@ class BaseDTO:
 
         return result
 
-
-
-
-
 # ==============================================================================
 
 # POLIZA DTOs
@@ -159,9 +137,7 @@ class BaseDTO:
 # ==============================================================================
 
 
-
 @dataclass
-
 class PolizaResumen(BaseDTO):
 
     """
@@ -184,10 +160,7 @@ class PolizaResumen(BaseDTO):
 
     dias_para_vencer: int = 0
 
-    
-
     @classmethod
-
     def from_model(cls, poliza) -> 'PolizaResumen':
 
         return cls(
@@ -206,28 +179,20 @@ class PolizaResumen(BaseDTO):
 
         )
 
-    
-
     @classmethod
-
     def from_queryset(cls, queryset) -> List['PolizaResumen']:
 
         """Optimizado para querysets."""
 
         return [
 
-            cls.from_model(p) 
+            cls.from_model(p)
 
             for p in queryset.select_related('compania_aseguradora')
 
         ]
 
-
-
-
-
 @dataclass
-
 class PolizaDetalle(BaseDTO):
 
     """
@@ -272,10 +237,7 @@ class PolizaDetalle(BaseDTO):
 
     siniestros_count: int = 0
 
-    
-
     @classmethod
-
     def from_model(cls, poliza) -> 'PolizaDetalle':
 
         return cls(
@@ -316,12 +278,7 @@ class PolizaDetalle(BaseDTO):
 
         )
 
-
-
-
-
 @dataclass
-
 class PolizaCard(BaseDTO):
 
     """
@@ -348,10 +305,7 @@ class PolizaCard(BaseDTO):
 
     suma_asegurada: Decimal
 
-    
-
     @classmethod
-
     def from_model(cls, poliza) -> 'PolizaCard':
 
         # Determinar clase CSS del badge
@@ -369,8 +323,6 @@ class PolizaCard(BaseDTO):
             'cancelada': 'bg-gray-100 text-gray-800',
 
         }
-
-        
 
         return cls(
 
@@ -392,10 +344,6 @@ class PolizaCard(BaseDTO):
 
         )
 
-
-
-
-
 # ==============================================================================
 
 # SINIESTRO DTOs
@@ -403,9 +351,7 @@ class PolizaCard(BaseDTO):
 # ==============================================================================
 
 
-
 @dataclass
-
 class SiniestroResumen(BaseDTO):
 
     """
@@ -428,10 +374,7 @@ class SiniestroResumen(BaseDTO):
 
     bien_nombre: str
 
-    
-
     @classmethod
-
     def from_model(cls, siniestro) -> 'SiniestroResumen':
 
         return cls(
@@ -450,12 +393,7 @@ class SiniestroResumen(BaseDTO):
 
         )
 
-
-
-
-
 @dataclass
-
 class SiniestroLista(BaseDTO):
 
     """
@@ -488,10 +426,7 @@ class SiniestroLista(BaseDTO):
 
     dias_gestion: int
 
-    
-
     @classmethod
-
     def from_model(cls, siniestro) -> 'SiniestroLista':
 
         estado = siniestro.estado
@@ -515,8 +450,6 @@ class SiniestroLista(BaseDTO):
             'cerrado': 'bg-gray-100 text-gray-800',
 
         }
-
-        
 
         return cls(
 
@@ -544,10 +477,7 @@ class SiniestroLista(BaseDTO):
 
         )
 
-    
-
     @classmethod
-
     def from_queryset(cls, queryset) -> List['SiniestroLista']:
 
         return [
@@ -558,12 +488,7 @@ class SiniestroLista(BaseDTO):
 
         ]
 
-
-
-
-
 @dataclass
-
 class SiniestroDetalle(BaseDTO):
 
     """
@@ -584,8 +509,6 @@ class SiniestroDetalle(BaseDTO):
 
     fecha_registro: datetime
 
-    
-
     # Bien afectado
 
     bien_nombre: str
@@ -598,8 +521,6 @@ class SiniestroDetalle(BaseDTO):
 
     bien_codigo_activo: str
 
-    
-
     # Póliza
 
     poliza_id: int
@@ -608,15 +529,11 @@ class SiniestroDetalle(BaseDTO):
 
     poliza_compania: str
 
-    
-
     # Responsable
 
     responsable_nombre: Optional[str]
 
     responsable_email: Optional[str]
-
-    
 
     # Ubicación y descripción
 
@@ -626,8 +543,6 @@ class SiniestroDetalle(BaseDTO):
 
     descripcion: str
 
-    
-
     # Montos
 
     monto_estimado: Decimal
@@ -636,18 +551,13 @@ class SiniestroDetalle(BaseDTO):
 
     deducible_aplicado: Optional[Decimal]
 
-    
-
     # Métricas
 
     dias_gestion: int
 
     dias_desde_registro: int
 
-    
-
     @classmethod
-
     def from_model(cls, siniestro) -> 'SiniestroDetalle':
 
         return cls(
@@ -702,10 +612,6 @@ class SiniestroDetalle(BaseDTO):
 
         )
 
-
-
-
-
 # ==============================================================================
 
 # FACTURA DTOs
@@ -713,9 +619,7 @@ class SiniestroDetalle(BaseDTO):
 # ==============================================================================
 
 
-
 @dataclass
-
 class FacturaResumen(BaseDTO):
 
     """
@@ -738,10 +642,7 @@ class FacturaResumen(BaseDTO):
 
     fecha_vencimiento: date
 
-    
-
     @classmethod
-
     def from_model(cls, factura) -> 'FacturaResumen':
 
         return cls(
@@ -762,12 +663,7 @@ class FacturaResumen(BaseDTO):
 
         )
 
-
-
-
-
-@dataclass 
-
+@dataclass
 class FacturaLista(BaseDTO):
 
     """
@@ -804,10 +700,7 @@ class FacturaLista(BaseDTO):
 
     esta_vencida: bool
 
-    
-
     @classmethod
-
     def from_model(cls, factura) -> 'FacturaLista':
 
         estado = factura.estado
@@ -825,8 +718,6 @@ class FacturaLista(BaseDTO):
             'anulada': 'bg-gray-100 text-gray-800',
 
         }
-
-        
 
         return cls(
 
@@ -860,10 +751,6 @@ class FacturaLista(BaseDTO):
 
         )
 
-
-
-
-
 # ==============================================================================
 
 # BIEN ASEGURADO DTOs
@@ -871,9 +758,7 @@ class FacturaLista(BaseDTO):
 # ==============================================================================
 
 
-
 @dataclass
-
 class BienAseguradoResumen(BaseDTO):
 
     """
@@ -894,10 +779,7 @@ class BienAseguradoResumen(BaseDTO):
 
     estado: str
 
-    
-
     @classmethod
-
     def from_model(cls, bien) -> 'BienAseguradoResumen':
 
         return cls(
@@ -916,12 +798,7 @@ class BienAseguradoResumen(BaseDTO):
 
         )
 
-
-
-
-
 @dataclass
-
 class BienAseguradoLista(BaseDTO):
 
     """
@@ -956,10 +833,7 @@ class BienAseguradoLista(BaseDTO):
 
     tiene_siniestros: bool
 
-    
-
     @classmethod
-
     def from_model(cls, bien) -> 'BienAseguradoLista':
 
         estado = bien.estado
@@ -977,8 +851,6 @@ class BienAseguradoLista(BaseDTO):
             'transferido': 'bg-blue-100 text-blue-800',
 
         }
-
-        
 
         return cls(
 
@@ -1010,10 +882,6 @@ class BienAseguradoLista(BaseDTO):
 
         )
 
-
-
-
-
 # ==============================================================================
 
 # DASHBOARD DTOs
@@ -1021,9 +889,7 @@ class BienAseguradoLista(BaseDTO):
 # ==============================================================================
 
 
-
 @dataclass
-
 class DashboardStats(BaseDTO):
 
     """
@@ -1044,8 +910,6 @@ class DashboardStats(BaseDTO):
 
     polizas_vencidas: int
 
-    
-
     # Siniestros
 
     siniestros_total: int
@@ -1053,8 +917,6 @@ class DashboardStats(BaseDTO):
     siniestros_abiertos: int
 
     siniestros_cerrados_mes: int
-
-    
 
     # Facturas
 
@@ -1064,18 +926,13 @@ class DashboardStats(BaseDTO):
 
     total_por_cobrar: Decimal
 
-    
-
     # Indicadores
 
     tasa_siniestralidad: Decimal = Decimal('0')
 
     dias_promedio_gestion: int = 0
 
-    
-
     @classmethod
-
     def calcular(cls) -> 'DashboardStats':
 
         """Calcula todas las estadísticas en queries optimizadas."""
@@ -1088,13 +945,9 @@ class DashboardStats(BaseDTO):
 
         from datetime import timedelta
 
-        
-
         hoy = timezone.now().date()
 
         inicio_mes = hoy.replace(day=1)
-
-        
 
         # Pólizas
 
@@ -1109,8 +962,6 @@ class DashboardStats(BaseDTO):
             vencidas=Count('id', filter=Q(estado='vencida')),
 
         )
-
-        
 
         # Siniestros
 
@@ -1132,8 +983,6 @@ class DashboardStats(BaseDTO):
 
         )
 
-        
-
         # Facturas
 
         facturas = Factura.objects.aggregate(
@@ -1145,8 +994,6 @@ class DashboardStats(BaseDTO):
             por_cobrar=Sum('monto_total', filter=Q(estado__in=['pendiente', 'parcial', 'vencida'])),
 
         )
-
-        
 
         return cls(
 
@@ -1174,10 +1021,6 @@ class DashboardStats(BaseDTO):
 
         )
 
-
-
-
-
 # ==============================================================================
 
 # REPORTE DTOs
@@ -1185,9 +1028,7 @@ class DashboardStats(BaseDTO):
 # ==============================================================================
 
 
-
 @dataclass
-
 class ReporteSiniestroContadora(BaseDTO):
 
     """
@@ -1218,10 +1059,7 @@ class ReporteSiniestroContadora(BaseDTO):
 
     monto_indemnizado: Optional[Decimal]
 
-    
-
     @classmethod
-
     def from_model(cls, siniestro) -> 'ReporteSiniestroContadora':
 
         return cls(
@@ -1249,4 +1087,3 @@ class ReporteSiniestroContadora(BaseDTO):
             monto_indemnizado=siniestro.monto_indemnizado,
 
         )
-

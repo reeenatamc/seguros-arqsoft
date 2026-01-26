@@ -7,7 +7,6 @@ Responsabilidad única: Gestión del ciclo de vida de pagos.
 """
 
 
-
 from decimal import Decimal
 
 from datetime import date
@@ -15,15 +14,10 @@ from datetime import date
 from typing import Optional
 
 
-
 from django.db import transaction
 
 
-
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
-
-
-
 
 
 class PagoService(BaseService):
@@ -31,8 +25,6 @@ class PagoService(BaseService):
     """
 
     Servicio para gestión de Pagos.
-
-    
 
     Responsabilidades:
 
@@ -42,13 +34,9 @@ class PagoService(BaseService):
 
     - Actualizar facturas relacionadas
 
-    
-
     USO:
 
         from app.services.pago import PagoService
-
-        
 
         resultado = PagoService.crear_pago(
 
@@ -64,10 +52,7 @@ class PagoService(BaseService):
 
     """
 
-    
-
     @classmethod
-
     def validar_monto(
 
         cls,
@@ -84,11 +69,7 @@ class PagoService(BaseService):
 
         from app.models import Pago
 
-        
-
         saldo = factura.saldo_pendiente
-
-        
 
         if pago_pk:
 
@@ -97,8 +78,6 @@ class PagoService(BaseService):
             if pago_anterior and pago_anterior.estado == 'aprobado':
 
                 saldo += pago_anterior.monto
-
-        
 
         if monto > saldo + Decimal('0.01'):
 
@@ -110,14 +89,9 @@ class PagoService(BaseService):
 
             )
 
-        
-
         return ResultadoValidacion(es_valido=True)
 
-    
-
     @classmethod
-
     @transaction.atomic
 
     def crear_pago(
@@ -144,8 +118,6 @@ class PagoService(BaseService):
 
         from app.models import Pago
 
-        
-
         if estado == 'aprobado':
 
             validacion = cls.validar_monto(factura, monto)
@@ -153,8 +125,6 @@ class PagoService(BaseService):
             if not validacion.es_valido:
 
                 return ResultadoOperacion.desde_validacion(validacion)
-
-        
 
         try:
 
@@ -178,17 +148,11 @@ class PagoService(BaseService):
 
             pago.save()
 
-            
-
             if estado == 'aprobado':
 
                 cls._actualizar_factura_por_pago(factura, fecha_pago)
 
-            
-
             return ResultadoOperacion.exito(pago, "Pago registrado exitosamente")
-
-            
 
         except Exception as e:
 
@@ -200,10 +164,7 @@ class PagoService(BaseService):
 
             )
 
-    
-
     @classmethod
-
     @transaction.atomic
 
     def aprobar_pago(cls, pago) -> ResultadoOperacion:
@@ -214,15 +175,11 @@ class PagoService(BaseService):
 
             return ResultadoOperacion.exito(pago, "El pago ya está aprobado")
 
-        
-
         validacion = cls.validar_monto(pago.factura, pago.monto, pago.pk)
 
         if not validacion.es_valido:
 
             return ResultadoOperacion.desde_validacion(validacion)
-
-        
 
         try:
 
@@ -230,15 +187,9 @@ class PagoService(BaseService):
 
             pago.save(update_fields=['estado'])
 
-            
-
             cls._actualizar_factura_por_pago(pago.factura, pago.fecha_pago)
 
-            
-
             return ResultadoOperacion.exito(pago, "Pago aprobado exitosamente")
-
-            
 
         except Exception as e:
 
@@ -250,10 +201,7 @@ class PagoService(BaseService):
 
             )
 
-    
-
     @classmethod
-
     def _actualizar_factura_por_pago(cls, factura, fecha_pago: date) -> None:
 
         """Actualiza la factura después de un pago aprobado."""
@@ -261,8 +209,6 @@ class PagoService(BaseService):
         from app.models import Pago
 
         from ..factura import FacturaService
-
-        
 
         primer_pago = Pago.objects.filter(
 
@@ -272,17 +218,11 @@ class PagoService(BaseService):
 
         ).order_by('fecha_pago').first()
 
-        
-
         fecha_primer_pago = primer_pago.fecha_pago if primer_pago else None
-
-        
 
         FacturaService.aplicar_calculos(factura, fecha_primer_pago)
 
         FacturaService.actualizar_estado(factura)
-
-        
 
         factura.save(update_fields=[
 
@@ -298,10 +238,7 @@ class PagoService(BaseService):
 
         ])
 
-    
-
     @classmethod
-
     @transaction.atomic
 
     def eliminar_pago(cls, pago) -> ResultadoOperacion:
@@ -312,19 +249,13 @@ class PagoService(BaseService):
 
         from ..factura import FacturaService
 
-        
-
         factura = pago.factura
 
         era_aprobado = pago.estado == 'aprobado'
 
-        
-
         try:
 
             pago.delete()
-
-            
 
             if era_aprobado and factura:
 
@@ -336,17 +267,11 @@ class PagoService(BaseService):
 
                 ).order_by('fecha_pago').first()
 
-                
-
                 fecha_primer_pago = primer_pago.fecha_pago if primer_pago else None
-
-                
 
                 FacturaService.aplicar_calculos(factura, fecha_primer_pago)
 
                 FacturaService.actualizar_estado(factura)
-
-                
 
                 factura.save(update_fields=[
 
@@ -362,11 +287,7 @@ class PagoService(BaseService):
 
                 ])
 
-            
-
             return ResultadoOperacion.exito(None, "Pago eliminado exitosamente")
-
-            
 
         except Exception as e:
 
@@ -377,4 +298,3 @@ class PagoService(BaseService):
                 f"Error al eliminar pago: {str(e)}"
 
             )
-

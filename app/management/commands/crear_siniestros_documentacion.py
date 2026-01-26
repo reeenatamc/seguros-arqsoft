@@ -7,7 +7,6 @@ from decimal import Decimal
 from datetime import timedelta
 
 
-
 from app.models import (
 
     Siniestro,
@@ -25,14 +24,9 @@ from app.models import (
 )
 
 
-
-
-
 class Command(BaseCommand):
 
     help = "Crea dos siniestros en estado 'documentacion_pendiente' para pruebas"
-
-
 
     def handle(self, *args, **options):
 
@@ -52,8 +46,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         # Obtener una póliza existente
 
         poliza = Poliza.objects.first()
@@ -63,8 +55,6 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("No hay pólizas en el sistema. Ejecuta primero 'reset_demo_data'"))
 
             return
-
-
 
         # Obtener o crear responsables
 
@@ -88,8 +78,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         responsable2, _ = ResponsableCustodio.objects.get_or_create(
 
             nombre="Carlos Ramírez",
@@ -110,13 +98,9 @@ class Command(BaseCommand):
 
         )
 
-
-
         # Obtener el broker de la póliza
 
         broker_email = poliza.corredor_seguros.email if poliza.corredor_seguros else ""
-
-
 
         # Crear primer siniestro
 
@@ -168,8 +152,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         # Crear segundo siniestro
 
         siniestro2, created2 = Siniestro.objects.get_or_create(
@@ -220,8 +202,6 @@ class Command(BaseCommand):
 
         )
 
-
-
         if created1:
 
             self.stdout.write(self.style.SUCCESS(f"Siniestro 1 creado: {siniestro1.numero_siniestro}"))
@@ -229,8 +209,6 @@ class Command(BaseCommand):
         else:
 
             self.stdout.write(self.style.WARNING(f"Siniestro 1 ya existía: {siniestro1.numero_siniestro}"))
-
-
 
         if created2:
 
@@ -240,13 +218,9 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.WARNING(f"Siniestro 2 ya existía: {siniestro2.numero_siniestro}"))
 
-
-
         # Crear instancias de checklist para cada siniestro
 
         self.stdout.write("\n📋 Creando checklist para los siniestros...")
-
-        
 
         # Obtener items de checklist configurados para el tipo de siniestro
 
@@ -257,8 +231,6 @@ class Command(BaseCommand):
             activo=True
 
         ).order_by('orden')
-
-
 
         if not items_config.exists():
 
@@ -300,8 +272,6 @@ class Command(BaseCommand):
 
                     count1 += 1
 
-
-
             # Crear checklist para siniestro 2
 
             count2 = 0
@@ -326,8 +296,6 @@ class Command(BaseCommand):
 
                     count2 += 1
 
-
-
             self.stdout.write(self.style.SUCCESS(
 
                 f"   ✓ Checklist creado para {siniestro1.numero_siniestro}: {count1} items"
@@ -340,11 +308,8 @@ class Command(BaseCommand):
 
             ))
 
-
-
         self.stdout.write(self.style.SUCCESS("\n✅ Siniestros listos para subir documentación!"))
 
         self.stdout.write(self.style.SUCCESS(f"   - {siniestro1.numero_siniestro}: {siniestro1.bien_nombre}"))
 
         self.stdout.write(self.style.SUCCESS(f"   - {siniestro2.numero_siniestro}: {siniestro2.bien_nombre}"))
-

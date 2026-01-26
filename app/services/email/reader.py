@@ -3,11 +3,9 @@
 Servicio para lectura de correos IMAP - Reportes de Siniestros
 
 
-
 Este módulo se conecta a una bandeja de entrada vía IMAP y extrae correos
 
 que cumplan con la política de formato establecida para reportes de siniestros.
-
 
 
 Política de formato:
@@ -17,12 +15,10 @@ Política de formato:
 - Cuerpo: Debe contener campos estructurados entre delimitadores
 
 
-
 Ejemplo de correo válido:
 
     Asunto: [SINIESTRO] Portátil no enciende
 
-    
 
     Cuerpo:
 
@@ -36,7 +32,6 @@ Ejemplo de correo válido:
 
     CAUSA: Mala manipulación
 
-    
 
     --- DATOS DEL EQUIPO ---
 
@@ -48,12 +43,10 @@ Ejemplo de correo válido:
 
     SERIE: PF22YXND
 
-    
 
     --- FIN REPORTE ---
 
 """
-
 
 
 import imaplib
@@ -73,9 +66,7 @@ import re
 import logging
 
 
-
 from django.conf import settings
-
 
 
 # Intentar importar mailparser, si no está disponible usar parsing básico
@@ -91,11 +82,7 @@ except ImportError:
     MAILPARSER_AVAILABLE = False
 
 
-
 logger = logging.getLogger('app')
-
-
-
 
 
 # ==============================================================================
@@ -105,16 +92,11 @@ logger = logging.getLogger('app')
 # ==============================================================================
 
 
-
 class IMAPConnectionError(Exception):
 
     """Error al conectar con el servidor IMAP."""
 
     pass
-
-
-
-
 
 class IMAPAuthenticationError(Exception):
 
@@ -122,29 +104,17 @@ class IMAPAuthenticationError(Exception):
 
     pass
 
-
-
-
-
 class EmailParsingError(Exception):
 
     """Error al parsear el contenido del correo."""
 
     pass
 
-
-
-
-
 class InvalidReportFormatError(Exception):
 
     """El correo no cumple con el formato de política establecido."""
 
     pass
-
-
-
-
 
 # ==============================================================================
 
@@ -153,9 +123,7 @@ class InvalidReportFormatError(Exception):
 # ==============================================================================
 
 
-
 @dataclass
-
 class DatosEquipo:
 
     """Datos del equipo reportado en el siniestro."""
@@ -170,12 +138,7 @@ class DatosEquipo:
 
     activo: Optional[str] = None  # Opcional
 
-
-
-
-
 @dataclass
-
 class ReporteSiniestro:
 
     """Estructura de datos de un reporte de siniestro extraído del correo."""
@@ -201,8 +164,6 @@ class ReporteSiniestro:
     raw_body: str = ''
 
     attachments: List[Dict[str, Any]] = field(default_factory=list)
-
-    
 
     def to_dict(self) -> Dict[str, Any]:
 
@@ -242,10 +203,6 @@ class ReporteSiniestro:
 
         }
 
-
-
-
-
 # ==============================================================================
 
 # CLASE PRINCIPAL
@@ -253,14 +210,11 @@ class ReporteSiniestro:
 # ==============================================================================
 
 
-
 class EmailReaderService:
 
     """
 
     Servicio para leer y procesar correos de siniestros desde una bandeja IMAP.
-
-    
 
     Uso:
 
@@ -274,8 +228,6 @@ class EmailReaderService:
 
     """
 
-    
-
     # Delimitadores del formato de política
 
     INICIO_REPORTE = '--- INICIO REPORTE ---'
@@ -284,15 +236,11 @@ class EmailReaderService:
 
     DATOS_EQUIPO = '--- DATOS DEL EQUIPO ---'
 
-    
-
     # Campos requeridos en el reporte
 
     CAMPOS_REQUERIDOS = ['RESPONSABLE', 'FECHA_REPORTE', 'PROBLEMA', 'CAUSA']
 
     CAMPOS_EQUIPO = ['PERIFERICO', 'MARCA', 'MODELO', 'SERIE']
-
-    
 
     def __init__(
 
@@ -313,8 +261,6 @@ class EmailReaderService:
         """
 
         Inicializa el servicio de lectura de correos.
-
-        
 
         Args:
 
@@ -342,19 +288,13 @@ class EmailReaderService:
 
         self.subject_tag = getattr(settings, 'SINIESTRO_EMAIL_SUBJECT_TAG', '[SINIESTRO]')
 
-        
-
         self._connection: Optional[imaplib.IMAP4_SSL] = None
-
-    
 
     def connect(self) -> None:
 
         """
 
         Establece conexión con el servidor IMAP.
-
-        
 
         Raises:
 
@@ -368,8 +308,6 @@ class EmailReaderService:
 
             logger.info(f"Conectando a {self.host}:{self.port}...")
 
-            
-
             if self.use_ssl:
 
                 self._connection = imaplib.IMAP4_SSL(self.host, self.port)
@@ -378,11 +316,7 @@ class EmailReaderService:
 
                 self._connection = imaplib.IMAP4(self.host, self.port)
 
-            
-
             logger.info("Conexión establecida, autenticando...")
-
-            
 
         except (imaplib.IMAP4.error, OSError, TimeoutError) as e:
 
@@ -392,15 +326,11 @@ class EmailReaderService:
 
             )
 
-        
-
         try:
 
             self._connection.login(self.email_address, self.password)
 
             logger.info(f"Autenticación exitosa para {self.email_address}")
-
-            
 
         except imaplib.IMAP4.error as e:
 
@@ -411,8 +341,6 @@ class EmailReaderService:
                 f"Verifica las credenciales. Error: {str(e)}"
 
             )
-
-    
 
     def disconnect(self) -> None:
 
@@ -436,8 +364,6 @@ class EmailReaderService:
 
                 self._connection = None
 
-    
-
     def __enter__(self):
 
         """Context manager - conectar."""
@@ -446,8 +372,6 @@ class EmailReaderService:
 
         return self
 
-    
-
     def __exit__(self, exc_type, exc_val, exc_tb):
 
         """Context manager - desconectar."""
@@ -455,8 +379,6 @@ class EmailReaderService:
         self.disconnect()
 
         return False
-
-    
 
     def search_siniestro_emails(
 
@@ -472,15 +394,11 @@ class EmailReaderService:
 
         Busca correos que contengan [SINIESTRO] en el asunto.
 
-        
-
         Args:
 
             folder: Carpeta a buscar (default: INBOX)
 
             unseen_only: Solo buscar correos no leídos
-
-            
 
         Returns:
 
@@ -492,8 +410,6 @@ class EmailReaderService:
 
             raise IMAPConnectionError("No hay conexión activa. Llama a connect() primero.")
 
-        
-
         # Seleccionar carpeta
 
         status, _ = self._connection.select(folder)
@@ -501,8 +417,6 @@ class EmailReaderService:
         if status != 'OK':
 
             raise IMAPConnectionError(f"No se pudo seleccionar la carpeta {folder}")
-
-        
 
         # Construir criterio de búsqueda
 
@@ -518,25 +432,17 @@ class EmailReaderService:
 
             search_criteria = 'ALL'
 
-        
-
         status, messages = self._connection.search(None, search_criteria)
 
         if status != 'OK':
 
             return []
 
-        
-
         email_ids = messages[0].split()
 
         logger.info(f"Encontrados {len(email_ids)} correos en {folder}")
 
-        
-
         return email_ids
-
-    
 
     def fetch_email(self, email_id: bytes) -> Dict[str, Any]:
 
@@ -544,13 +450,9 @@ class EmailReaderService:
 
         Obtiene y parsea un correo específico.
 
-        
-
         Args:
 
             email_id: ID del correo a obtener
-
-            
 
         Returns:
 
@@ -562,19 +464,13 @@ class EmailReaderService:
 
             raise IMAPConnectionError("No hay conexión activa.")
 
-        
-
         status, msg_data = self._connection.fetch(email_id, '(RFC822)')
 
         if status != 'OK':
 
             raise EmailParsingError(f"No se pudo obtener el correo {email_id}")
 
-        
-
         raw_email = msg_data[0][1]
-
-        
 
         if MAILPARSER_AVAILABLE:
 
@@ -584,8 +480,6 @@ class EmailReaderService:
 
             return self._parse_with_email_lib(raw_email, email_id)
 
-    
-
     def _parse_with_mailparser(self, raw_email: bytes, email_id: bytes) -> Dict[str, Any]:
 
         """Parsea el correo usando la librería mail-parser."""
@@ -593,8 +487,6 @@ class EmailReaderService:
         try:
 
             mail = mailparser.parse_from_bytes(raw_email)
-
-            
 
             return {
 
@@ -634,8 +526,6 @@ class EmailReaderService:
 
             raise EmailParsingError(f"Error parseando correo con mailparser: {e}")
 
-    
-
     def _parse_with_email_lib(self, raw_email: bytes, email_id: bytes) -> Dict[str, Any]:
 
         """Parsea el correo usando la librería estándar email."""
@@ -643,8 +533,6 @@ class EmailReaderService:
         try:
 
             msg = email.message_from_bytes(raw_email)
-
-            
 
             # Decodificar asunto
 
@@ -664,13 +552,9 @@ class EmailReaderService:
 
                 )
 
-            
-
             # Obtener remitente
 
             from_header = msg.get('From', '')
-
-            
 
             # Obtener fecha
 
@@ -688,8 +572,6 @@ class EmailReaderService:
 
                     pass
 
-            
-
             # Extraer cuerpo del mensaje
 
             body_text = ''
@@ -698,8 +580,6 @@ class EmailReaderService:
 
             attachments = []
 
-            
-
             if msg.is_multipart():
 
                 for part in msg.walk():
@@ -707,8 +587,6 @@ class EmailReaderService:
                     content_type = part.get_content_type()
 
                     content_disposition = str(part.get('Content-Disposition', ''))
-
-                    
 
                     if 'attachment' in content_disposition:
 
@@ -758,8 +636,6 @@ class EmailReaderService:
 
                         body_text = payload.decode(charset, errors='replace')
 
-            
-
             return {
 
                 'email_id': email_id.decode() if isinstance(email_id, bytes) else str(email_id),
@@ -784,33 +660,23 @@ class EmailReaderService:
 
             raise EmailParsingError(f"Error parseando correo: {e}")
 
-    
-
     def extract_report_data(self, body_text: str) -> Dict[str, str]:
 
         """
 
         Extrae los datos estructurados del cuerpo del correo.
 
-        
-
         Busca el contenido entre los delimitadores y parsea los campos
 
         CAMPO: valor.
-
-        
 
         Args:
 
             body_text: Texto plano del cuerpo del correo
 
-            
-
         Returns:
 
             Diccionario con los campos extraídos
-
-            
 
         Raises:
 
@@ -824,8 +690,6 @@ class EmailReaderService:
 
         fin_match = body_text.find(self.FIN_REPORTE)
 
-        
-
         if inicio_match == -1 or fin_match == -1:
 
             raise InvalidReportFormatError(
@@ -836,21 +700,15 @@ class EmailReaderService:
 
             )
 
-        
-
         # Extraer contenido entre delimitadores
 
         report_content = body_text[inicio_match + len(self.INICIO_REPORTE):fin_match]
-
-        
 
         # Parsear campos CAMPO: valor
 
         data = {}
 
         pattern = r'^([A-Z_]+):\s*(.+?)$'
-
-        
 
         for line in report_content.split('\n'):
 
@@ -859,8 +717,6 @@ class EmailReaderService:
             if not line or line == self.DATOS_EQUIPO:
 
                 continue
-
-            
 
             match = re.match(pattern, line)
 
@@ -872,11 +728,7 @@ class EmailReaderService:
 
                 data[campo] = valor
 
-        
-
         return data
-
-    
 
     def validate_report_data(self, data: Dict[str, str]) -> List[str]:
 
@@ -884,13 +736,9 @@ class EmailReaderService:
 
         Valida que el reporte contenga todos los campos requeridos.
 
-        
-
         Args:
 
             data: Diccionario con los datos extraídos
-
-            
 
         Returns:
 
@@ -900,15 +748,11 @@ class EmailReaderService:
 
         missing = []
 
-        
-
         for campo in self.CAMPOS_REQUERIDOS:
 
             if campo not in data or not data[campo]:
 
                 missing.append(campo)
-
-        
 
         for campo in self.CAMPOS_EQUIPO:
 
@@ -916,11 +760,7 @@ class EmailReaderService:
 
                 missing.append(campo)
 
-        
-
         return missing
-
-    
 
     def parse_siniestro_email(self, email_data: Dict[str, Any]) -> Optional[ReporteSiniestro]:
 
@@ -928,13 +768,9 @@ class EmailReaderService:
 
         Convierte los datos del correo en un ReporteSiniestro.
 
-        
-
         Args:
 
             email_data: Datos del correo obtenidos con fetch_email
-
-            
 
         Returns:
 
@@ -944,8 +780,6 @@ class EmailReaderService:
 
         subject = email_data.get('subject', '')
 
-        
-
         # Verificar que el asunto contenga el tag de siniestro
 
         if self.subject_tag not in subject:
@@ -953,8 +787,6 @@ class EmailReaderService:
             logger.debug(f"Correo ignorado - no contiene {self.subject_tag}: {subject}")
 
             return None
-
-        
 
         body_text = email_data.get('body_text', '')
 
@@ -964,15 +796,11 @@ class EmailReaderService:
 
             return None
 
-        
-
         try:
 
             # Extraer datos del reporte
 
             data = self.extract_report_data(body_text)
-
-            
 
             # Validar campos requeridos
 
@@ -990,8 +818,6 @@ class EmailReaderService:
 
                 # Continuamos pero registramos la advertencia
 
-            
-
             # Construir objeto de reporte
 
             equipo = DatosEquipo(
@@ -1007,8 +833,6 @@ class EmailReaderService:
                 activo=data.get('ACTIVO'),
 
             )
-
-            
 
             reporte = ReporteSiniestro(
 
@@ -1036,11 +860,7 @@ class EmailReaderService:
 
             )
 
-            
-
             return reporte
-
-            
 
         except InvalidReportFormatError as e:
 
@@ -1053,8 +873,6 @@ class EmailReaderService:
             logger.error(f"Error procesando correo '{subject}': {e}")
 
             return None
-
-    
 
     def process_siniestro_emails(
 
@@ -1074,8 +892,6 @@ class EmailReaderService:
 
         Procesa todos los correos de siniestros en la bandeja.
 
-        
-
         Esta es la función principal que orquesta todo el proceso:
 
         1. Busca correos en la carpeta especificada
@@ -1086,8 +902,6 @@ class EmailReaderService:
 
         4. Retorna lista de reportes procesados
 
-        
-
         Args:
 
             folder: Carpeta a procesar (default: INBOX)
@@ -1097,8 +911,6 @@ class EmailReaderService:
             unseen_only: Solo procesar correos no leídos
 
             mark_as_read: Marcar correos procesados como leídos
-
-            
 
         Returns:
 
@@ -1114,13 +926,9 @@ class EmailReaderService:
 
         errores = 0
 
-        
-
         # Buscar correos
 
         email_ids = self.search_siniestro_emails(folder, unseen_only)
-
-        
 
         if not email_ids:
 
@@ -1128,21 +936,15 @@ class EmailReaderService:
 
             return reportes
 
-        
-
         # Aplicar límite si se especificó
 
         if limit:
 
             email_ids = email_ids[-limit:]  # Los más recientes
 
-        
-
         total = len(email_ids)
 
         logger.info(f"Procesando {total} correos...")
-
-        
 
         for i, email_id in enumerate(email_ids, 1):
 
@@ -1152,13 +954,9 @@ class EmailReaderService:
 
                 email_data = self.fetch_email(email_id)
 
-                
-
                 # Parsear como reporte de siniestro
 
                 reporte = self.parse_siniestro_email(email_data)
-
-                
 
                 if reporte:
 
@@ -1174,8 +972,6 @@ class EmailReaderService:
 
                     )
 
-                    
-
                     # Marcar como leído si se solicita
 
                     if mark_as_read and self._connection:
@@ -1186,15 +982,11 @@ class EmailReaderService:
 
                     ignorados += 1
 
-                    
-
             except Exception as e:
 
                 errores += 1
 
                 logger.error(f"[{i}/{total}] ✗ Error: {e}")
-
-        
 
         logger.info(
 
@@ -1202,20 +994,13 @@ class EmailReaderService:
 
         )
 
-        
-
         return reportes
-
-
-
-
 
 # ==============================================================================
 
 # FUNCIONES DE CONVENIENCIA
 
 # ==============================================================================
-
 
 
 def leer_correos_siniestros(
@@ -1232,7 +1017,6 @@ def leer_correos_siniestros(
 
     Función de conveniencia para leer correos de siniestros.
 
-    
 
     Args:
 
@@ -1242,13 +1026,11 @@ def leer_correos_siniestros(
 
         mark_as_read: Marcar como leídos después de procesar
 
-        
 
     Returns:
 
         Lista de diccionarios con los datos de cada siniestro
 
-        
 
     Example:
 
@@ -1278,7 +1060,6 @@ def leer_correos_siniestros(
 
             return [r.to_dict() for r in reportes]
 
-            
 
     except IMAPConnectionError as e:
 
@@ -1299,16 +1080,12 @@ def leer_correos_siniestros(
         raise
 
 
-
-
-
 def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: bool = True):
 
     """
 
     Guarda un reporte de siniestro en la base de datos.
 
-    
 
     Args:
 
@@ -1316,7 +1093,6 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
 
         intentar_crear_siniestro: Si True, intenta crear el siniestro automáticamente
 
-        
 
     Returns:
 
@@ -1326,7 +1102,6 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
 
     from app.models import SiniestroEmail
 
-    
 
     # Verificar si ya existe un registro con este email_id
 
@@ -1338,7 +1113,6 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
 
         return existente, existente.siniestro_creado, "Correo ya procesado anteriormente"
 
-    
 
     # Crear registro de SiniestroEmail
 
@@ -1374,11 +1148,9 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
 
     )
 
-    
 
     logger.info(f"Registro SiniestroEmail creado: {siniestro_email.id}")
 
-    
 
     # Intentar crear siniestro automáticamente
 
@@ -1386,7 +1158,6 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
 
     mensaje = "Guardado como pendiente de revisión"
 
-    
 
     if intentar_crear_siniestro:
 
@@ -1400,12 +1171,8 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
 
             logger.warning(f"No se pudo crear siniestro automáticamente: {mensaje}")
 
-    
 
     return siniestro_email, siniestro, mensaje
-
-
-
 
 
 def procesar_y_guardar_correos(
@@ -1424,7 +1191,6 @@ def procesar_y_guardar_correos(
 
     Lee correos de siniestros y los guarda en la base de datos.
 
-    
 
     Args:
 
@@ -1436,7 +1202,6 @@ def procesar_y_guardar_correos(
 
         crear_siniestros: Intentar crear siniestros automáticamente
 
-        
 
     Returns:
 
@@ -1460,7 +1225,6 @@ def procesar_y_guardar_correos(
 
     }
 
-    
 
     try:
 
@@ -1476,7 +1240,6 @@ def procesar_y_guardar_correos(
 
             )
 
-            
 
             for reporte in reportes:
 
@@ -1484,17 +1247,15 @@ def procesar_y_guardar_correos(
 
                     siniestro_email, siniestro, mensaje = guardar_reporte_en_bd(
 
-                        reporte, 
+                        reporte,
 
                         intentar_crear_siniestro=crear_siniestros
 
                     )
 
-                    
 
                     resultados['total_procesados'] += 1
 
-                    
 
                     if siniestro:
 
@@ -1504,13 +1265,11 @@ def procesar_y_guardar_correos(
 
                         resultados['pendientes_revision'] += 1
 
-                    
 
                     if "ya procesado" in mensaje.lower():
 
                         resultados['ya_existentes'] += 1
 
-                    
 
                     resultados['detalles'].append({
 
@@ -1528,7 +1287,6 @@ def procesar_y_guardar_correos(
 
                     })
 
-                    
 
                 except Exception as e:
 
@@ -1552,15 +1310,12 @@ def procesar_y_guardar_correos(
 
                     logger.error(f"Error guardando reporte: {e}")
 
-            
 
             return resultados
 
-            
 
     except Exception as e:
 
         logger.error(f"Error en procesar_y_guardar_correos: {e}")
 
         raise
-

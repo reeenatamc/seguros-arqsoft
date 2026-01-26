@@ -3,7 +3,6 @@
 Comando Django para leer correos de siniestros desde la bandeja IMAP.
 
 
-
 Uso:
 
     python manage.py leer_correos
@@ -17,7 +16,6 @@ Uso:
     python manage.py leer_correos --dry-run
 
     python manage.py leer_correos --no-auto-create
-
 
 
 Opciones:
@@ -37,11 +35,9 @@ Opciones:
 """
 
 
-
 from django.core.management.base import BaseCommand, CommandError
 
 from django.conf import settings
-
 
 
 from app.services.email_reader import (
@@ -59,14 +55,9 @@ from app.services.email_reader import (
 )
 
 
-
-
-
 class Command(BaseCommand):
 
     help = 'Lee correos de siniestros desde la bandeja de entrada IMAP y los guarda en la BD'
-
-    
 
     def add_arguments(self, parser):
 
@@ -144,8 +135,6 @@ class Command(BaseCommand):
 
         )
 
-    
-
     def handle(self, *args, **options):
 
         limit = options['limit']
@@ -162,15 +151,11 @@ class Command(BaseCommand):
 
         auto_create = not options['no_auto_create']
 
-        
-
         # Verificar configuración
 
         if not self._check_configuration():
 
             return
-
-        
 
         self.stdout.write('')
 
@@ -182,15 +167,11 @@ class Command(BaseCommand):
 
         self.stdout.write('')
 
-        
-
         if dry_run:
 
             self.stdout.write(self.style.WARNING('⚠ MODO DRY-RUN: No se guardarán datos en la BD'))
 
             self.stdout.write('')
-
-        
 
         # Mostrar configuración
 
@@ -208,13 +189,9 @@ class Command(BaseCommand):
 
         self.stdout.write('')
 
-        
-
         try:
 
             self.stdout.write(f'Conectando a {settings.IMAP_HOST}:{settings.IMAP_PORT}...')
-
-            
 
             with EmailReaderService() as service:
 
@@ -222,11 +199,7 @@ class Command(BaseCommand):
 
                 self.stdout.write('')
 
-                
-
                 self.stdout.write(f'Buscando correos con [{settings.SINIESTRO_EMAIL_SUBJECT_TAG}]...')
-
-                
 
                 reportes = service.process_siniestro_emails(
 
@@ -240,15 +213,11 @@ class Command(BaseCommand):
 
                 )
 
-                
-
                 self.stdout.write('')
 
                 self.stdout.write(self.style.HTTP_INFO('-' * 60))
 
                 self.stdout.write('')
-
-                
 
                 if not reportes:
 
@@ -259,8 +228,6 @@ class Command(BaseCommand):
                     ))
 
                     return
-
-                
 
                 # Estadísticas
 
@@ -274,8 +241,6 @@ class Command(BaseCommand):
 
                 errores = 0
 
-                
-
                 # Mostrar y procesar resultados
 
                 self.stdout.write(self.style.SUCCESS(
@@ -286,13 +251,9 @@ class Command(BaseCommand):
 
                 self.stdout.write('')
 
-                
-
                 for i, reporte in enumerate(reportes, 1):
 
                     self._print_reporte(i, reporte, verbose)
-
-                    
 
                     # Guardar en BD si no es dry-run
 
@@ -308,11 +269,7 @@ class Command(BaseCommand):
 
                             )
 
-                            
-
                             guardados += 1
-
-                            
 
                             if siniestro:
 
@@ -344,11 +301,7 @@ class Command(BaseCommand):
 
                                 ))
 
-                            
-
                             self.stdout.write('')
-
-                            
 
                         except Exception as e:
 
@@ -361,8 +314,6 @@ class Command(BaseCommand):
                             ))
 
                             self.stdout.write('')
-
-                
 
                 # Resumen final
 
@@ -377,8 +328,6 @@ class Command(BaseCommand):
                 self.stdout.write('')
 
                 self.stdout.write(f'📬 Correos procesados: {len(reportes)}')
-
-                
 
                 if not dry_run:
 
@@ -412,17 +361,11 @@ class Command(BaseCommand):
 
                     ))
 
-                
-
                 self.stdout.write('')
-
-                
 
         except IMAPConnectionError as e:
 
             raise CommandError(f'Error de conexión: {e}')
-
-        
 
         except IMAPAuthenticationError as e:
 
@@ -440,13 +383,9 @@ class Command(BaseCommand):
 
             )
 
-        
-
         except Exception as e:
 
             raise CommandError(f'Error inesperado: {e}')
-
-    
 
     def _check_configuration(self) -> bool:
 
@@ -454,19 +393,13 @@ class Command(BaseCommand):
 
         errors = []
 
-        
-
         if not getattr(settings, 'IMAP_EMAIL', ''):
 
             errors.append('IMAP_EMAIL no está configurado')
 
-        
-
         if not getattr(settings, 'IMAP_PASSWORD', ''):
 
             errors.append('IMAP_PASSWORD no está configurado')
-
-        
 
         if errors:
 
@@ -492,11 +425,7 @@ class Command(BaseCommand):
 
             return False
 
-        
-
         return True
-
-    
 
     def _print_reporte(self, index: int, reporte: ReporteSiniestro, verbose: bool):
 
@@ -532,8 +461,6 @@ class Command(BaseCommand):
 
         self.stdout.write(f'│')
 
-        
-
         if reporte.attachments:
 
             self.stdout.write(f'│  📎 Adjuntos: {len(reporte.attachments)}')
@@ -541,8 +468,6 @@ class Command(BaseCommand):
             for att in reporte.attachments:
 
                 self.stdout.write(f'│     - {att.get("filename", "sin nombre")}')
-
-        
 
         if verbose:
 
@@ -556,7 +481,4 @@ class Command(BaseCommand):
 
                 self.stdout.write(f'│  🕐 Fecha email: {reporte.date}')
 
-        
-
         self.stdout.write(f'└{"─" * 58}')
-

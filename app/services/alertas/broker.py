@@ -7,7 +7,6 @@ Responsabilidad única: notificar al corredor de seguros.
 """
 
 
-
 from datetime import timedelta
 
 from django.utils import timezone
@@ -15,11 +14,7 @@ from django.utils import timezone
 from typing import Optional
 
 
-
 from .base import BaseNotifier
-
-
-
 
 
 class BrokerNotifier(BaseNotifier):
@@ -27,8 +22,6 @@ class BrokerNotifier(BaseNotifier):
     """
 
     Notificador especializado para comunicaciones con el broker.
-
-    
 
     USO:
 
@@ -38,15 +31,11 @@ class BrokerNotifier(BaseNotifier):
 
     """
 
-    
-
     def notificar_siniestro(self, siniestro, usuario=None):
 
         """
 
         Notifica un nuevo siniestro al broker.
-
-        
 
         Args:
 
@@ -54,13 +43,9 @@ class BrokerNotifier(BaseNotifier):
 
             usuario: Usuario que realiza la acción
 
-            
-
         Returns:
 
             NotificacionEmail creada
-
-            
 
         Raises:
 
@@ -70,17 +55,11 @@ class BrokerNotifier(BaseNotifier):
 
         email_broker = self._obtener_email_broker(siniestro)
 
-        
-
         if not email_broker:
 
             raise ValueError("No se encontró email del broker para notificar")
 
-
-
         asunto = f"Notificación de Siniestro - {siniestro.numero_siniestro}"
-
-        
 
         bloques = [
 
@@ -140,8 +119,6 @@ class BrokerNotifier(BaseNotifier):
 
         ]
 
-
-
         contenido_html = self._renderizar_email(
 
             titulo=asunto,
@@ -158,11 +135,7 @@ class BrokerNotifier(BaseNotifier):
 
         )
 
-
-
         contenido_texto = self._generar_texto_plano(siniestro)
-
-
 
         notificacion = self._crear_notificacion(
 
@@ -182,8 +155,6 @@ class BrokerNotifier(BaseNotifier):
 
         )
 
-
-
         # Actualizar fechas en el siniestro
 
         siniestro.fecha_notificacion_broker = timezone.now()
@@ -192,13 +163,9 @@ class BrokerNotifier(BaseNotifier):
 
         siniestro.save(update_fields=['fecha_notificacion_broker', 'fecha_respuesta_esperada'])
 
-
-
         self._enviar_email(notificacion)
 
         return notificacion
-
-
 
     def crear_alerta_respuesta(self, siniestro):
 
@@ -206,13 +173,9 @@ class BrokerNotifier(BaseNotifier):
 
         Crea una alerta por respuesta pendiente de la aseguradora.
 
-        
-
         Args:
 
             siniestro: Siniestro con respuesta pendiente
-
-            
 
         Returns:
 
@@ -221,8 +184,6 @@ class BrokerNotifier(BaseNotifier):
         """
 
         from app.models import NotificacionEmail
-
-        
 
         # Verificar si ya hay alerta reciente
 
@@ -236,13 +197,9 @@ class BrokerNotifier(BaseNotifier):
 
         ).exists()
 
-
-
         if alerta_reciente:
 
             return None
-
-
 
         email_broker = self._obtener_email_broker(siniestro)
 
@@ -250,13 +207,9 @@ class BrokerNotifier(BaseNotifier):
 
             return None
 
-
-
         asunto = f"ALERTA: Respuesta Pendiente - Siniestro {siniestro.numero_siniestro}"
 
         dias_espera = siniestro.dias_espera_respuesta
-
-
 
         bloques = [
 
@@ -278,8 +231,6 @@ class BrokerNotifier(BaseNotifier):
 
         ]
 
-
-
         contenido_html = self._renderizar_email(
 
             titulo=asunto,
@@ -292,8 +243,6 @@ class BrokerNotifier(BaseNotifier):
 
         )
 
-
-
         contenido_texto = (
 
             f"{asunto}\n\n"
@@ -303,8 +252,6 @@ class BrokerNotifier(BaseNotifier):
             f"Días transcurridos desde envío: {dias_espera}\n"
 
         )
-
-
 
         notificacion = self._crear_notificacion(
 
@@ -322,13 +269,9 @@ class BrokerNotifier(BaseNotifier):
 
         )
 
-
-
         self._enviar_email(notificacion)
 
         return notificacion
-
-
 
     def crear_alerta_deposito(self, siniestro):
 
@@ -336,13 +279,9 @@ class BrokerNotifier(BaseNotifier):
 
         Crea una alerta por depósito de indemnización pendiente.
 
-        
-
         Args:
 
             siniestro: Siniestro con depósito pendiente
-
-            
 
         Returns:
 
@@ -351,8 +290,6 @@ class BrokerNotifier(BaseNotifier):
         """
 
         from app.models import NotificacionEmail
-
-        
 
         alerta_reciente = NotificacionEmail.objects.filter(
 
@@ -364,21 +301,15 @@ class BrokerNotifier(BaseNotifier):
 
         ).exists()
 
-
-
         if alerta_reciente:
 
             return None
-
-
 
         email_broker = self._obtener_email_broker(siniestro)
 
         if not email_broker:
 
             return None
-
-
 
         asunto = f"ALERTA: Depósito Pendiente - Siniestro {siniestro.numero_siniestro}"
 
@@ -387,8 +318,6 @@ class BrokerNotifier(BaseNotifier):
             (timezone.now() - siniestro.fecha_firma_indemnizacion).total_seconds() / 3600
 
         )
-
-
 
         bloques = [
 
@@ -412,8 +341,6 @@ class BrokerNotifier(BaseNotifier):
 
         ]
 
-
-
         contenido_html = self._renderizar_email(
 
             titulo=asunto,
@@ -426,8 +353,6 @@ class BrokerNotifier(BaseNotifier):
 
         )
 
-
-
         contenido_texto = (
 
             f"{asunto}\n\n"
@@ -437,8 +362,6 @@ class BrokerNotifier(BaseNotifier):
             f"Horas transcurridas desde firma: {horas_transcurridas}\n"
 
         )
-
-
 
         notificacion = self._crear_notificacion(
 
@@ -456,13 +379,9 @@ class BrokerNotifier(BaseNotifier):
 
         )
 
-
-
         self._enviar_email(notificacion)
 
         return notificacion
-
-
 
     def _obtener_email_broker(self, siniestro) -> Optional[str]:
 
@@ -476,8 +395,6 @@ class BrokerNotifier(BaseNotifier):
 
         return email
 
-
-
     def _get_tipo_display(self, siniestro) -> str:
 
         """Obtiene el display del tipo de siniestro."""
@@ -487,8 +404,6 @@ class BrokerNotifier(BaseNotifier):
             return siniestro.tipo_siniestro.get_nombre_display()
 
         return 'N/A'
-
-
 
     def _generar_texto_plano(self, siniestro) -> str:
 
@@ -507,4 +422,3 @@ class BrokerNotifier(BaseNotifier):
             f"Ubicación: {siniestro.ubicacion}\n"
 
         )
-

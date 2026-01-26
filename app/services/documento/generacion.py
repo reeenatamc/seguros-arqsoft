@@ -7,7 +7,6 @@ Gestiona la generación de documentos Word, PDF y firma electrónica.
 """
 
 
-
 import hashlib
 
 import os
@@ -15,7 +14,6 @@ import os
 from io import BytesIO, StringIO
 
 from datetime import datetime
-
 
 
 from django.conf import settings
@@ -27,11 +25,7 @@ from django.http import HttpResponse
 from django.contrib.staticfiles import finders
 
 
-
 from app.models import Siniestro, AdjuntoSiniestro, ConfiguracionSistema
-
-
-
 
 
 try:
@@ -49,17 +43,11 @@ except ImportError:
     DOCX_AVAILABLE = False
 
 
-
-
-
 class DocumentosService:
 
     """Servicio para generación y gestión de documentos"""
 
-
-
     @staticmethod
-
     def _verificar_docx():
 
         """Verifica que docxtpl esté disponible"""
@@ -74,10 +62,7 @@ class DocumentosService:
 
             )
 
-
-
     @staticmethod
-
     def _get_template_path(filename):
 
         """
@@ -102,8 +87,6 @@ class DocumentosService:
 
             return candidate
 
-
-
         # 2) Directorio de templates del proyecto
 
         candidate = os.path.join(settings.BASE_DIR, 'templates', 'docx', filename)
@@ -111,8 +94,6 @@ class DocumentosService:
         if os.path.exists(candidate):
 
             return candidate
-
-
 
         # 3) Directorio de plantillas legacy en la raíz
 
@@ -122,8 +103,6 @@ class DocumentosService:
 
             return candidate
 
-
-
         raise FileNotFoundError(
 
             f"No se encontró la plantilla Word '{filename}'. "
@@ -132,10 +111,7 @@ class DocumentosService:
 
         )
 
-
-
     @staticmethod
-
     def _formatear_fecha_es(fecha, con_hora=False):
 
         """
@@ -154,8 +130,6 @@ class DocumentosService:
 
             return ""
 
-
-
         meses = [
 
             "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -166,22 +140,15 @@ class DocumentosService:
 
         mes_nombre = meses[fecha.month - 1]
 
-
-
         if con_hora:
 
             return f"{fecha.day:02d}/{fecha.month:02d}/{fecha.year} {fecha.hour:02d}:{fecha.minute:02d}"
-
-
 
         # Formato tipo "20 de enero de 2026"
 
         return f"{fecha.day} de {mes_nombre} de {fecha.year}"
 
-
-
     @classmethod
-
     def generar_carta_formal_siniestro(cls, siniestro, destinatario_nombre=None,
 
                                         destinatario_cargo=None):
@@ -192,15 +159,11 @@ class DocumentosService:
 
         una plantilla Word (.docx) con docxtpl.
 
-
-
         La plantilla debe llamarse 'plantilla_carta_siniestro.docx'.
 
         """
 
         cls._verificar_docx()
-
-
 
         # 1. Cargar la plantilla diseñada estéticamente
 
@@ -210,17 +173,11 @@ class DocumentosService:
 
         doc = DocxTemplate(ruta_plantilla)
 
-
-
         # 2. Preparar el contexto (diccionario de datos)
-
-
 
         firmante_nombre = ConfiguracionSistema.get_config('FIRMANTE_CARTA_NOMBRE', '')
 
         firmante_cargo = ConfiguracionSistema.get_config('FIRMANTE_CARTA_CARGO', '')
-
-
 
         context = {
 
@@ -238,8 +195,6 @@ class DocumentosService:
 
             'fecha_siniestro': cls._formatear_fecha_es(siniestro.fecha_siniestro),
 
-
-
             # Datos del cuadro resumen
 
             'tipo_siniestro': siniestro.tipo_siniestro.get_nombre_display() if siniestro.tipo_siniestro else "N/A",
@@ -254,13 +209,9 @@ class DocumentosService:
 
             'monto_estimado': f"${siniestro.monto_estimado:,.2f}",
 
-
-
             'descripcion': siniestro.descripcion_detallada,
 
             'causa': siniestro.causa,
-
-
 
             # Aliases genéricos
 
@@ -276,8 +227,6 @@ class DocumentosService:
 
             'descripcion_incidente': siniestro.descripcion_detallada,
 
-
-
             # === Aliases EXACTOS para tu plantilla Word ===
 
             # Encabezado
@@ -285,8 +234,6 @@ class DocumentosService:
             'codigo_oficio': siniestro.numero_siniestro,
 
             'aseguradora_nombre': siniestro.poliza.compania_aseguradora.nombre,
-
-
 
             # Detalle del equipo
 
@@ -300,15 +247,11 @@ class DocumentosService:
 
             'bien_activo': siniestro.bien_codigo_activo or "",
 
-
-
             # Responsable y causa
 
             'responsable_nombre': getattr(siniestro.responsable_custodio, "nombre", "") or "",
 
             'causa_siniestro': siniestro.causa,
-
-
 
             # Firmante (configurable en ConfiguracionSistema)
 
@@ -322,13 +265,9 @@ class DocumentosService:
 
         }
 
-
-
         # 3. Renderizar plantilla
 
         doc.render(context)
-
-
 
         # 4. Guardar en buffer
 
@@ -340,17 +279,12 @@ class DocumentosService:
 
         return buffer
 
-
-
     @classmethod
-
     def generar_recibo_indemnizacion(cls, siniestro):
 
         """
 
         Genera un recibo de indemnización usando una plantilla Word (.docx).
-
-
 
         La plantilla debe llamarse 'plantilla_recibo_indemnizacion.docx'.
 
@@ -358,15 +292,11 @@ class DocumentosService:
 
         cls._verificar_docx()
 
-
-
         # 1. Cargar plantilla
 
         ruta_plantilla = cls._get_template_path('plantilla_recibo_indemnizacion.docx')
 
         doc = DocxTemplate(ruta_plantilla)
-
-
 
         monto_indemnizacion = (
 
@@ -378,23 +308,17 @@ class DocumentosService:
 
         )
 
-
-
         # 2. Contexto para la plantilla
 
         firmante_nombre = ConfiguracionSistema.get_config('FIRMANTE_CARTA_NOMBRE', '')
 
         firmante_cargo = ConfiguracionSistema.get_config('FIRMANTE_CARTA_CARGO', '')
 
-
-
         context = {
 
             'nro_recibo': f"{siniestro.numero_siniestro}-IND",
 
             'fecha_actual': timezone.now().strftime('%d de %B de %Y'),
-
-
 
             # Datos Tabla Superior
 
@@ -410,8 +334,6 @@ class DocumentosService:
 
             'monto_indemnizar': f"${monto_indemnizacion:,.2f}",
 
-
-
             # Datos Desglose (Cálculos)
 
             'val_reclamo': f"${(siniestro.valor_reclamo or 0):,.2f}",
@@ -422,15 +344,11 @@ class DocumentosService:
 
             'total_final': f"${monto_indemnizacion:,.2f}",
 
-
-
             # Texto legal dinámico
 
             'monto_texto': f"${monto_indemnizacion:,.2f}",
 
             'aseguradora_nombre': siniestro.poliza.compania_aseguradora.nombre,
-
-
 
             # Firmante en el recibo
 
@@ -440,13 +358,9 @@ class DocumentosService:
 
         }
 
-
-
         # 3. Renderizar
 
         doc.render(context)
-
-
 
         # 4. Guardar en buffer
 
@@ -458,23 +372,16 @@ class DocumentosService:
 
         return buffer
 
-
-
     @staticmethod
-
     def calcular_hash_archivo(archivo):
 
         """
 
         Calcula el hash SHA256 de un archivo.
 
-
-
         Args:
 
             archivo: Archivo a procesar (FileField o path)
-
-
 
         Returns:
 
@@ -483,8 +390,6 @@ class DocumentosService:
         """
 
         hasher = hashlib.sha256()
-
-
 
         if hasattr(archivo, 'chunks'):
 
@@ -514,21 +419,14 @@ class DocumentosService:
 
             raise ValueError("Tipo de archivo no soportado")
 
-
-
         return hasher.hexdigest()
 
-
-
     @classmethod
-
     def aplicar_firma_electronica(cls, adjunto, usuario, ip=None):
 
         """
 
         Aplica una firma electrónica a un documento adjunto.
-
-
 
         Args:
 
@@ -537,8 +435,6 @@ class DocumentosService:
             usuario: Usuario que firma
 
             ip: Dirección IP del firmante (opcional)
-
-
 
         Returns:
 
@@ -550,19 +446,13 @@ class DocumentosService:
 
             raise ValueError("El adjunto no tiene archivo asociado")
 
-
-
         if adjunto.firmado:
 
             raise ValueError("El documento ya está firmado")
 
-
-
         # Calcular hash del archivo
 
         hash_firma = cls.calcular_hash_archivo(adjunto.archivo)
-
-
 
         # Actualizar el adjunto
 
@@ -578,27 +468,18 @@ class DocumentosService:
 
         adjunto.save()
 
-
-
         return adjunto
 
-
-
     @classmethod
-
     def verificar_firma(cls, adjunto):
 
         """
 
         Verifica la integridad de un documento firmado.
 
-
-
         Args:
 
             adjunto: Instancia de AdjuntoSiniestro
-
-
 
         Returns:
 
@@ -616,8 +497,6 @@ class DocumentosService:
 
             }
 
-
-
         if not adjunto.archivo:
 
             return {
@@ -628,19 +507,13 @@ class DocumentosService:
 
             }
 
-
-
         # Calcular hash actual
 
         hash_actual = cls.calcular_hash_archivo(adjunto.archivo)
 
-
-
         # Comparar
 
         es_valido = hash_actual == adjunto.hash_firma
-
-
 
         return {
 
@@ -658,23 +531,16 @@ class DocumentosService:
 
         }
 
-
-
     @classmethod
-
     def descargar_carta_siniestro(cls, siniestro):
 
         """
 
         Genera y retorna una respuesta HTTP con la carta de siniestro.
 
-
-
         Args:
 
             siniestro: Instancia del modelo Siniestro
-
-
 
         Returns:
 
@@ -683,8 +549,6 @@ class DocumentosService:
         """
 
         buffer = cls.generar_carta_formal_siniestro(siniestro)
-
-
 
         response = HttpResponse(
 
@@ -696,27 +560,18 @@ class DocumentosService:
 
         response['Content-Disposition'] = f'attachment; filename="carta_siniestro_{siniestro.numero_siniestro}.docx"'
 
-
-
         return response
 
-
-
     @classmethod
-
     def descargar_recibo_indemnizacion(cls, siniestro):
 
         """
 
         Genera y retorna una respuesta HTTP con el recibo de indemnización.
 
-
-
         Args:
 
             siniestro: Instancia del modelo Siniestro
-
-
 
         Returns:
 
@@ -725,8 +580,6 @@ class DocumentosService:
         """
 
         buffer = cls.generar_recibo_indemnizacion(siniestro)
-
-
 
         response = HttpResponse(
 
@@ -738,21 +591,14 @@ class DocumentosService:
 
         response['Content-Disposition'] = f'attachment; filename="recibo_indemnizacion_{siniestro.numero_siniestro}.docx"'
 
-
-
         return response
 
-
-
     @classmethod
-
     def crear_adjunto_desde_buffer(cls, siniestro, buffer, tipo_adjunto, nombre, usuario):
 
         """
 
         Crea un AdjuntoSiniestro desde un buffer de documento.
-
-
 
         Args:
 
@@ -766,8 +612,6 @@ class DocumentosService:
 
             usuario: Usuario que crea el adjunto
 
-
-
         Returns:
 
             AdjuntoSiniestro: El adjunto creado
@@ -776,13 +620,9 @@ class DocumentosService:
 
         from django.core.files.base import ContentFile
 
-
-
         contenido = buffer.getvalue()
 
         archivo = ContentFile(contenido, name=f"{nombre}.docx")
-
-
 
         adjunto = AdjuntoSiniestro.objects.create(
 
@@ -800,7 +640,4 @@ class DocumentosService:
 
         )
 
-
-
         return adjunto
-

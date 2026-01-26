@@ -3,12 +3,10 @@ from django.urls import path
 from . import views
 
 
-
 urlpatterns = [
 
     path('', views.dashboard, name='dashboard'),
 
-    
 
     # Pólizas
 
@@ -16,7 +14,6 @@ urlpatterns = [
 
     path('polizas/exportar/', views.polizas_exportar, name='polizas_exportar'),
 
-    
 
     # Desglose por Ramos
 
@@ -24,7 +21,6 @@ urlpatterns = [
 
     path('desglose-ramos/exportar/', views.desglose_ramos_exportar, name='desglose_ramos_exportar'),
 
-    
 
     # Facturas
 
@@ -38,7 +34,6 @@ urlpatterns = [
 
     path('facturas/exportar/', views.facturas_exportar, name='facturas_exportar'),
 
-    
 
     # Siniestros
 
@@ -54,7 +49,6 @@ urlpatterns = [
 
     path('api/siniestros/email/count/', views.siniestros_email_count, name='siniestros_email_count'),
 
-    
 
     # Alertas
 
@@ -62,7 +56,6 @@ urlpatterns = [
 
     path('alertas/<int:pk>/leida/', views.alerta_marcar_leida, name='alerta_marcar_leida'),
 
-    
 
     # Reportes
 
@@ -80,7 +73,6 @@ urlpatterns = [
 
     path('reportes/ejecutivo/pdf/', views.reportes_ejecutivo_pdf, name='reportes_ejecutivo_pdf'),
 
-    
 
     # Documentos
 
@@ -95,7 +87,6 @@ urlpatterns = [
     path('documentos/<int:pk>/descargar/', views.documento_descargar, name='documento_descargar'),
 
 
-
     # Pagos
 
     path('pagos/crear/', views.PagoCreateView.as_view(), name='pago_crear'),
@@ -104,13 +95,11 @@ urlpatterns = [
 
     path('pagos/<int:pk>/editar/', views.PagoUpdateView.as_view(), name='pago_editar'),
 
-    
 
     # Búsqueda Global
 
     path('buscar/', views.busqueda_global, name='busqueda_global'),
 
-    
 
     # API endpoints
 
@@ -120,7 +109,6 @@ urlpatterns = [
 
     path('api/buscar/', views.api_buscar, name='api_buscar'),
 
-    
 
     # Dashboard Analytics API
 
@@ -132,7 +120,6 @@ urlpatterns = [
 
     path('api/dashboard/year-comparison/', views.api_dashboard_year_comparison, name='api_dashboard_year_comparison'),
 
-    
 
     # Dashboard Filters API (estilo Odoo)
 
@@ -146,25 +133,21 @@ urlpatterns = [
 
     path('api/dashboard/export/', views.api_dashboard_export, name='api_dashboard_export'),
 
-    
 
     # Renovaciones de Pólizas
 
     path('renovaciones/', views.renewals_list, name='renewals_list'),
 
-    
 
     # Cotizaciones
 
     path('cotizaciones/', views.quotes_list, name='quotes_list'),
 
-    
 
     # Bienes Asegurados
 
     path('bienes/', views.assets_list, name='assets_list'),
 
-    
 
     # Calendario
 
@@ -174,7 +157,6 @@ urlpatterns = [
 
     path('api/calendario/eventos/', views.api_calendar_events, name='api_calendar_events'),
 
-    
 
     # Aprobaciones de Pago
 
@@ -184,7 +166,6 @@ urlpatterns = [
 
     path('aprobaciones/<int:pk>/rechazar/', views.reject_payment, name='reject_payment'),
 
-    
 
     # Dashboard Analytics Especializado
 
@@ -199,37 +180,31 @@ urlpatterns = [
     path('api/analytics/insurers/', views.api_analytics_insurers, name='api_analytics_insurers'),
 
 
-
     # =========================================================================
 
     # NUEVAS RUTAS - CREACIÓN RÁPIDA DE ENTIDADES (para popups)
 
     # =========================================================================
 
-    
 
     # Compañías Aseguradoras
 
     path('aseguradoras/crear/', views.CompaniaAseguradoraCreateView.as_view(), name='aseguradora_crear'),
 
-    
 
     # Corredores de Seguros
 
     path('corredores/crear/', views.CorredorSegurosCreateView.as_view(), name='corredor_crear'),
 
-    
 
     # Tipos de Siniestro
 
     path('tipos-siniestro/crear/', views.TipoSiniestroCreateView.as_view(), name='tipo_siniestro_crear'),
 
-    
 
     # Responsables/Custodios
 
     path('responsables/crear/', views.ResponsableCustodioCreateView.as_view(), name='responsable_crear'),
-
 
 
     # =========================================================================
@@ -237,7 +212,6 @@ urlpatterns = [
     # SISTEMA DE RAMOS
 
     # =========================================================================
-
 
 
     # Ramos (Grupos de Ramo)
@@ -251,7 +225,6 @@ urlpatterns = [
     path('ramos/inicializar/', views.inicializar_ramos_predefinidos, name='ramos_inicializar'),
 
 
-
     # Pólizas - CRUD Completo
 
     path('polizas/crear/', views.PolizaCreateView.as_view(), name='poliza_crear'),
@@ -261,7 +234,6 @@ urlpatterns = [
     path('polizas/<int:pk>/editar/', views.PolizaUpdateView.as_view(), name='poliza_editar'),
 
 
-
     # Siniestros - CRUD Completo
 
     path('siniestros/crear/', views.SiniestroCreateView.as_view(), name='siniestro_crear'),
@@ -269,7 +241,6 @@ urlpatterns = [
     path('siniestros/<int:pk>/', views.SiniestroDetailView.as_view(), name='siniestro_detalle'),
 
     path('siniestros/<int:pk>/editar/', views.SiniestroUpdateView.as_view(), name='siniestro_editar'),
-
 
 
     # Acciones de Siniestros
@@ -287,11 +258,9 @@ urlpatterns = [
     path('siniestros/<int:pk>/enviar-aseguradora/', views.siniestro_enviar_aseguradora, name='siniestro_enviar_aseguradora'),
 
 
-
     # Adjuntos
 
     path('adjuntos/<int:pk>/firmar/', views.adjunto_firmar, name='adjunto_firmar'),
-
 
 
     # Grupos de Bienes
@@ -303,7 +272,6 @@ urlpatterns = [
     path('grupos-bienes/<int:pk>/', views.GrupoBienesDetailView.as_view(), name='grupo_bienes_detalle'),
 
 
-
     # Bienes Asegurados - CRUD
 
     path('bienes/crear/', views.BienAseguradoCreateView.as_view(), name='bien_asegurado_crear'),
@@ -311,7 +279,6 @@ urlpatterns = [
     path('bienes/<int:pk>/', views.BienAseguradoDetailView.as_view(), name='bien_asegurado_detalle'),
 
     path('bienes/<int:pk>/editar/', views.BienAseguradoUpdateView.as_view(), name='bien_asegurado_editar'),
-
 
 
     # Reportes Avanzados
@@ -325,7 +292,6 @@ urlpatterns = [
     path('reportes/siniestros-dependencia/', views.reporte_siniestros_dependencia, name='reporte_siniestros_dependencia'),
 
 
-
     # APIs Adicionales
 
     path('api/subtipos-ramo/', views.api_subtipos_ramo, name='api_subtipos_ramo'),
@@ -337,7 +303,6 @@ urlpatterns = [
     path('api/reporte-siniestralidad/', views.api_reporte_siniestralidad, name='api_reporte_siniestralidad'),
 
 
-
     # Configuración del Sistema
 
     path('configuracion/', views.configuracion_lista, name='configuracion_lista'),
@@ -347,7 +312,6 @@ urlpatterns = [
     path('configuracion/categoria/<str:categoria>/', views.configuracion_categoria, name='configuracion_categoria'),
 
     path('configuracion/restablecer/', views.configuracion_restablecer, name='configuracion_restablecer'),
-
 
 
     # Respaldos y Recuperación
@@ -365,4 +329,3 @@ urlpatterns = [
     path('backups/configuracion/', views.backup_configuracion, name='backup_configuracion'),
 
 ]
-

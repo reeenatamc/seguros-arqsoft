@@ -7,7 +7,6 @@ Formularios Django para gestión de pólizas, siniestros, ramos y bienes asegura
 """
 
 
-
 from django import forms
 
 from django.forms import inlineformset_factory
@@ -17,10 +16,9 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 
-
 from .models import (
 
-    Poliza, DetallePolizaRamo, 
+    Poliza, DetallePolizaRamo,
 
     TipoRamo, GrupoRamo, SubgrupoRamo, BienAsegurado,
 
@@ -39,9 +37,6 @@ from .models import (
 )
 
 
-
-
-
 # ==============================================================================
 
 # WIDGETS PERSONALIZADOS
@@ -49,14 +44,11 @@ from .models import (
 # ==============================================================================
 
 
-
 class DateInput(forms.DateInput):
 
     """Widget de fecha con type=date para navegadores modernos"""
 
     input_type = 'date'
-
-
 
     def __init__(self, *args, **kwargs):
 
@@ -66,17 +58,11 @@ class DateInput(forms.DateInput):
 
         super().__init__(*args, **kwargs)
 
-
-
-
-
 class DateTimeInput(forms.DateTimeInput):
 
     """Widget de datetime-local para navegadores modernos"""
 
     input_type = 'datetime-local'
-
-
 
     # Formato compatible con inputs HTML datetime-local
 
@@ -86,10 +72,6 @@ class DateTimeInput(forms.DateTimeInput):
 
         super().__init__(*args, **kwargs)
 
-
-
-
-
 # ==============================================================================
 
 # FORMULARIOS DE ENTIDADES BASE (Compañías, Corredores, etc.)
@@ -97,18 +79,15 @@ class DateTimeInput(forms.DateTimeInput):
 # ==============================================================================
 
 
-
 class CompaniaAseguradoraForm(forms.ModelForm):
 
     """Formulario para crear/editar compañías aseguradoras"""
-
-
 
     class Meta:
 
         model = CompaniaAseguradora
 
-        fields = ['nombre', 'ruc', 'direccion', 'telefono', 'email', 
+        fields = ['nombre', 'ruc', 'direccion', 'telefono', 'email',
 
                   'contacto_nombre', 'contacto_telefono', 'activo']
 
@@ -182,15 +161,9 @@ class CompaniaAseguradoraForm(forms.ModelForm):
 
         }
 
-
-
-
-
 class CorredorSegurosForm(forms.ModelForm):
 
     """Formulario para crear/editar corredores de seguros"""
-
-
 
     class Meta:
 
@@ -268,8 +241,6 @@ class CorredorSegurosForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -278,15 +249,9 @@ class CorredorSegurosForm(forms.ModelForm):
 
         self.fields['compania_aseguradora'].queryset = CompaniaAseguradora.objects.filter(activo=True)
 
-
-
-
-
 class TipoSiniestroForm(forms.ModelForm):
 
     """Formulario para crear/editar tipos de siniestro"""
-
-
 
     class Meta:
 
@@ -320,15 +285,9 @@ class TipoSiniestroForm(forms.ModelForm):
 
         }
 
-
-
-
-
 class ResponsableCustodioForm(forms.ModelForm):
 
     """Formulario para crear/editar responsables/custodios"""
-
-
 
     class Meta:
 
@@ -384,10 +343,6 @@ class ResponsableCustodioForm(forms.ModelForm):
 
         }
 
-
-
-
-
 # ==============================================================================
 
 # FORMULARIOS DE CATÁLOGO DE RAMOS (JERARQUÍA)
@@ -395,12 +350,9 @@ class ResponsableCustodioForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class TipoRamoForm(forms.ModelForm):
 
     """Formulario para crear/editar tipos de ramo (nivel superior)"""
-
-
 
     class Meta:
 
@@ -444,8 +396,6 @@ class TipoRamoForm(forms.ModelForm):
 
         }
 
-
-
     def clean_codigo(self):
 
         codigo = self.cleaned_data.get('codigo', '').upper()
@@ -456,15 +406,9 @@ class TipoRamoForm(forms.ModelForm):
 
         return codigo
 
-
-
-
-
 class GrupoRamoForm(forms.ModelForm):
 
     """Formulario para crear/editar grupos de ramo (segundo nivel)"""
-
-
 
     class Meta:
 
@@ -518,15 +462,11 @@ class GrupoRamoForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
         self.fields['tipo_ramo'].queryset = TipoRamo.objects.filter(activo=True)
-
-
 
     def clean_codigo(self):
 
@@ -548,15 +488,9 @@ class GrupoRamoForm(forms.ModelForm):
 
         return codigo
 
-
-
-
-
 class SubgrupoRamoForm(forms.ModelForm):
 
     """Formulario para crear/editar subgrupos de ramo (tercer nivel)"""
-
-
 
     class Meta:
 
@@ -598,26 +532,17 @@ class SubgrupoRamoForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
         self.fields['grupo_ramo'].queryset = GrupoRamo.objects.filter(activo=True)
 
-
-
-
-
 # Alias para compatibilidad con código existente (deprecado)
 
 RamoForm = GrupoRamoForm
 
 SubtipoRamoForm = SubgrupoRamoForm
-
-
-
 
 
 # ==============================================================================
@@ -627,12 +552,9 @@ SubtipoRamoForm = SubgrupoRamoForm
 # ==============================================================================
 
 
-
 class PolizaForm(forms.ModelForm):
 
     """Formulario principal para crear/editar pólizas"""
-
-
 
     class Meta:
 
@@ -786,8 +708,6 @@ class PolizaForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -804,8 +724,6 @@ class PolizaForm(forms.ModelForm):
 
         self.fields['grupo_ramo'].required = False
 
-        
-
         # Campos opcionales
 
         self.fields['prima_neta'].required = False
@@ -817,8 +735,6 @@ class PolizaForm(forms.ModelForm):
         self.fields['porcentaje_deducible'].required = False
 
         self.fields['deducible_minimo'].required = False
-
-
 
         # Si se selecciona una compañía, limitar los corredores a esa compañía
 
@@ -840,8 +756,6 @@ class PolizaForm(forms.ModelForm):
 
             compania = self.instance.compania_aseguradora
 
-
-
         if compania:
 
             self.fields['corredor_seguros'].queryset = CorredorSeguros.objects.filter(
@@ -850,8 +764,6 @@ class PolizaForm(forms.ModelForm):
 
             )
 
-
-
     def clean(self):
 
         cleaned_data = super().clean()
@@ -859,8 +771,6 @@ class PolizaForm(forms.ModelForm):
         fecha_inicio = cleaned_data.get('fecha_inicio')
 
         fecha_fin = cleaned_data.get('fecha_fin')
-
-
 
         if fecha_inicio and fecha_fin:
 
@@ -872,19 +782,11 @@ class PolizaForm(forms.ModelForm):
 
                 })
 
-
-
         return cleaned_data
-
-
-
-
 
 class DetallePolizaRamoForm(forms.ModelForm):
 
     """Formulario para detalle de póliza por ramo con cálculos en vivo"""
-
-
 
     class Meta:
 
@@ -968,27 +870,19 @@ class DetallePolizaRamoForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
-
-
         # Siempre limitar los grupos a los activos
 
         self.fields['grupo_ramo'].queryset = GrupoRamo.objects.filter(activo=True)
-
-
 
         # Por defecto, no obligamos el subgrupo y restringimos su queryset
 
         self.fields['subgrupo_ramo'].required = False
 
         self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.none()
-
-
 
         # Si viene un grupo_ramo en el POST, limitar los subgrupos a ese grupo
 
@@ -1020,8 +914,6 @@ class DetallePolizaRamoForm(forms.ModelForm):
 
             ).order_by('orden', 'nombre')
 
-
-
     def clean_subgrupo_ramo(self):
 
         """
@@ -1034,8 +926,6 @@ class DetallePolizaRamoForm(forms.ModelForm):
 
         grupo = self.cleaned_data.get('grupo_ramo')
 
-
-
         if subgrupo and grupo and subgrupo.grupo_ramo_id != grupo.id:
 
             raise ValidationError(
@@ -1044,13 +934,7 @@ class DetallePolizaRamoForm(forms.ModelForm):
 
             )
 
-
-
         return subgrupo
-
-
-
-
 
 # Formset para detalles de ramo en póliza
 
@@ -1073,9 +957,6 @@ DetallePolizaRamoFormSet = inlineformset_factory(
 )
 
 
-
-
-
 # ==============================================================================
 
 # FORMULARIOS DE SINIESTRO
@@ -1083,12 +964,9 @@ DetallePolizaRamoFormSet = inlineformset_factory(
 # ==============================================================================
 
 
-
 class SiniestroForm(forms.ModelForm):
 
     """Formulario principal para crear/editar siniestros"""
-
-
 
     class Meta:
 
@@ -1234,19 +1112,13 @@ class SiniestroForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
-
-
         # Obtener la instancia actual si existe (modo edición)
 
         instance = getattr(self, 'instance', None)
-
-
 
         # Bienes asegurados: activos de pólizas vigentes + el actual si existe
 
@@ -1258,19 +1130,13 @@ class SiniestroForm(forms.ModelForm):
 
         ).select_related('poliza', 'subgrupo_ramo')
 
-        
-
         if instance and instance.bien_asegurado_id:
 
             bienes_qs = bienes_qs | BienAsegurado.objects.filter(pk=instance.bien_asegurado_id)
 
-        
-
         self.fields['bien_asegurado'].queryset = bienes_qs.distinct()
 
         self.fields['bien_asegurado'].required = False
-
-        
 
         # Tipos de siniestro: activos + el actual si existe
 
@@ -1281,8 +1147,6 @@ class SiniestroForm(forms.ModelForm):
             tipos_qs = tipos_qs | TipoSiniestro.objects.filter(pk=instance.tipo_siniestro_id)
 
         self.fields['tipo_siniestro'].queryset = tipos_qs.distinct()
-
-        
 
         # Responsables: activos + el actual si existe
 
@@ -1295,8 +1159,6 @@ class SiniestroForm(forms.ModelForm):
         self.fields['responsable_custodio'].queryset = responsables_qs.distinct()
 
         self.fields['responsable_custodio'].required = False
-
-
 
         # Prefill del email del broker desde la póliza cuando sea posible
 
@@ -1330,8 +1192,6 @@ class SiniestroForm(forms.ModelForm):
 
                     poliza_obj = instance.poliza
 
-
-
                 if poliza_obj and poliza_obj.corredor_seguros and poliza_obj.corredor_seguros.email:
 
                     self.fields['email_broker'].initial = poliza_obj.corredor_seguros.email
@@ -1339,8 +1199,6 @@ class SiniestroForm(forms.ModelForm):
         except Exception:
 
             pass
-
-
 
         # Formatos de fecha compatibles con datetime-local
 
@@ -1354,11 +1212,9 @@ class SiniestroForm(forms.ModelForm):
 
         ]
 
-
-
         # Campos opcionales
 
-        for field in ['valor_reclamo', 'deducible_aplicado', 'depreciacion', 
+        for field in ['valor_reclamo', 'deducible_aplicado', 'depreciacion',
 
                       'suma_asegurada_bien', 'email_broker', 'observaciones']:
 
@@ -1366,15 +1222,11 @@ class SiniestroForm(forms.ModelForm):
 
                 self.fields[field].required = False
 
-
-
     def clean(self):
 
         cleaned_data = super().clean()
 
         bien_asegurado = cleaned_data.get('bien_asegurado')
-
-
 
         # El bien asegurado es requerido (la póliza se obtiene de él)
 
@@ -1386,19 +1238,11 @@ class SiniestroForm(forms.ModelForm):
 
             )
 
-
-
         return cleaned_data
-
-
-
-
 
 class SiniestroGestionForm(forms.ModelForm):
 
     """Formulario para gestión de estado de siniestro"""
-
-
 
     class Meta:
 
@@ -1450,21 +1294,15 @@ class SiniestroGestionForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-
-
 
         # Formatos compatibles para todos los campos de fecha / fecha-hora
 
         date_formats = ['%Y-%m-%d']
 
         datetime_formats = ['%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M']
-
-
 
         self.fields['fecha_envio_aseguradora'].input_formats = date_formats
 
@@ -1476,15 +1314,9 @@ class SiniestroGestionForm(forms.ModelForm):
 
         self.fields['fecha_firma_indemnizacion'].input_formats = datetime_formats
 
-
-
-
-
 class AdjuntoSiniestroForm(forms.ModelForm):
 
     """Formulario para adjuntos de siniestro"""
-
-
 
     class Meta:
 
@@ -1528,10 +1360,6 @@ class AdjuntoSiniestroForm(forms.ModelForm):
 
         }
 
-
-
-
-
 # Formset para adjuntos de siniestro
 
 AdjuntoSiniestroFormSet = inlineformset_factory(
@@ -1553,14 +1381,9 @@ AdjuntoSiniestroFormSet = inlineformset_factory(
 )
 
 
-
-
-
 class ChecklistSiniestroForm(forms.ModelForm):
 
     """Formulario para items de checklist de siniestro"""
-
-
 
     class Meta:
 
@@ -1582,10 +1405,6 @@ class ChecklistSiniestroForm(forms.ModelForm):
 
         }
 
-
-
-
-
 # ==============================================================================
 
 # FORMULARIOS DE BIENES ASEGURADOS
@@ -1593,12 +1412,9 @@ class ChecklistSiniestroForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class GrupoBienesForm(forms.ModelForm):
 
     """Formulario para crear/editar grupos de bienes"""
-
-
 
     class Meta:
 
@@ -1636,8 +1452,6 @@ class GrupoBienesForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -1647,8 +1461,6 @@ class GrupoBienesForm(forms.ModelForm):
         self.fields['subgrupo_ramo'].required = False
 
         self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.none()
-
-        
 
         # Si viene un grupo_ramo en el POST, limitar los subgrupos
 
@@ -1676,8 +1488,6 @@ class GrupoBienesForm(forms.ModelForm):
 
             ).order_by('orden', 'nombre')
 
-        
-
         self.fields['responsable'].queryset = ResponsableCustodio.objects.filter(activo=True)
 
         self.fields['responsable'].required = False
@@ -1685,10 +1495,6 @@ class GrupoBienesForm(forms.ModelForm):
         self.fields['poliza'].queryset = Poliza.objects.filter(estado__in=['vigente', 'por_vencer'])
 
         self.fields['poliza'].required = False
-
-
-
-
 
 class BienAseguradoForm(forms.ModelForm):
 
@@ -1699,8 +1505,6 @@ class BienAseguradoForm(forms.ModelForm):
     Combina campos de BienAsegurado + InsuredAsset (deprecado).
 
     """
-
-
 
     class Meta:
 
@@ -1934,13 +1738,9 @@ class BienAseguradoForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-
-        
 
         # Pólizas vigentes o por vencer
 
@@ -1950,13 +1750,9 @@ class BienAseguradoForm(forms.ModelForm):
 
         ).select_related('compania_aseguradora', 'grupo_ramo')
 
-        
-
         # Subgrupos: depende de si hay una póliza seleccionada con grupo_ramo
 
         self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.filter(activo=True)
-
-        
 
         # Si hay una póliza seleccionada con grupo_ramo, filtrar subgrupos
 
@@ -1976,8 +1772,6 @@ class BienAseguradoForm(forms.ModelForm):
 
             poliza_id = self.instance.poliza_id
 
-        
-
         if poliza_id:
 
             try:
@@ -1996,8 +1790,6 @@ class BienAseguradoForm(forms.ModelForm):
 
                 pass
 
-        
-
         self.fields['responsable_custodio'].queryset = ResponsableCustodio.objects.filter(activo=True)
 
         self.fields['responsable_custodio'].required = False
@@ -2005,8 +1797,6 @@ class BienAseguradoForm(forms.ModelForm):
         self.fields['grupo_bienes'].queryset = GrupoBienes.objects.filter(activo=True)
 
         self.fields['grupo_bienes'].required = False
-
-        
 
         # Campos opcionales
 
@@ -2036,10 +1826,6 @@ class BienAseguradoForm(forms.ModelForm):
 
         self.fields['codigo_qr'].required = False
 
-
-
-
-
 # ==============================================================================
 
 # FORMULARIOS DE FACTURA
@@ -2047,12 +1833,9 @@ class BienAseguradoForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class FacturaForm(forms.ModelForm):
 
     """Formulario para crear/editar facturas con cálculos en vivo"""
-
-
 
     class Meta:
 
@@ -2182,8 +1965,6 @@ class FacturaForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -2194,10 +1975,6 @@ class FacturaForm(forms.ModelForm):
 
         ).select_related('compania_aseguradora')
 
-
-
-
-
 # ==============================================================================
 
 # FORMULARIOS DE DOCUMENTO
@@ -2205,12 +1982,9 @@ class FacturaForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class DocumentoForm(forms.ModelForm):
 
     """Formulario para crear/editar documentos"""
-
-
 
     class Meta:
 
@@ -2256,8 +2030,6 @@ class DocumentoForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -2274,10 +2046,6 @@ class DocumentoForm(forms.ModelForm):
 
         self.fields['factura'].required = False
 
-
-
-
-
 # ==============================================================================
 
 # FORMULARIOS DE PAGO
@@ -2285,12 +2053,9 @@ class DocumentoForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class PagoForm(forms.ModelForm):
 
     """Formulario para crear/editar pagos con validación de saldo en vivo"""
-
-
 
     class Meta:
 
@@ -2350,15 +2115,11 @@ class PagoForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
         import json
-
-        
 
         facturas = Factura.objects.filter(
 
@@ -2368,15 +2129,11 @@ class PagoForm(forms.ModelForm):
 
         self.fields['factura'].queryset = facturas
 
-        
-
         # Crear diccionario de saldos para JavaScript
 
         saldos = {str(f.pk): float(f.saldo_pendiente) for f in facturas}
 
         self.fields['factura'].widget.attrs['data-saldos'] = json.dumps(saldos)
-
-        
 
         # Mejorar labels con saldo visible
 
@@ -2388,10 +2145,6 @@ class PagoForm(forms.ModelForm):
 
         self.fields['factura'].choices = choices
 
-
-
-
-
 # ==============================================================================
 
 # FORMULARIOS DE NOTA DE CRÉDITO
@@ -2399,12 +2152,9 @@ class PagoForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class NotaCreditoForm(forms.ModelForm):
 
     """Formulario para crear/editar notas de crédito con validación de saldo"""
-
-
 
     class Meta:
 
@@ -2462,15 +2212,11 @@ class NotaCreditoForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
         import json
-
-        
 
         # Incluir saldo de factura para validación JS
 
@@ -2480,10 +2226,6 @@ class NotaCreditoForm(forms.ModelForm):
 
         self.fields['factura'].widget.attrs['data-saldos'] = json.dumps(saldos)
 
-
-
-
-
 # ==============================================================================
 
 # FORMULARIOS DE CONFIGURACIÓN DE CHECKLIST
@@ -2491,12 +2233,9 @@ class NotaCreditoForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class ChecklistSiniestroConfigForm(forms.ModelForm):
 
     """Formulario para configurar items de checklist por tipo de siniestro"""
-
-
 
     class Meta:
 
@@ -2538,17 +2277,11 @@ class ChecklistSiniestroConfigForm(forms.ModelForm):
 
         }
 
-
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
         self.fields['tipo_siniestro'].queryset = TipoSiniestro.objects.filter(activo=True)
-
-
-
-
 
 # ==============================================================================
 
@@ -2557,12 +2290,9 @@ class ChecklistSiniestroConfigForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class FiltroPolizasForm(forms.Form):
 
     """Formulario de filtros para lista de pólizas"""
-
-
 
     estado = forms.ChoiceField(
 
@@ -2614,15 +2344,9 @@ class FiltroPolizasForm(forms.Form):
 
     )
 
-
-
-
-
 class FiltroSiniestrosForm(forms.Form):
 
     """Formulario de filtros para lista de siniestros"""
-
-
 
     estado = forms.ChoiceField(
 
@@ -2662,15 +2386,9 @@ class FiltroSiniestrosForm(forms.Form):
 
     )
 
-
-
-
-
 class FiltroReportesForm(forms.Form):
 
     """Formulario de filtros para reportes"""
-
-
 
     fecha_desde = forms.DateField(
 
@@ -2716,16 +2434,11 @@ class FiltroReportesForm(forms.Form):
 
     )
 
-
-
-
-
 # ==============================================================================
 
 # FORMULARIOS DE CONFIGURACIÓN DEL SISTEMA
 
 # ==============================================================================
-
 
 
 class ConfiguracionSistemaForm(forms.ModelForm):
@@ -2737,8 +2450,6 @@ class ConfiguracionSistemaForm(forms.ModelForm):
     Valida según el tipo de dato configurado.
 
     """
-
-    
 
     class Meta:
 
@@ -2766,21 +2477,15 @@ class ConfiguracionSistemaForm(forms.ModelForm):
 
         }
 
-    
-
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-
-        
 
         # Ajustar widget según el tipo
 
         if self.instance and self.instance.pk:
 
             tipo = self.instance.tipo
-
-            
 
             if tipo == 'decimal':
 
@@ -2794,8 +2499,6 @@ class ConfiguracionSistemaForm(forms.ModelForm):
 
                 self.fields['valor'].help_text = 'Ingrese un valor decimal (ej: 0.035 para 3.5%)'
 
-            
-
             elif tipo == 'entero':
 
                 self.fields['valor'].widget = forms.NumberInput(attrs={
@@ -2808,8 +2511,6 @@ class ConfiguracionSistemaForm(forms.ModelForm):
 
                 self.fields['valor'].help_text = 'Ingrese un número entero'
 
-            
-
             elif tipo == 'texto':
 
                 self.fields['valor'].widget = forms.TextInput(attrs={
@@ -2819,8 +2520,6 @@ class ConfiguracionSistemaForm(forms.ModelForm):
                 })
 
                 self.fields['valor'].help_text = 'Ingrese el texto'
-
-            
 
             elif tipo == 'json':
 
@@ -2834,25 +2533,17 @@ class ConfiguracionSistemaForm(forms.ModelForm):
 
                 self.fields['valor'].help_text = 'Ingrese JSON válido'
 
-    
-
     def clean_valor(self):
 
         """Valida el valor según el tipo de configuración."""
 
         valor = self.cleaned_data.get('valor', '')
 
-        
-
         if not self.instance or not self.instance.pk:
 
             return valor
 
-        
-
         tipo = self.instance.tipo
-
-        
 
         if tipo == 'decimal':
 
@@ -2864,8 +2555,6 @@ class ConfiguracionSistemaForm(forms.ModelForm):
 
                 raise ValidationError('Debe ser un valor decimal válido (ej: 0.035)')
 
-        
-
         elif tipo == 'entero':
 
             try:
@@ -2875,8 +2564,6 @@ class ConfiguracionSistemaForm(forms.ModelForm):
             except (ValueError, TypeError, Exception):
 
                 raise ValidationError('Debe ser un número entero válido')
-
-        
 
         elif tipo == 'json':
 
@@ -2890,13 +2577,7 @@ class ConfiguracionSistemaForm(forms.ModelForm):
 
                 raise ValidationError(f'JSON inválido: {str(e)}')
 
-        
-
         return valor
-
-
-
-
 
 class ConfiguracionBulkForm(forms.Form):
 
@@ -2908,13 +2589,9 @@ class ConfiguracionBulkForm(forms.Form):
 
     """
 
-    
-
     def __init__(self, *args, categoria=None, **kwargs):
 
         super().__init__(*args, **kwargs)
-
-        
 
         # Filtrar configuraciones por categoría
 
@@ -2924,15 +2601,11 @@ class ConfiguracionBulkForm(forms.Form):
 
             qs = qs.filter(categoria=categoria)
 
-        
-
         # Crear un campo por cada configuración
 
         for config in qs:
 
             field_name = f'config_{config.pk}'
-
-            
 
             if config.tipo == 'decimal':
 
@@ -2958,8 +2631,6 @@ class ConfiguracionBulkForm(forms.Form):
 
                 )
 
-            
-
             elif config.tipo == 'entero':
 
                 self.fields[field_name] = forms.IntegerField(
@@ -2981,8 +2652,6 @@ class ConfiguracionBulkForm(forms.Form):
                     })
 
                 )
-
-            
 
             elif config.tipo == 'json':
 
@@ -3006,8 +2675,6 @@ class ConfiguracionBulkForm(forms.Form):
 
                 )
 
-            
-
             else:  # texto
 
                 self.fields[field_name] = forms.CharField(
@@ -3028,13 +2695,9 @@ class ConfiguracionBulkForm(forms.Form):
 
                 )
 
-            
-
             # Guardar referencia al objeto config
 
             self.fields[field_name].config_instance = config
-
-    
 
     def save(self):
 
@@ -3061,4 +2724,3 @@ class ConfiguracionBulkForm(forms.Form):
                     saved.append(config.clave)
 
         return saved
-

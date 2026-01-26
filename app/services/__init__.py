@@ -3,7 +3,6 @@
 Servicios de la Aplicación - Arquitectura por Dominios.
 
 
-
 Estructura:
 
     services/
@@ -16,7 +15,7 @@ Estructura:
 
     ├── factura/               # Dominio Factura
 
-    ├── pago/                  # Dominio Pago  
+    ├── pago/                  # Dominio Pago
 
     ├── poliza/                # Dominio Póliza
 
@@ -43,7 +42,6 @@ Estructura:
 """
 
 
-
 # ==============================================================================
 
 # BASE Y TIPOS COMPARTIDOS
@@ -59,7 +57,6 @@ from .base import (
     ResultadoOperacion,
 
 )
-
 
 
 # ==============================================================================
@@ -83,7 +80,6 @@ from .nota_credito import NotaCreditoService
 from .bien_asegurado import BienAseguradoService
 
 
-
 # ==============================================================================
 
 # REPORTES Y EXPORTACIÓN
@@ -101,7 +97,6 @@ from .reportes import (
     ExportacionService,
 
 )
-
 
 
 # ==============================================================================
@@ -123,7 +118,6 @@ from .analytics import (
     AdvancedAnalyticsService,
 
 )
-
 
 
 # ==============================================================================
@@ -175,7 +169,6 @@ from .alertas import (
 )
 
 
-
 # ==============================================================================
 
 # EMAIL
@@ -183,7 +176,6 @@ from .alertas import (
 # ==============================================================================
 
 from .email import EmailReaderService
-
 
 
 # ==============================================================================
@@ -217,7 +209,6 @@ from .configuracion import (
 )
 
 
-
 # ==============================================================================
 
 # EXPORTS
@@ -234,7 +225,6 @@ __all__ = [
 
     'ResultadoOperacion',
 
-    
 
     # Dominio
 
@@ -254,7 +244,6 @@ __all__ = [
 
     'BienAseguradoService',
 
-    
 
     # Reportes
 
@@ -266,7 +255,6 @@ __all__ = [
 
     'ExportacionService',
 
-    
 
     # Analytics
 
@@ -280,7 +268,6 @@ __all__ = [
 
     'AdvancedAnalyticsService',
 
-    
 
     # Alertas
 
@@ -322,13 +309,11 @@ __all__ = [
 
     'crear_dispatcher_desde_config',
 
-    
 
     # Email
 
     'EmailReaderService',
 
-    
 
     # Configuración
 
@@ -353,4 +338,3 @@ __all__ = [
     'validar_configuracion',
 
 ]
-

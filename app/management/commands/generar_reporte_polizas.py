@@ -27,14 +27,9 @@ from app.models import Poliza, Factura
 import os
 
 
-
-
-
 class Command(BaseCommand):
 
     help = 'Genera reportes de pólizas en formato Excel y PDF'
-
-
 
     def add_arguments(self, parser):
 
@@ -66,19 +61,13 @@ class Command(BaseCommand):
 
         )
 
-
-
     def handle(self, *args, **options):
 
         formato = options['formato']
 
         estado = options['estado']
 
-        
-
         self.stdout.write(self.style.SUCCESS(f'Generando reporte de pólizas...'))
-
-        
 
         # Obtener pólizas según filtro
 
@@ -90,19 +79,13 @@ class Command(BaseCommand):
 
             polizas = Poliza.objects.filter(estado=estado)
 
-        
-
         # Crear directorio de reportes si no existe
 
         reportes_dir = 'media/reportes/polizas'
 
         os.makedirs(reportes_dir, exist_ok=True)
 
-        
-
         timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-
-        
 
         if formato in ['excel', 'ambos']:
 
@@ -112,8 +95,6 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS(f'  ✓ Reporte Excel generado: {excel_file}'))
 
-        
-
         if formato in ['pdf', 'ambos']:
 
             pdf_file = f'{reportes_dir}/reporte_polizas_{estado}_{timestamp}.pdf'
@@ -122,19 +103,13 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS(f'  ✓ Reporte PDF generado: {pdf_file}'))
 
-        
-
         self.stdout.write(self.style.SUCCESS(f'✓ Reporte completado: {polizas.count()} pólizas procesadas'))
-
-
 
     def generar_excel(self, polizas, filename, estado):
 
         """Genera el reporte en formato Excel"""
 
         wb = openpyxl.Workbook()
-
-        
 
         # Hoja 1: Resumen
 
@@ -144,15 +119,11 @@ class Command(BaseCommand):
 
         self.crear_hoja_resumen(ws_resumen, polizas)
 
-        
-
         # Hoja 2: Detalle de Pólizas
 
         ws_detalle = wb.create_sheet("Detalle de Pólizas")
 
         self.crear_hoja_detalle_polizas(ws_detalle, polizas)
-
-        
 
         # Hoja 3: Gastos por Póliza
 
@@ -160,11 +131,7 @@ class Command(BaseCommand):
 
         self.crear_hoja_gastos(ws_gastos, polizas)
 
-        
-
         wb.save(filename)
-
-
 
     def crear_hoja_resumen(self, ws, polizas):
 
@@ -180,23 +147,17 @@ class Command(BaseCommand):
 
         ws.merge_cells('A1:D1')
 
-        
-
         # Fecha de generación
 
         ws['A2'] = f'Fecha de Generación: {timezone.now().strftime("%d/%m/%Y %H:%M")}'
 
         ws['A2'].font = Font(size=10, italic=True)
 
-        
-
         # Resumen por estado
 
         ws['A4'] = 'RESUMEN POR ESTADO'
 
         ws['A4'].font = Font(size=12, bold=True)
-
-        
 
         headers = ['Estado', 'Cantidad', 'Suma Asegurada Total', 'Porcentaje']
 
@@ -210,15 +171,11 @@ class Command(BaseCommand):
 
             cell.alignment = Alignment(horizontal='center')
 
-        
-
         estados = ['vigente', 'vencida', 'por_vencer', 'cancelada']
 
         total_polizas = polizas.count()
 
         row = 6
-
-        
 
         for estado in estados:
 
@@ -230,8 +187,6 @@ class Command(BaseCommand):
 
             porcentaje = (cantidad / total_polizas * 100) if total_polizas > 0 else 0
 
-            
-
             ws.cell(row=row, column=1, value=estado.replace('_', ' ').title())
 
             ws.cell(row=row, column=2, value=cantidad)
@@ -241,8 +196,6 @@ class Command(BaseCommand):
             ws.cell(row=row, column=4, value=f'{porcentaje:.1f}%')
 
             row += 1
-
-        
 
         # Total
 
@@ -254,8 +207,6 @@ class Command(BaseCommand):
 
         ws.cell(row=row, column=2).font = Font(bold=True)
 
-        
-
         # Ajustar anchos de columna
 
         ws.column_dimensions['A'].width = 20
@@ -266,8 +217,6 @@ class Command(BaseCommand):
 
         ws.column_dimensions['D'].width = 15
 
-
-
     def crear_hoja_detalle_polizas(self, ws, polizas):
 
         """Crea la hoja con el detalle de todas las pólizas"""
@@ -277,8 +226,6 @@ class Command(BaseCommand):
         ws['A1'] = 'DETALLE DE PÓLIZAS'
 
         ws['A1'].font = Font(size=14, bold=True)
-
-        
 
         # Headers
 
@@ -304,8 +251,6 @@ class Command(BaseCommand):
 
         ]
 
-        
-
         for col, header in enumerate(headers, start=1):
 
             cell = ws.cell(row=3, column=col, value=header)
@@ -315,8 +260,6 @@ class Command(BaseCommand):
             cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
 
             cell.alignment = Alignment(horizontal='center', wrap_text=True)
-
-        
 
         # Datos
 
@@ -342,8 +285,6 @@ class Command(BaseCommand):
 
             ws.cell(row=row, column=9, value=poliza.get_estado_display())
 
-            
-
             # Color según estado
 
             estado_cell = ws.cell(row=row, column=9)
@@ -360,19 +301,13 @@ class Command(BaseCommand):
 
                 estado_cell.fill = PatternFill(start_color='FFC7CE', end_color='FFC7CE', fill_type='solid')
 
-            
-
             row += 1
-
-        
 
         # Ajustar anchos de columna
 
         for col in range(1, len(headers) + 1):
 
             ws.column_dimensions[get_column_letter(col)].width = 18
-
-
 
     def crear_hoja_gastos(self, ws, polizas):
 
@@ -383,8 +318,6 @@ class Command(BaseCommand):
         ws['A1'] = 'GASTOS POR PÓLIZA'
 
         ws['A1'].font = Font(size=14, bold=True)
-
-        
 
         # Headers
 
@@ -404,8 +337,6 @@ class Command(BaseCommand):
 
         ]
 
-        
-
         for col, header in enumerate(headers, start=1):
 
             cell = ws.cell(row=3, column=col, value=header)
@@ -416,8 +347,6 @@ class Command(BaseCommand):
 
             cell.alignment = Alignment(horizontal='center', wrap_text=True)
 
-        
-
         # Datos
 
         row = 4
@@ -425,8 +354,6 @@ class Command(BaseCommand):
         total_facturado_global = 0
 
         total_pagado_global = 0
-
-        
 
         for poliza in polizas:
 
@@ -446,8 +373,6 @@ class Command(BaseCommand):
 
             num_facturas = facturas.count()
 
-            
-
             ws.cell(row=row, column=1, value=poliza.numero_poliza)
 
             ws.cell(row=row, column=2, value=str(poliza.compania_aseguradora))
@@ -460,17 +385,11 @@ class Command(BaseCommand):
 
             ws.cell(row=row, column=6, value=num_facturas)
 
-            
-
             total_facturado_global += total_facturado
 
             total_pagado_global += total_pagado
 
-            
-
             row += 1
-
-        
 
         # Totales
 
@@ -490,15 +409,11 @@ class Command(BaseCommand):
 
         ws.cell(row=row, column=5).font = Font(bold=True)
 
-        
-
         # Ajustar anchos
 
         for col in range(1, len(headers) + 1):
 
             ws.column_dimensions[get_column_letter(col)].width = 20
-
-
 
     def generar_pdf(self, polizas, filename, estado):
 
@@ -509,8 +424,6 @@ class Command(BaseCommand):
         elements = []
 
         styles = getSampleStyleSheet()
-
-        
 
         # Estilo personalizado para título
 
@@ -530,15 +443,11 @@ class Command(BaseCommand):
 
         )
 
-        
-
         # Título
 
         title = Paragraph('REPORTE DE PÓLIZAS', title_style)
 
         elements.append(title)
-
-        
 
         # Fecha
 
@@ -548,19 +457,13 @@ class Command(BaseCommand):
 
         elements.append(Spacer(1, 20))
 
-        
-
         # Resumen por estado
 
         elements.append(Paragraph('RESUMEN POR ESTADO', styles['Heading2']))
 
-        
-
         resumen_data = [['Estado', 'Cantidad', 'Suma Asegurada']]
 
         estados = ['vigente', 'vencida', 'por_vencer', 'cancelada']
-
-        
 
         for est in estados:
 
@@ -579,8 +482,6 @@ class Command(BaseCommand):
                 f'${suma_total:,.2f}'
 
             ])
-
-        
 
         resumen_table = Table(resumen_data, colWidths=[2*inch, 1.5*inch, 2*inch])
 
@@ -606,19 +507,13 @@ class Command(BaseCommand):
 
         elements.append(Spacer(1, 30))
 
-        
-
         # Detalle de pólizas (primeras 20)
 
         elements.append(Paragraph('DETALLE DE PÓLIZAS', styles['Heading2']))
 
         elements.append(Spacer(1, 10))
 
-        
-
         detalle_data = [['Número', 'Compañía', 'Suma Asegurada', 'Vigencia', 'Estado']]
-
-        
 
         for poliza in polizas[:20]:  # Limitar a 20 para el PDF
 
@@ -636,13 +531,9 @@ class Command(BaseCommand):
 
             ])
 
-        
-
         if polizas.count() > 20:
 
             detalle_data.append(['...', '...', '...', '...', '...'])
-
-        
 
         detalle_table = Table(detalle_data, colWidths=[1.2*inch, 1.8*inch, 1.3*inch, 1.2*inch, 1*inch])
 
@@ -666,9 +557,6 @@ class Command(BaseCommand):
 
         elements.append(detalle_table)
 
-        
-
         # Construir PDF
 
         doc.build(elements)
-

@@ -7,11 +7,7 @@ Responsabilidad única: notificar al usuario que registró algo.
 """
 
 
-
 from .base import BaseNotifier
-
-
-
 
 
 class UserNotifier(BaseNotifier):
@@ -19,8 +15,6 @@ class UserNotifier(BaseNotifier):
     """
 
     Notificador especializado para comunicaciones con usuarios internos.
-
-    
 
     USO:
 
@@ -30,23 +24,17 @@ class UserNotifier(BaseNotifier):
 
     """
 
-    
-
     def confirmar_registro_siniestro(self, siniestro, usuario):
 
         """
 
         Envía confirmación de registro de siniestro al usuario.
 
-        
-
         Args:
 
             siniestro: Instancia del modelo Siniestro
 
             usuario: Usuario que registró el siniestro
-
-            
 
         Returns:
 
@@ -58,13 +46,9 @@ class UserNotifier(BaseNotifier):
 
             return None
 
-
-
         asunto = f"Confirmación de Registro de Siniestro - {siniestro.numero_siniestro}"
 
         nombre_usuario = usuario.get_full_name() or usuario.username
-
-
 
         bloques = [
 
@@ -102,8 +86,6 @@ class UserNotifier(BaseNotifier):
 
         ]
 
-
-
         contenido_html = self._renderizar_email(
 
             titulo=asunto,
@@ -126,8 +108,6 @@ class UserNotifier(BaseNotifier):
 
         )
 
-
-
         contenido_texto = (
 
             f"{asunto}\n\n"
@@ -141,8 +121,6 @@ class UserNotifier(BaseNotifier):
             f"Bien Afectado: {siniestro.bien_nombre}\n"
 
         )
-
-
 
         notificacion = self._crear_notificacion(
 
@@ -162,13 +140,9 @@ class UserNotifier(BaseNotifier):
 
         )
 
-
-
         self._enviar_email(notificacion)
 
         return notificacion
-
-
 
     def _get_tipo_display(self, siniestro) -> str:
 
@@ -177,4 +151,3 @@ class UserNotifier(BaseNotifier):
             return siniestro.tipo_siniestro.get_nombre_display()
 
         return 'N/A'
-

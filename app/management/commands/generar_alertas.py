@@ -9,14 +9,9 @@ from datetime import timedelta
 from app.models import Poliza, Factura, Siniestro, Alerta
 
 
-
-
-
 class Command(BaseCommand):
 
     help = 'Genera alertas automáticas para pólizas, facturas y siniestros'
-
-
 
     def add_arguments(self, parser):
 
@@ -32,39 +27,25 @@ class Command(BaseCommand):
 
         )
 
-
-
     def handle(self, *args, **options):
 
         tipo = options['tipo']
 
-        
-
         self.stdout.write(self.style.SUCCESS(f'Generando alertas tipo: {tipo}'))
-
-        
 
         if tipo in ['polizas', 'todas']:
 
             self.generar_alertas_polizas()
 
-        
-
         if tipo in ['facturas', 'todas']:
 
             self.generar_alertas_facturas()
-
-        
 
         if tipo in ['siniestros', 'todas']:
 
             self.generar_alertas_siniestros()
 
-        
-
         self.stdout.write(self.style.SUCCESS('✓ Generación de alertas completada'))
-
-
 
     def generar_alertas_polizas(self):
 
@@ -72,27 +53,17 @@ class Command(BaseCommand):
 
         self.stdout.write('Generando alertas de pólizas...')
 
-        
-
         hoy = timezone.now().date()
-
-        
 
         # Usar manager centralizado (DRY)
 
         polizas_por_vencer = Poliza.objects.por_vencer(dias=30)
 
-        
-
         usuarios_admin = User.objects.filter(is_staff=True, is_active=True)
-
-        
 
         for poliza in polizas_por_vencer:
 
             dias_restantes = (poliza.fecha_fin - hoy).days
-
-            
 
             # Verificar si ya existe una alerta reciente para esta póliza
 
@@ -105,8 +76,6 @@ class Command(BaseCommand):
                 fecha_creacion__gte=timezone.now() - timedelta(days=7)
 
             ).exists()
-
-            
 
             if not alerta_existente:
 
@@ -132,21 +101,15 @@ class Command(BaseCommand):
 
                 self.stdout.write(f'  ✓ Alerta creada para póliza {poliza.numero_poliza} ({dias_restantes} días)')
 
-
-
     def generar_alertas_facturas(self):
 
         """Genera alertas para facturas pendientes y descuentos por pronto pago"""
 
         self.stdout.write('Generando alertas de facturas...')
 
-        
-
         hoy = timezone.now().date()
 
         usuarios_admin = User.objects.filter(is_staff=True, is_active=True)
-
-        
 
         # Alertas de pagos pendientes próximos a vencer
 
@@ -160,13 +123,9 @@ class Command(BaseCommand):
 
         )
 
-        
-
         for factura in facturas_pendientes:
 
             dias_restantes = (factura.fecha_vencimiento - hoy).days
-
-            
 
             alerta_existente = Alerta.objects.filter(
 
@@ -177,8 +136,6 @@ class Command(BaseCommand):
                 fecha_creacion__gte=timezone.now() - timedelta(days=3)
 
             ).exists()
-
-            
 
             if not alerta_existente:
 
@@ -206,8 +163,6 @@ class Command(BaseCommand):
 
                 self.stdout.write(f'  ✓ Alerta de pago pendiente para factura {factura.numero_factura}')
 
-        
-
         # Alertas de descuento por pronto pago
 
         fecha_limite_descuento = hoy + timedelta(days=5)
@@ -222,15 +177,11 @@ class Command(BaseCommand):
 
         )
 
-        
-
         for factura in facturas_con_descuento:
 
             if factura.puede_aplicar_descuento:
 
                 dias_restantes = 20 - (hoy - factura.fecha_emision).days
-
-                
 
                 alerta_existente = Alerta.objects.filter(
 
@@ -241,8 +192,6 @@ class Command(BaseCommand):
                     fecha_creacion__gte=timezone.now() - timedelta(days=3)
 
                 ).exists()
-
-                
 
                 if not alerta_existente and dias_restantes <= 5:
 
@@ -270,19 +219,13 @@ class Command(BaseCommand):
 
                     self.stdout.write(f'  ✓ Alerta de pronto pago para factura {factura.numero_factura}')
 
-
-
     def generar_alertas_siniestros(self):
 
         """Genera alertas para siniestros con documentación o respuesta pendiente"""
 
         self.stdout.write('Generando alertas de siniestros...')
 
-        
-
         usuarios_admin = User.objects.filter(is_staff=True, is_active=True)
-
-        
 
         # Alertas por documentación pendiente (más de 30 días)
 
@@ -291,8 +234,6 @@ class Command(BaseCommand):
             estado='documentacion_pendiente'
 
         )
-
-        
 
         for siniestro in siniestros_doc_pendiente:
 
@@ -309,8 +250,6 @@ class Command(BaseCommand):
                     fecha_creacion__gte=timezone.now() - timedelta(days=8)
 
                 ).exists()
-
-                
 
                 if not alerta_existente:
 
@@ -338,8 +277,6 @@ class Command(BaseCommand):
 
                     self.stdout.write(f'  ✓ Alerta de documentación para siniestro {siniestro.numero_siniestro}')
 
-        
-
         # Alertas por falta de respuesta de aseguradora (más de 8 días)
 
         siniestros_sin_respuesta = Siniestro.objects.filter(
@@ -351,8 +288,6 @@ class Command(BaseCommand):
             fecha_respuesta_aseguradora__isnull=True
 
         )
-
-        
 
         for siniestro in siniestros_sin_respuesta:
 
@@ -367,8 +302,6 @@ class Command(BaseCommand):
                     fecha_creacion__gte=timezone.now() - timedelta(days=8)
 
                 ).exists()
-
-                
 
                 if not alerta_existente:
 
@@ -397,4 +330,3 @@ class Command(BaseCommand):
                     alerta.destinatarios.set(usuarios_admin)
 
                     self.stdout.write(f'  ✓ Alerta de respuesta para siniestro {siniestro.numero_siniestro}')
-

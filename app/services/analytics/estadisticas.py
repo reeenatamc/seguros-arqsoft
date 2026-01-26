@@ -9,24 +9,14 @@ from datetime import timedelta
 from decimal import Decimal
 
 
-
-
-
 class EstadisticasService:
 
-    
-
     @staticmethod
-
     def get_dashboard_stats():
 
         from app.models import Poliza, Factura, Siniestro, Alerta
 
-        
-
         hoy = timezone.now().date()
-
-        
 
         return {
 
@@ -82,15 +72,10 @@ class EstadisticasService:
 
         }
 
-    
-
     @staticmethod
-
     def get_polizas_por_estado():
 
         from app.models import Poliza
-
-        
 
         estados = Poliza.objects.values('estado').annotate(
 
@@ -100,19 +85,12 @@ class EstadisticasService:
 
         ).order_by('estado')
 
-        
-
         return list(estados)
 
-    
-
     @staticmethod
-
     def get_polizas_por_compania():
 
         from app.models import Poliza
-
-        
 
         return list(Poliza.objects.values(
 
@@ -126,15 +104,10 @@ class EstadisticasService:
 
         ).order_by('-cantidad')[:10])
 
-    
-
     @staticmethod
-
     def get_polizas_por_tipo():
 
         from app.models import Poliza
-
-        
 
         return list(Poliza.objects.values(
 
@@ -148,15 +121,10 @@ class EstadisticasService:
 
         ).order_by('-cantidad'))
 
-    
-
     @staticmethod
-
     def get_siniestros_por_tipo():
 
         from app.models import Siniestro
-
-        
 
         return list(Siniestro.objects.values(
 
@@ -172,19 +140,12 @@ class EstadisticasService:
 
         ).order_by('-cantidad'))
 
-    
-
     @staticmethod
-
     def get_siniestros_por_mes(meses=12):
 
         from app.models import Siniestro
 
-        
-
         fecha_inicio = timezone.now() - timedelta(days=meses * 30)
-
-        
 
         return list(Siniestro.objects.filter(
 
@@ -202,19 +163,12 @@ class EstadisticasService:
 
         ).order_by('mes'))
 
-    
-
     @staticmethod
-
     def get_facturas_por_mes(meses=12):
 
         from app.models import Factura
 
-        
-
         fecha_inicio = timezone.now() - timedelta(days=meses * 30)
-
-        
 
         return list(Factura.objects.filter(
 
@@ -234,21 +188,14 @@ class EstadisticasService:
 
         ).order_by('mes'))
 
-    
-
     @staticmethod
-
     def get_polizas_proximas_vencer(dias=30, limit=10):
 
         from app.models import Poliza
 
-        
-
         hoy = timezone.now().date()
 
         fecha_limite = hoy + timedelta(days=dias)
-
-        
 
         return Poliza.objects.filter(
 
@@ -264,15 +211,10 @@ class EstadisticasService:
 
         ).order_by('fecha_fin')[:limit]
 
-    
-
     @staticmethod
-
     def get_facturas_pendientes(limit=10):
 
         from app.models import Factura
-
-        
 
         return Factura.objects.filter(
 
@@ -284,15 +226,10 @@ class EstadisticasService:
 
         ).order_by('fecha_vencimiento')[:limit]
 
-    
-
     @staticmethod
-
     def get_siniestros_recientes(limit=10):
 
         from app.models import Siniestro
-
-        
 
         return Siniestro.objects.exclude(
 
@@ -304,23 +241,16 @@ class EstadisticasService:
 
         ).order_by('-fecha_siniestro')[:limit]
 
-    
-
     @staticmethod
-
     def get_kpis():
 
         from app.models import Poliza, Factura, Siniestro
-
-        
 
         hoy = timezone.now().date()
 
         hace_30_dias = hoy - timedelta(days=30)
 
         hace_365_dias = hoy - timedelta(days=365)
-
-        
 
         polizas_vigentes = Poliza.objects.filter(estado='vigente')
 
@@ -330,13 +260,9 @@ class EstadisticasService:
 
         )['total'] or Decimal('0')
 
-        
-
         facturas_anio = Factura.objects.filter(fecha_emision__gte=hace_365_dias)
 
         total_facturado = facturas_anio.aggregate(total=Sum('monto_total'))['total'] or Decimal('0')
-
-        
 
         siniestros_anio = Siniestro.objects.filter(fecha_siniestro__date__gte=hace_365_dias)
 
@@ -344,11 +270,7 @@ class EstadisticasService:
 
         total_indemnizado = siniestros_anio.aggregate(total=Sum('monto_indemnizado'))['total'] or Decimal('0')
 
-        
-
         tasa_siniestralidad = (total_indemnizado / total_facturado * 100) if total_facturado > 0 else Decimal('0')
-
-        
 
         tiempo_promedio_resolucion = siniestros_anio.filter(
 
@@ -359,8 +281,6 @@ class EstadisticasService:
             dias_resolucion=F('fecha_liquidacion') - F('fecha_registro')
 
         ).aggregate(promedio=Avg('dias_resolucion'))['promedio']
-
-        
 
         return {
 
@@ -379,4 +299,3 @@ class EstadisticasService:
             'polizas_activas': polizas_vigentes.count(),
 
         }
-

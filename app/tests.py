@@ -11,7 +11,6 @@ del pipeline CI/CD y la aplicación.
 """
 
 
-
 import pytest
 
 from django.test import TestCase, Client
@@ -21,9 +20,6 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 
-
-
-
 # ============================================
 
 # Tests de Configuración Básica
@@ -31,12 +27,9 @@ from django.urls import reverse
 # ============================================
 
 
-
 class ConfigurationTests(TestCase):
 
     """Tests para verificar la configuración básica de Django"""
-
-    
 
     def test_django_installed(self):
 
@@ -46,8 +39,6 @@ class ConfigurationTests(TestCase):
 
         self.assertIsNotNone(django.VERSION)
 
-    
-
     def test_database_connection(self):
 
         """Verifica la conexión a la base de datos"""
@@ -55,8 +46,6 @@ class ConfigurationTests(TestCase):
         from django.db import connection
 
         self.assertIsNotNone(connection)
-
-    
 
     def test_settings_loaded(self):
 
@@ -66,10 +55,6 @@ class ConfigurationTests(TestCase):
 
         self.assertTrue(settings.configured)
 
-
-
-
-
 # ============================================
 
 # Tests de Modelos
@@ -77,14 +62,10 @@ class ConfigurationTests(TestCase):
 # ============================================
 
 
-
 @pytest.mark.django_db
-
 class UserModelTests(TestCase):
 
     """Tests para el modelo de Usuario"""
-
-    
 
     def setUp(self):
 
@@ -100,8 +81,6 @@ class UserModelTests(TestCase):
 
         )
 
-    
-
     def test_user_creation(self):
 
         """Verifica que se pueda crear un usuario"""
@@ -112,17 +91,11 @@ class UserModelTests(TestCase):
 
         self.assertTrue(self.user.check_password('testpass123'))
 
-    
-
     def test_user_str(self):
 
         """Verifica la representación en string del usuario"""
 
         self.assertEqual(str(self.user), 'testuser')
-
-
-
-
 
 # ============================================
 
@@ -131,14 +104,10 @@ class UserModelTests(TestCase):
 # ============================================
 
 
-
 @pytest.mark.django_db
-
 class ViewTests(TestCase):
 
     """Tests para las vistas de la aplicación"""
-
-    
 
     def setUp(self):
 
@@ -154,8 +123,6 @@ class ViewTests(TestCase):
 
         )
 
-    
-
     def test_login_page_loads(self):
 
         """Verifica que la página de login cargue correctamente"""
@@ -164,8 +131,6 @@ class ViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
-    
-
     def test_redirect_if_not_logged_in(self):
 
         """Verifica redirección si no está autenticado"""
@@ -173,8 +138,6 @@ class ViewTests(TestCase):
         response = self.client.get('/dashboard/')
 
         self.assertEqual(response.status_code, 302)  # Redirect
-
-    
 
     def test_user_can_login(self):
 
@@ -190,10 +153,6 @@ class ViewTests(TestCase):
 
         self.assertTrue(logged_in)
 
-
-
-
-
 # ============================================
 
 # Tests de Integración
@@ -201,16 +160,12 @@ class ViewTests(TestCase):
 # ============================================
 
 
-
 @pytest.mark.integration
-
 @pytest.mark.django_db
 
 class IntegrationTests(TestCase):
 
     """Tests de integración del sistema"""
-
-    
 
     def setUp(self):
 
@@ -228,8 +183,6 @@ class IntegrationTests(TestCase):
 
         )
 
-    
-
     def test_complete_user_flow(self):
 
         """Test del flujo completo de usuario"""
@@ -246,17 +199,11 @@ class IntegrationTests(TestCase):
 
         self.assertTrue(logged_in)
 
-        
-
         # 2. Acceder al dashboard
 
         response = self.client.get('/dashboard/')
 
         self.assertIn(response.status_code, [200, 302])
-
-
-
-
 
 # ============================================
 
@@ -265,12 +212,9 @@ class IntegrationTests(TestCase):
 # ============================================
 
 
-
 class SecurityTests(TestCase):
 
     """Tests de seguridad básicos"""
-
-    
 
     def test_sql_injection_protection(self):
 
@@ -294,8 +238,6 @@ class SecurityTests(TestCase):
 
             self.assertFalse(response.wsgi_request.user.is_authenticated)
 
-    
-
     def test_xss_protection(self):
 
         """Verifica protección contra XSS"""
@@ -310,10 +252,6 @@ class SecurityTests(TestCase):
 
         self.assertNotIn("<script>", escaped)
 
-
-
-
-
 # ============================================
 
 # Tests de Performance (Opcional)
@@ -321,17 +259,12 @@ class SecurityTests(TestCase):
 # ============================================
 
 
-
 @pytest.mark.slow
-
 class PerformanceTests(TestCase):
 
     """Tests de rendimiento del sistema"""
 
-    
-
     @pytest.mark.django_db
-
     def test_database_query_performance(self):
 
         """Verifica el rendimiento de queries a la base de datos"""
@@ -339,8 +272,6 @@ class PerformanceTests(TestCase):
         from django.db import connection
 
         from django.test.utils import override_settings
-
-        
 
         with override_settings(DEBUG=True):
 
@@ -356,8 +287,6 @@ class PerformanceTests(TestCase):
 
             User.objects.bulk_create(users)
 
-            
-
             # Medir queries
 
             queries_before = len(connection.queries)
@@ -366,15 +295,9 @@ class PerformanceTests(TestCase):
 
             queries_after = len(connection.queries)
 
-            
-
             # Debería ser una sola query
 
             self.assertEqual(queries_after - queries_before, 1)
-
-
-
-
 
 # ============================================
 
@@ -383,20 +306,15 @@ class PerformanceTests(TestCase):
 # ============================================
 
 
-
 class UtilityTests(TestCase):
 
     """Tests para funciones de utilidad"""
-
-    
 
     def test_environment_variables(self):
 
         """Verifica que las variables de entorno estén configuradas"""
 
         from django.conf import settings
-
-        
 
         # Verificar que SECRET_KEY existe
 
@@ -406,15 +324,11 @@ class UtilityTests(TestCase):
 
         self.assertNotEqual(settings.SECRET_KEY, '')
 
-    
-
     def test_installed_apps(self):
 
         """Verifica que las apps necesarias estén instaladas"""
 
         from django.conf import settings
-
-        
 
         required_apps = [
 
@@ -434,15 +348,9 @@ class UtilityTests(TestCase):
 
         ]
 
-        
-
         for app in required_apps:
 
             self.assertIn(app, settings.INSTALLED_APPS)
-
-
-
-
 
 # ============================================
 
@@ -451,9 +359,7 @@ class UtilityTests(TestCase):
 # ============================================
 
 
-
 @pytest.fixture
-
 def user_factory():
 
     """Factory para crear usuarios de prueba"""
@@ -477,11 +383,7 @@ def user_factory():
     return create_user
 
 
-
-
-
 @pytest.fixture
-
 def authenticated_client(user_factory):
 
     """Cliente autenticado para pruebas"""
@@ -495,9 +397,6 @@ def authenticated_client(user_factory):
     return client
 
 
-
-
-
 # ============================================
 
 # Tests con Pytest Fixtures
@@ -505,9 +404,7 @@ def authenticated_client(user_factory):
 # ============================================
 
 
-
 @pytest.mark.django_db
-
 def test_user_creation_with_factory(user_factory):
 
     """Test usando factory fixture"""
@@ -517,11 +414,7 @@ def test_user_creation_with_factory(user_factory):
     assert user.username == 'factoryuser'
 
 
-
-
-
 @pytest.mark.django_db
-
 def test_authenticated_access(authenticated_client):
 
     """Test de acceso con usuario autenticado"""
@@ -531,9 +424,6 @@ def test_authenticated_access(authenticated_client):
     assert response.status_code in [200, 302]
 
 
-
-
-
 # ============================================
 
 # Tests Parametrizados
@@ -541,9 +431,7 @@ def test_authenticated_access(authenticated_client):
 # ============================================
 
 
-
 @pytest.mark.parametrize("username,email,valid", [
-
     ("user1", "user1@example.com", True),
 
     ("user2", "user2@example.com", True),
@@ -555,7 +443,6 @@ def test_authenticated_access(authenticated_client):
 ])
 
 @pytest.mark.django_db
-
 def test_user_validation(username, email, valid):
 
     """Test parametrizado para validación de usuarios"""
@@ -587,4 +474,3 @@ def test_user_validation(username, email, valid):
                 password='testpass123'
 
             )
-

@@ -7,7 +7,6 @@ Contiene la lógica compartida de persistencia y envío.
 """
 
 
-
 from django.core.mail import send_mail, EmailMultiAlternatives
 
 from django.template.loader import render_to_string
@@ -15,9 +14,6 @@ from django.template.loader import render_to_string
 from django.conf import settings
 
 from typing import Optional, List, Dict, Any
-
-
-
 
 
 class BaseNotifier:
@@ -29,8 +25,6 @@ class BaseNotifier:
     No debe usarse directamente - usar las subclases específicas.
 
     """
-
-    
 
     def _crear_notificacion(
 
@@ -62,8 +56,6 @@ class BaseNotifier:
 
         from app.models import NotificacionEmail
 
-        
-
         return NotificacionEmail.objects.create(
 
             tipo=tipo,
@@ -88,8 +80,6 @@ class BaseNotifier:
 
         )
 
-
-
     def _enviar_email(self, notificacion) -> bool:
 
         """Envía el email y actualiza el estado de la notificación."""
@@ -97,8 +87,6 @@ class BaseNotifier:
         try:
 
             cc_list = [e.strip() for e in notificacion.cc.split(',') if e.strip()]
-
-
 
             if notificacion.contenido_html:
 
@@ -136,21 +124,15 @@ class BaseNotifier:
 
                 )
 
-
-
             notificacion.marcar_como_enviado()
 
             return True
-
-
 
         except Exception as e:
 
             notificacion.registrar_error(str(e))
 
             return False
-
-
 
     def _renderizar_email(
 
@@ -190,11 +172,8 @@ class BaseNotifier:
 
         return render_to_string('emails/base_notificacion.html', context)
 
-
-
     def _get_site_url(self) -> str:
 
         """Obtiene la URL base del sitio."""
 
         return getattr(settings, 'SITE_URL', '')
-

@@ -3,11 +3,9 @@
 Validadores de Configuración Extensibles.
 
 
-
 Este módulo implementa un sistema de validación para ConfiguracionSistema
 
 que permite agregar nuevos validadores sin modificar el modelo.
-
 
 
 ARQUITECTURA:
@@ -19,7 +17,6 @@ ARQUITECTURA:
 - Validadores concretos: PorcentajeValidator, RangoNumericoValidator, etc.
 
 
-
 USO:
 
     from app.services.config_validators import (
@@ -28,7 +25,6 @@ USO:
 
     )
 
-    
 
     # Registrar un nuevo validador
 
@@ -40,19 +36,16 @@ USO:
 
     )
 
-    
 
     # Validar una configuración
 
     errores = validar_configuracion('PORCENTAJE_SUPERINTENDENCIA', '0.035', 'decimal')
 
 
-
 EXTENSIBILIDAD:
 
     Para agregar una nueva validación:
 
-    
 
     1. Crear validador (puede ser función o clase):
 
@@ -64,14 +57,12 @@ EXTENSIBILIDAD:
 
            return {}
 
-    
 
     2. Registrarlo:
 
        registro_validadores.registrar('MI_CONFIG', validar_mi_config)
 
 """
-
 
 
 from abc import ABC, abstractmethod
@@ -87,15 +78,11 @@ import json
 import re
 
 
-
-
-
 # ==============================================================================
 
 # INTERFAZ BASE - VALIDADOR
 
 # ==============================================================================
-
 
 
 class ValidadorConfig(ABC):
@@ -108,25 +95,18 @@ class ValidadorConfig(ABC):
 
     """
 
-    
-
     @abstractmethod
-
     def validar(self, valor: str, tipo: str) -> Dict[str, str]:
 
         """
 
         Valida el valor de una configuración.
 
-        
-
         Args:
 
             valor: Valor de la configuración (siempre string)
 
             tipo: Tipo declarado ('texto', 'decimal', 'entero', 'json')
-
-            
 
         Returns:
 
@@ -136,26 +116,18 @@ class ValidadorConfig(ABC):
 
         pass
 
-    
-
     @property
-
     def descripcion(self) -> str:
 
         """Descripción del validador para documentación."""
 
         return self.__class__.__name__
 
-
-
-
-
 # ==============================================================================
 
 # VALIDADORES CONCRETOS
 
 # ==============================================================================
-
 
 
 class PorcentajeValidator(ValidadorConfig):
@@ -167,8 +139,6 @@ class PorcentajeValidator(ValidadorConfig):
     Por defecto, acepta valores entre 0.0 y 1.0 (0% a 100%).
 
     """
-
-    
 
     def __init__(
 
@@ -188,21 +158,14 @@ class PorcentajeValidator(ValidadorConfig):
 
         self.tipo_requerido = tipo_requerido
 
-    
-
     @property
-
     def descripcion(self) -> str:
 
         return f"Porcentaje entre {self.min_valor} y {self.max_valor}"
 
-    
-
     def validar(self, valor: str, tipo: str) -> Dict[str, str]:
 
         errores = {}
-
-        
 
         # Validar tipo
 
@@ -211,8 +174,6 @@ class PorcentajeValidator(ValidadorConfig):
             errores['tipo'] = f'Este parámetro debe ser de tipo "{self.tipo_requerido}".'
 
             return errores
-
-        
 
         # Validar valor decimal
 
@@ -226,8 +187,6 @@ class PorcentajeValidator(ValidadorConfig):
 
             return errores
 
-        
-
         # Validar rango
 
         if not (self.min_valor <= valor_decimal <= self.max_valor):
@@ -240,13 +199,7 @@ class PorcentajeValidator(ValidadorConfig):
 
             )
 
-        
-
         return errores
-
-
-
-
 
 class RangoNumericoValidator(ValidadorConfig):
 
@@ -255,8 +208,6 @@ class RangoNumericoValidator(ValidadorConfig):
     Valida que un valor numérico esté dentro de un rango.
 
     """
-
-    
 
     def __init__(
 
@@ -280,10 +231,7 @@ class RangoNumericoValidator(ValidadorConfig):
 
         self.mensaje_error = mensaje_error
 
-    
-
     @property
-
     def descripcion(self) -> str:
 
         partes = []
@@ -298,13 +246,9 @@ class RangoNumericoValidator(ValidadorConfig):
 
         return f"Número {self.tipo_requerido} ({', '.join(partes) or 'sin límites'})"
 
-    
-
     def validar(self, valor: str, tipo: str) -> Dict[str, str]:
 
         errores = {}
-
-        
 
         # Validar tipo
 
@@ -313,8 +257,6 @@ class RangoNumericoValidator(ValidadorConfig):
             errores['tipo'] = f'Este parámetro debe ser de tipo "{self.tipo_requerido}".'
 
             return errores
-
-        
 
         # Convertir según tipo
 
@@ -334,8 +276,6 @@ class RangoNumericoValidator(ValidadorConfig):
 
             return errores
 
-        
-
         # Validar rango
 
         if self.min_valor is not None and valor_numerico < self.min_valor:
@@ -344,21 +284,13 @@ class RangoNumericoValidator(ValidadorConfig):
 
             errores['valor'] = msg
 
-        
-
         if self.max_valor is not None and valor_numerico > self.max_valor:
 
             msg = self.mensaje_error or f'El valor no debe exceder {self.max_valor}.'
 
             errores['valor'] = msg
 
-        
-
         return errores
-
-
-
-
 
 class JsonValidator(ValidadorConfig):
 
@@ -369,8 +301,6 @@ class JsonValidator(ValidadorConfig):
     Opcionalmente valida la estructura del JSON.
 
     """
-
-    
 
     def __init__(
 
@@ -386,10 +316,7 @@ class JsonValidator(ValidadorConfig):
 
         self.campos_requeridos = campos_requeridos or []
 
-    
-
     @property
-
     def descripcion(self) -> str:
 
         if self.campos_requeridos:
@@ -398,21 +325,15 @@ class JsonValidator(ValidadorConfig):
 
         return "JSON válido"
 
-    
-
     def validar(self, valor: str, tipo: str) -> Dict[str, str]:
 
         errores = {}
-
-        
 
         if tipo != 'json':
 
             errores['tipo'] = 'Este parámetro debe ser de tipo "json".'
 
             return errores
-
-        
 
         try:
 
@@ -424,8 +345,6 @@ class JsonValidator(ValidadorConfig):
 
             return errores
 
-        
-
         # Validar campos requeridos
 
         if self.campos_requeridos and isinstance(data, dict):
@@ -436,37 +355,22 @@ class JsonValidator(ValidadorConfig):
 
                 errores['valor'] = f'Campos requeridos faltantes: {", ".join(faltantes)}'
 
-        
-
         return errores
-
-
-
-
 
 class EmailValidator(ValidadorConfig):
 
     """Valida que un valor sea un email válido."""
 
-    
-
     EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
-    
-
     @property
-
     def descripcion(self) -> str:
 
         return "Email válido"
 
-    
-
     def validar(self, valor: str, tipo: str) -> Dict[str, str]:
 
         errores = {}
-
-        
 
         if tipo != 'texto':
 
@@ -474,25 +378,15 @@ class EmailValidator(ValidadorConfig):
 
             return errores
 
-        
-
         if not self.EMAIL_REGEX.match(valor):
 
             errores['valor'] = 'El valor debe ser un email válido.'
 
-        
-
         return errores
-
-
-
-
 
 class UrlValidator(ValidadorConfig):
 
     """Valida que un valor sea una URL válida."""
-
-    
 
     URL_REGEX = re.compile(
 
@@ -510,21 +404,14 @@ class UrlValidator(ValidadorConfig):
 
     )
 
-    
-
     @property
-
     def descripcion(self) -> str:
 
         return "URL válida (http/https)"
 
-    
-
     def validar(self, valor: str, tipo: str) -> Dict[str, str]:
 
         errores = {}
-
-        
 
         if tipo != 'texto':
 
@@ -532,25 +419,15 @@ class UrlValidator(ValidadorConfig):
 
             return errores
 
-        
-
         if not self.URL_REGEX.match(valor):
 
             errores['valor'] = 'El valor debe ser una URL válida (http:// o https://).'
 
-        
-
         return errores
-
-
-
-
 
 class ListaValoresValidator(ValidadorConfig):
 
     """Valida que un valor esté en una lista de valores permitidos."""
-
-    
 
     def __init__(self, valores_permitidos: List[str], case_sensitive: bool = False):
 
@@ -558,21 +435,14 @@ class ListaValoresValidator(ValidadorConfig):
 
         self.case_sensitive = case_sensitive
 
-    
-
     @property
-
     def descripcion(self) -> str:
 
         return f"Uno de: {', '.join(self.valores_permitidos)}"
 
-    
-
     def validar(self, valor: str, tipo: str) -> Dict[str, str]:
 
         errores = {}
-
-        
 
         if self.case_sensitive:
 
@@ -582,19 +452,11 @@ class ListaValoresValidator(ValidadorConfig):
 
             es_valido = valor.lower() in [v.lower() for v in self.valores_permitidos]
 
-        
-
         if not es_valido:
 
             errores['valor'] = f'El valor debe ser uno de: {", ".join(self.valores_permitidos)}.'
 
-        
-
         return errores
-
-
-
-
 
 class TablaTasasValidator(ValidadorConfig):
 
@@ -606,29 +468,20 @@ class TablaTasasValidator(ValidadorConfig):
 
     """
 
-    
-
     @property
-
     def descripcion(self) -> str:
 
         return "Tabla de tasas de emisión (JSON array)"
 
-    
-
     def validar(self, valor: str, tipo: str) -> Dict[str, str]:
 
         errores = {}
-
-        
 
         if tipo != 'json':
 
             errores['tipo'] = 'Este parámetro debe ser de tipo "json".'
 
             return errores
-
-        
 
         try:
 
@@ -640,15 +493,11 @@ class TablaTasasValidator(ValidadorConfig):
 
             return errores
 
-        
-
         if not isinstance(data, list):
 
             errores['valor'] = 'La tabla de tasas debe ser un array JSON.'
 
             return errores
-
-        
 
         for i, item in enumerate(data):
 
@@ -658,15 +507,11 @@ class TablaTasasValidator(ValidadorConfig):
 
                 return errores
 
-            
-
             if 'tasa' not in item:
 
                 errores['valor'] = f'El elemento {i} debe tener campo "tasa".'
 
                 return errores
-
-            
 
             try:
 
@@ -678,20 +523,13 @@ class TablaTasasValidator(ValidadorConfig):
 
                 return errores
 
-        
-
         return errores
-
-
-
-
 
 # ==============================================================================
 
 # REGISTRO DE VALIDADORES
 
 # ==============================================================================
-
 
 
 class RegistroValidadores:
@@ -704,13 +542,9 @@ class RegistroValidadores:
 
     """
 
-    
-
     def __init__(self):
 
         self._validadores: Dict[str, Union[ValidadorConfig, Callable]] = {}
-
-    
 
     def registrar(
 
@@ -726,15 +560,11 @@ class RegistroValidadores:
 
         Registra un validador para una clave de configuración.
 
-        
-
         Args:
 
             clave: Nombre de la configuración (ej: 'PORCENTAJE_SUPERINTENDENCIA')
 
             validador: Instancia de ValidadorConfig o función callable
-
-            
 
         Returns:
 
@@ -745,8 +575,6 @@ class RegistroValidadores:
         self._validadores[clave] = validador
 
         return self
-
-    
 
     def registrar_multiples(
 
@@ -766,15 +594,11 @@ class RegistroValidadores:
 
         return self
 
-    
-
     def obtener(self, clave: str) -> Optional[Union[ValidadorConfig, Callable]]:
 
         """Obtiene el validador para una clave."""
 
         return self._validadores.get(clave)
-
-    
 
     def tiene_validador(self, clave: str) -> bool:
 
@@ -782,15 +606,11 @@ class RegistroValidadores:
 
         return clave in self._validadores
 
-    
-
     def validar(self, clave: str, valor: str, tipo: str) -> Dict[str, str]:
 
         """
 
         Ejecuta la validación para una clave.
-
-        
 
         Returns:
 
@@ -802,13 +622,9 @@ class RegistroValidadores:
 
         validador = self.obtener(clave)
 
-        
-
         if validador is None:
 
             return {}
-
-        
 
         if isinstance(validador, ValidadorConfig):
 
@@ -818,21 +634,14 @@ class RegistroValidadores:
 
             return validador(valor, tipo)
 
-        
-
         return {}
 
-    
-
     @property
-
     def claves_registradas(self) -> List[str]:
 
         """Lista de claves que tienen validador registrado."""
 
         return list(self._validadores.keys())
-
-    
 
     def documentacion(self) -> Dict[str, str]:
 
@@ -852,10 +661,6 @@ class RegistroValidadores:
 
         return docs
 
-
-
-
-
 # ==============================================================================
 
 # REGISTRO GLOBAL - SINGLETON
@@ -863,11 +668,9 @@ class RegistroValidadores:
 # ==============================================================================
 
 
-
 # Crear registro global
 
 registro_validadores = RegistroValidadores()
-
 
 
 # Registrar validadores por defecto
@@ -881,7 +684,6 @@ registro_validadores.registrar_multiples(
 )
 
 
-
 registro_validadores.registrar(
 
     'PORCENTAJE_IVA',
@@ -889,7 +691,6 @@ registro_validadores.registrar(
     PorcentajeValidator(min_valor=0.0, max_valor=0.25)  # 0% a 25%
 
 )
-
 
 
 registro_validadores.registrar(
@@ -901,7 +702,6 @@ registro_validadores.registrar(
 )
 
 
-
 registro_validadores.registrar(
 
     'DIAS_LIMITE_DESCUENTO_PRONTO_PAGO',
@@ -909,7 +709,6 @@ registro_validadores.registrar(
     RangoNumericoValidator(min_valor=1, max_valor=90, tipo_requerido='entero')
 
 )
-
 
 
 registro_validadores.registrar(
@@ -921,7 +720,6 @@ registro_validadores.registrar(
 )
 
 
-
 registro_validadores.registrar(
 
     'DIAS_ALERTA_DOCUMENTACION_SINIESTRO',
@@ -929,7 +727,6 @@ registro_validadores.registrar(
     RangoNumericoValidator(min_valor=1, max_valor=180, tipo_requerido='entero')
 
 )
-
 
 
 registro_validadores.registrar(
@@ -941,7 +738,6 @@ registro_validadores.registrar(
 )
 
 
-
 registro_validadores.registrar(
 
     'HORAS_LIMITE_DEPOSITO_INDEMNIZACION',
@@ -949,7 +745,6 @@ registro_validadores.registrar(
     RangoNumericoValidator(min_valor=1, max_valor=720, tipo_requerido='entero')
 
 )
-
 
 
 registro_validadores.registrar(
@@ -961,7 +756,6 @@ registro_validadores.registrar(
 )
 
 
-
 registro_validadores.registrar(
 
     'SITE_URL',
@@ -969,7 +763,6 @@ registro_validadores.registrar(
     UrlValidator()
 
 )
-
 
 
 registro_validadores.registrar(
@@ -981,7 +774,6 @@ registro_validadores.registrar(
 )
 
 
-
 registro_validadores.registrar(
 
     'TABLA_TASAS_EMISION',
@@ -991,15 +783,11 @@ registro_validadores.registrar(
 )
 
 
-
-
-
 # ==============================================================================
 
 # FUNCIÓN DE CONVENIENCIA
 
 # ==============================================================================
-
 
 
 def validar_configuracion(clave: str, valor: str, tipo: str) -> Dict[str, str]:
@@ -1008,7 +796,6 @@ def validar_configuracion(clave: str, valor: str, tipo: str) -> Dict[str, str]:
 
     Función de conveniencia para validar una configuración.
 
-    
 
     Args:
 
@@ -1018,7 +805,6 @@ def validar_configuracion(clave: str, valor: str, tipo: str) -> Dict[str, str]:
 
         tipo: Tipo declarado de la configuración
 
-        
 
     Returns:
 
@@ -1027,4 +813,3 @@ def validar_configuracion(clave: str, valor: str, tipo: str) -> Dict[str, str]:
     """
 
     return registro_validadores.validar(clave, valor, tipo)
-

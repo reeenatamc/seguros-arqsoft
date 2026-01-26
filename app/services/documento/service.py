@@ -7,15 +7,10 @@ Responsabilidad única: Gestión de documentos asociados a entidades.
 """
 
 
-
 from typing import Optional
 
 
-
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
-
-
-
 
 
 class DocumentoService(BaseService):
@@ -24,21 +19,15 @@ class DocumentoService(BaseService):
 
     Servicio para gestión de Documentos.
 
-    
-
     Responsabilidades:
 
     - Validar coherencia de relaciones documento-entidad
 
     - Validar tipos de documento
 
-    
-
     USO:
 
         from app.services.documento import DocumentoService
-
-        
 
         validacion = DocumentoService.validar_relaciones(
 
@@ -54,10 +43,7 @@ class DocumentoService(BaseService):
 
     """
 
-    
-
     @classmethod
-
     def validar_relaciones(
 
         cls,
@@ -76,15 +62,11 @@ class DocumentoService(BaseService):
 
         errores = {}
 
-        
-
         # Debe tener al menos una relación
 
         if not any([poliza_id, siniestro_id, factura_id]):
 
             errores['__all__'] = 'El documento debe estar asociado al menos a una póliza, siniestro o factura.'
-
-        
 
         # Coherencia tipo-relación
 
@@ -92,19 +74,12 @@ class DocumentoService(BaseService):
 
             errores['tipo_documento'] = 'Un documento de tipo "Póliza" debe estar asociado a una póliza.'
 
-        
-
         if tipo_documento == 'factura' and not factura_id:
 
             errores['tipo_documento'] = 'Un documento de tipo "Factura" debe estar asociado a una factura.'
-
-        
 
         if errores:
 
             return ResultadoValidacion(es_valido=False, errores=errores)
 
-        
-
         return ResultadoValidacion(es_valido=True)
-

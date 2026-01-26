@@ -7,7 +7,6 @@ Gestiona la generación de reportes especializados para análisis de seguros.
 """
 
 
-
 from decimal import Decimal
 
 from datetime import datetime, timedelta
@@ -15,13 +14,11 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 
 
-
 from django.db.models import Sum, Count, Avg, F, Q, Case, When, Value, DecimalField
 
 from django.db.models.functions import TruncMonth, Coalesce
 
 from django.utils import timezone
-
 
 
 from app.models import (
@@ -33,17 +30,11 @@ from app.models import (
 )
 
 
-
-
-
 class ReportesAvanzadosService:
 
     """Servicio para reportes especializados de seguros"""
 
-
-
     @classmethod
-
     def calcular_siniestralidad(cls, fecha_desde=None, fecha_hasta=None,
 
                                  compania_id=None, tipo_poliza_id=None):
@@ -51,8 +42,6 @@ class ReportesAvanzadosService:
         """
 
         Calcula el índice de siniestralidad: Siniestros pagados / Primas pagadas.
-
-
 
         Args:
 
@@ -63,8 +52,6 @@ class ReportesAvanzadosService:
             compania_id: ID de compañía para filtrar
 
             tipo_poliza_id: ID de tipo de póliza para filtrar
-
-
 
         Returns:
 
@@ -82,8 +69,6 @@ class ReportesAvanzadosService:
 
             fecha_desde = fecha_hasta - timedelta(days=365)
 
-
-
         # Filtro base para siniestros
 
         filtro_siniestros = Q(
@@ -95,8 +80,6 @@ class ReportesAvanzadosService:
             fecha_pago__lte=fecha_hasta,
 
         )
-
-
 
         # Filtro base para pagos de facturas
 
@@ -110,23 +93,17 @@ class ReportesAvanzadosService:
 
         )
 
-
-
         if compania_id:
 
             filtro_siniestros &= Q(poliza__compania_aseguradora_id=compania_id)
 
             filtro_pagos &= Q(factura__poliza__compania_aseguradora_id=compania_id)
 
-
-
         if tipo_poliza_id:
 
             filtro_siniestros &= Q(poliza__tipo_poliza_id=tipo_poliza_id)
 
             filtro_pagos &= Q(factura__poliza__tipo_poliza_id=tipo_poliza_id)
-
-
 
         # Calcular totales
 
@@ -136,15 +113,11 @@ class ReportesAvanzadosService:
 
         )['total']
 
-
-
         primas_pagadas = Pago.objects.filter(filtro_pagos).aggregate(
 
             total=Coalesce(Sum('monto'), Decimal('0.00'))
 
         )['total']
-
-
 
         # Calcular índice
 
@@ -156,15 +129,11 @@ class ReportesAvanzadosService:
 
             indice_siniestralidad = Decimal('0.00')
 
-
-
         # Detalle por mes
 
         detalle_mensual = []
 
         fecha_actual = fecha_desde.replace(day=1)
-
-
 
         while fecha_actual <= fecha_hasta:
 
@@ -172,23 +141,17 @@ class ReportesAvanzadosService:
 
             fin_mes = mes_siguiente - timedelta(days=1)
 
-
-
             # Filtros del mes
 
             filtro_mes_sin = Q(fecha_pago__gte=fecha_actual, fecha_pago__lte=fin_mes)
 
             filtro_mes_pago = Q(fecha_pago__gte=fecha_actual, fecha_pago__lte=fin_mes)
 
-
-
             if compania_id:
 
                 filtro_mes_sin &= Q(poliza__compania_aseguradora_id=compania_id)
 
                 filtro_mes_pago &= Q(factura__poliza__compania_aseguradora_id=compania_id)
-
-
 
             siniestros_mes = Siniestro.objects.filter(
 
@@ -198,8 +161,6 @@ class ReportesAvanzadosService:
 
             ).aggregate(total=Coalesce(Sum('valor_pagado'), Decimal('0.00')))['total']
 
-
-
             primas_mes = Pago.objects.filter(
 
                 filtro_mes_pago,
@@ -208,11 +169,7 @@ class ReportesAvanzadosService:
 
             ).aggregate(total=Coalesce(Sum('monto'), Decimal('0.00')))['total']
 
-
-
             indice_mes = (siniestros_mes / primas_mes * 100) if primas_mes > 0 else Decimal('0.00')
-
-
 
             detalle_mensual.append({
 
@@ -228,11 +185,7 @@ class ReportesAvanzadosService:
 
             })
 
-
-
             fecha_actual = mes_siguiente
-
-
 
         return {
 
@@ -260,10 +213,7 @@ class ReportesAvanzadosService:
 
         }
 
-
-
     @staticmethod
-
     def _interpretar_siniestralidad(indice):
 
         """Interpreta el índice de siniestralidad"""
@@ -328,10 +278,7 @@ class ReportesAvanzadosService:
 
             }
 
-
-
     @classmethod
-
     def reporte_gasto_por_ramos(cls, fecha_desde=None, fecha_hasta=None,
 
                                  poliza_id=None):
@@ -340,8 +287,6 @@ class ReportesAvanzadosService:
 
         Genera un reporte de gastos agrupado por ramo.
 
-
-
         Args:
 
             fecha_desde: Fecha de inicio
@@ -349,8 +294,6 @@ class ReportesAvanzadosService:
             fecha_hasta: Fecha de fin
 
             poliza_id: ID de póliza específica (opcional)
-
-
 
         Returns:
 
@@ -366,8 +309,6 @@ class ReportesAvanzadosService:
 
             fecha_desde = fecha_hasta - timedelta(days=365)
 
-
-
         # Filtro base
 
         filtro = Q(
@@ -378,13 +319,9 @@ class ReportesAvanzadosService:
 
         )
 
-
-
         if poliza_id:
 
             filtro &= Q(poliza_id=poliza_id)
-
-
 
         # Agregar datos por ramo
 
@@ -422,8 +359,6 @@ class ReportesAvanzadosService:
 
         ).order_by('-total_prima')
 
-
-
         # Calcular totales generales
 
         totales = {
@@ -443,8 +378,6 @@ class ReportesAvanzadosService:
             'valor_por_pagar': Decimal('0.00'),
 
         }
-
-
 
         ramos = []
 
@@ -476,8 +409,6 @@ class ReportesAvanzadosService:
 
             ramos.append(ramo)
 
-
-
             # Acumular totales
 
             for key in totales.keys():
@@ -485,8 +416,6 @@ class ReportesAvanzadosService:
                 if key in dato and dato[key]:
 
                     totales[key] += Decimal(str(dato[key]))
-
-
 
         # Calcular porcentajes
 
@@ -503,8 +432,6 @@ class ReportesAvanzadosService:
             else:
 
                 ramo['porcentaje_prima'] = 0
-
-
 
         return {
 
@@ -524,10 +451,7 @@ class ReportesAvanzadosService:
 
         }
 
-
-
     @classmethod
-
     def reporte_dias_gestion_siniestros(cls, fecha_desde=None, fecha_hasta=None,
 
                                          tipo_siniestro_id=None, estado=None):
@@ -535,8 +459,6 @@ class ReportesAvanzadosService:
         """
 
         Genera un reporte de días promedio de gestión por siniestro.
-
-
 
         Args:
 
@@ -547,8 +469,6 @@ class ReportesAvanzadosService:
             tipo_siniestro_id: Filtrar por tipo de siniestro
 
             estado: Filtrar por estado
-
-
 
         Returns:
 
@@ -564,8 +484,6 @@ class ReportesAvanzadosService:
 
             fecha_desde = fecha_hasta - timedelta(days=365)
 
-
-
         # Filtro base
 
         filtro = Q(
@@ -576,23 +494,15 @@ class ReportesAvanzadosService:
 
         )
 
-
-
         if tipo_siniestro_id:
 
             filtro &= Q(tipo_siniestro_id=tipo_siniestro_id)
-
-
 
         if estado:
 
             filtro &= Q(estado=estado)
 
-
-
         siniestros = Siniestro.objects.filter(filtro)
-
-
 
         # Calcular días de gestión para cada siniestro
 
@@ -601,8 +511,6 @@ class ReportesAvanzadosService:
         total_dias = 0
 
         siniestros_cerrados = 0
-
-
 
         for siniestro in siniestros:
 
@@ -628,21 +536,15 @@ class ReportesAvanzadosService:
 
             total_dias += dias
 
-
-
             if siniestro.estado in ['liquidado', 'cerrado']:
 
                 siniestros_cerrados += 1
-
-
 
         # Calcular promedios
 
         cantidad = len(datos_siniestros)
 
         promedio_general = total_dias / cantidad if cantidad > 0 else 0
-
-
 
         # Agrupar por tipo de siniestro
 
@@ -655,8 +557,6 @@ class ReportesAvanzadosService:
             por_tipo[tipo]['total_dias'] += dato['dias_gestion']
 
             por_tipo[tipo]['cantidad'] += 1
-
-
 
         resumen_por_tipo = []
 
@@ -672,8 +572,6 @@ class ReportesAvanzadosService:
 
             })
 
-
-
         # Agrupar por estado
 
         por_estado = defaultdict(lambda: {'total_dias': 0, 'cantidad': 0})
@@ -685,8 +583,6 @@ class ReportesAvanzadosService:
             por_estado[estado]['total_dias'] += dato['dias_gestion']
 
             por_estado[estado]['cantidad'] += 1
-
-
 
         resumen_por_estado = []
 
@@ -702,8 +598,6 @@ class ReportesAvanzadosService:
 
             })
 
-
-
         # Detalle para contadora con fechas clave y montos
 
         detalle_contadora = []
@@ -716,8 +610,6 @@ class ReportesAvanzadosService:
 
         pendientes_pago = 0
 
-        
-
         for siniestro in siniestros.select_related('tipo_siniestro', 'poliza__compania_aseguradora'):
 
             # Calcular días entre hitos
@@ -728,25 +620,17 @@ class ReportesAvanzadosService:
 
             dias_respuesta_pago = None
 
-            
-
             if siniestro.fecha_envio_aseguradora and siniestro.fecha_registro:
 
                 dias_hasta_envio = (siniestro.fecha_envio_aseguradora - siniestro.fecha_registro.date()).days
-
-            
 
             if siniestro.fecha_respuesta_aseguradora and siniestro.fecha_envio_aseguradora:
 
                 dias_envio_respuesta = (siniestro.fecha_respuesta_aseguradora - siniestro.fecha_envio_aseguradora).days
 
-            
-
             if siniestro.fecha_pago and siniestro.fecha_respuesta_aseguradora:
 
                 dias_respuesta_pago = (siniestro.fecha_pago - siniestro.fecha_respuesta_aseguradora).days
-
-            
 
             # Acumular totales
 
@@ -756,13 +640,9 @@ class ReportesAvanzadosService:
 
             total_deducible += siniestro.deducible_aplicado or Decimal('0.00')
 
-            
-
             if siniestro.estado not in ['liquidado', 'cerrado', 'rechazado'] and not siniestro.fecha_pago:
 
                 pendientes_pago += 1
-
-            
 
             detalle_contadora.append({
 
@@ -814,13 +694,9 @@ class ReportesAvanzadosService:
 
             })
 
-        
-
         # Ordenar por fecha de registro (más reciente primero)
 
         detalle_contadora = sorted(detalle_contadora, key=lambda x: x['fecha_registro'], reverse=True)
-
-
 
         return {
 
@@ -866,25 +742,18 @@ class ReportesAvanzadosService:
 
         }
 
-
-
     @classmethod
-
     def reporte_siniestros_por_dependencia(cls, fecha_desde=None, fecha_hasta=None):
 
         """
 
         Genera un reporte de siniestros agrupados por departamento/área.
 
-
-
         Args:
 
             fecha_desde: Fecha de inicio
 
             fecha_hasta: Fecha de fin
-
-
 
         Returns:
 
@@ -900,8 +769,6 @@ class ReportesAvanzadosService:
 
             fecha_desde = fecha_hasta - timedelta(days=365)
 
-
-
         filtro = Q(
 
             fecha_registro__date__gte=fecha_desde,
@@ -909,8 +776,6 @@ class ReportesAvanzadosService:
             fecha_registro__date__lte=fecha_hasta,
 
         )
-
-
 
         # Agrupar por departamento del responsable
 
@@ -930,8 +795,6 @@ class ReportesAvanzadosService:
 
         ).order_by('-cantidad')
 
-
-
         dependencias = []
 
         total_cantidad = 0
@@ -939,8 +802,6 @@ class ReportesAvanzadosService:
         total_estimado = Decimal('0.00')
 
         total_pagado = Decimal('0.00')
-
-
 
         for dato in datos:
 
@@ -966,8 +827,6 @@ class ReportesAvanzadosService:
 
             total_pagado += dato['monto_pagado_total'] or Decimal('0.00')
 
-
-
         # Calcular porcentajes
 
         for dep in dependencias:
@@ -980,8 +839,6 @@ class ReportesAvanzadosService:
 
                 dep['porcentaje_cantidad'] = 0
 
-
-
             if total_estimado > 0:
 
                 dep['porcentaje_monto'] = (Decimal(str(dep['monto_estimado'])) / total_estimado) * 100
@@ -989,8 +846,6 @@ class ReportesAvanzadosService:
             else:
 
                 dep['porcentaje_monto'] = 0
-
-
 
         return {
 
@@ -1016,25 +871,18 @@ class ReportesAvanzadosService:
 
         }
 
-
-
     @classmethod
-
     def reporte_siniestralidad_por_compania(cls, fecha_desde=None, fecha_hasta=None):
 
         """
 
         Genera un reporte comparativo de siniestralidad por compañía aseguradora.
 
-
-
         Args:
 
             fecha_desde: Fecha de inicio
 
             fecha_hasta: Fecha de fin
-
-
 
         Returns:
 
@@ -1050,13 +898,9 @@ class ReportesAvanzadosService:
 
             fecha_desde = fecha_hasta - timedelta(days=365)
 
-
-
         companias = CompaniaAseguradora.objects.filter(activo=True)
 
         resultados = []
-
-
 
         for compania in companias:
 
@@ -1070,8 +914,6 @@ class ReportesAvanzadosService:
 
             )
 
-
-
             # Contar pólizas vigentes
 
             polizas_vigentes = Poliza.objects.filter(
@@ -1081,8 +923,6 @@ class ReportesAvanzadosService:
                 estado__in=['vigente', 'por_vencer'],
 
             ).count()
-
-
 
             # Contar siniestros en el período
 
@@ -1095,8 +935,6 @@ class ReportesAvanzadosService:
                 fecha_registro__date__lte=fecha_hasta,
 
             ).count()
-
-
 
             resultados.append({
 
@@ -1116,13 +954,9 @@ class ReportesAvanzadosService:
 
             })
 
-
-
         # Ordenar por índice de siniestralidad
 
         resultados = sorted(resultados, key=lambda x: x['indice_siniestralidad'])
-
-
 
         return {
 
@@ -1138,25 +972,18 @@ class ReportesAvanzadosService:
 
         }
 
-
-
     @classmethod
-
     def generar_resumen_ejecutivo(cls, fecha_desde=None, fecha_hasta=None):
 
         """
 
         Genera un resumen ejecutivo completo con todas las métricas clave.
 
-
-
         Args:
 
             fecha_desde: Fecha de inicio
 
             fecha_hasta: Fecha de fin
-
-
 
         Returns:
 
@@ -1172,8 +999,6 @@ class ReportesAvanzadosService:
 
             fecha_desde = fecha_hasta - timedelta(days=365)
 
-
-
         # Calcular siniestralidad general
 
         siniestralidad = cls.calcular_siniestralidad(
@@ -1183,8 +1008,6 @@ class ReportesAvanzadosService:
             fecha_hasta=fecha_hasta,
 
         )
-
-
 
         # Reporte por ramos
 
@@ -1196,8 +1019,6 @@ class ReportesAvanzadosService:
 
         )
 
-
-
         # Días de gestión
 
         dias_gestion = cls.reporte_dias_gestion_siniestros(
@@ -1207,8 +1028,6 @@ class ReportesAvanzadosService:
             fecha_hasta=fecha_hasta,
 
         )
-
-
 
         # Por dependencia
 
@@ -1220,8 +1039,6 @@ class ReportesAvanzadosService:
 
         )
 
-
-
         # Pólizas activas
 
         polizas_activas = Poliza.objects.filter(
@@ -1230,15 +1047,11 @@ class ReportesAvanzadosService:
 
         ).count()
 
-
-
         polizas_por_vencer = Poliza.objects.filter(
 
             estado='por_vencer'
 
         ).count()
-
-
 
         # Siniestros pendientes
 
@@ -1247,8 +1060,6 @@ class ReportesAvanzadosService:
             estado__in=['registrado', 'documentacion_pendiente', 'enviado_aseguradora', 'en_evaluacion']
 
         ).count()
-
-
 
         return {
 
@@ -1293,4 +1104,3 @@ class ReportesAvanzadosService:
             'tendencia_mensual': siniestralidad['detalle_mensual'],
 
         }
-

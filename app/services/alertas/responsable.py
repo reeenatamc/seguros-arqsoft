@@ -7,13 +7,9 @@ Responsabilidad única: notificar al custodio del bien.
 """
 
 
-
 from django.utils import timezone
 
 from .base import BaseNotifier
-
-
-
 
 
 class ResponsableNotifier(BaseNotifier):
@@ -21,8 +17,6 @@ class ResponsableNotifier(BaseNotifier):
     """
 
     Notificador especializado para comunicaciones con el responsable/custodio.
-
-    
 
     USO:
 
@@ -32,23 +26,17 @@ class ResponsableNotifier(BaseNotifier):
 
     """
 
-    
-
     def notificar_siniestro_pendiente(self, siniestro, usuario=None):
 
         """
 
         Notifica al responsable/custodio sobre un siniestro pendiente.
 
-        
-
         Args:
 
             siniestro: Instancia del modelo Siniestro
 
             usuario: Usuario que realiza la acción
-
-            
 
         Returns:
 
@@ -60,19 +48,13 @@ class ResponsableNotifier(BaseNotifier):
 
             return None
 
-
-
         email_responsable = siniestro.responsable_custodio.email
 
         nombre_responsable = siniestro.responsable_custodio.nombre
 
         dias_transcurridos = siniestro.dias_gestion
 
-
-
         asunto = f"Aviso: Siniestro Pendiente - {siniestro.numero_siniestro}"
-
-
 
         bloques = [
 
@@ -96,8 +78,6 @@ class ResponsableNotifier(BaseNotifier):
 
         ]
 
-
-
         contenido_html = self._renderizar_email(
 
             titulo=asunto,
@@ -120,8 +100,6 @@ class ResponsableNotifier(BaseNotifier):
 
         )
 
-
-
         contenido_texto = (
 
             f"{asunto}\n\n"
@@ -135,8 +113,6 @@ class ResponsableNotifier(BaseNotifier):
             f"Estado Actual: {siniestro.get_estado_display()}\n"
 
         )
-
-
 
         notificacion = self._crear_notificacion(
 
@@ -156,21 +132,15 @@ class ResponsableNotifier(BaseNotifier):
 
         )
 
-
-
         # Actualizar fecha de notificación
 
         siniestro.fecha_notificacion_responsable = timezone.now().date()
 
         siniestro.save(update_fields=['fecha_notificacion_responsable'])
 
-
-
         self._enviar_email(notificacion)
 
         return notificacion
-
-
 
     def notificar_documentacion_pendiente(self, siniestro, usuario=None):
 
@@ -178,15 +148,11 @@ class ResponsableNotifier(BaseNotifier):
 
         Recordatorio de documentación pendiente al responsable.
 
-        
-
         Args:
 
             siniestro: Siniestro con documentación pendiente
 
             usuario: Usuario que realiza la acción
-
-            
 
         Returns:
 
@@ -198,17 +164,11 @@ class ResponsableNotifier(BaseNotifier):
 
             return None
 
-
-
         email_responsable = siniestro.responsable_custodio.email
 
         dias = siniestro.dias_desde_registro
 
-
-
         asunto = f"Recordatorio: Documentación Pendiente - {siniestro.numero_siniestro}"
-
-
 
         bloques = [
 
@@ -232,8 +192,6 @@ class ResponsableNotifier(BaseNotifier):
 
         ]
 
-
-
         contenido_html = self._renderizar_email(
 
             titulo=asunto,
@@ -256,8 +214,6 @@ class ResponsableNotifier(BaseNotifier):
 
         )
 
-
-
         contenido_texto = (
 
             f"{asunto}\n\n"
@@ -269,8 +225,6 @@ class ResponsableNotifier(BaseNotifier):
             f"Días desde registro: {dias}\n"
 
         )
-
-
 
         notificacion = self._crear_notificacion(
 
@@ -290,9 +244,6 @@ class ResponsableNotifier(BaseNotifier):
 
         )
 
-
-
         self._enviar_email(notificacion)
 
         return notificacion
-

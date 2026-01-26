@@ -1,18 +1,12 @@
 from django.core.management.base import BaseCommand
 
 
-
 from app.models import Ramo, SubtipoRamo
-
-
-
 
 
 class Command(BaseCommand):
 
     help = "Puebla los datos maestros de RAMOS GENERALES según la tabla del TDR de Seguros UTPL"
-
-
 
     RAMOS = {
 
@@ -92,8 +86,6 @@ class Command(BaseCommand):
 
     }
 
-
-
     def handle(self, *args, **options):
 
         """
@@ -106,13 +98,9 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.MIGRATE_HEADING("Poblando RAMOS GENERALES según TDR..."))
 
-
-
         for grupo_nombre, subgrupos in self.RAMOS.items():
 
             codigo_grupo = self._slugify_codigo(grupo_nombre)
-
-
 
             ramo, created = Ramo.objects.get_or_create(
 
@@ -137,8 +125,6 @@ class Command(BaseCommand):
             else:
 
                 self.stdout.write(self.style.WARNING(f"Ramo ya existía: {grupo_nombre} (código={ramo.codigo})"))
-
-
 
             for sg in subgrupos:
 
@@ -170,11 +156,7 @@ class Command(BaseCommand):
 
                     self.stdout.write(self.style.WARNING(f"  - Subgrupo ya existía: {sg} (código={subtipo.codigo})"))
 
-
-
         self.stdout.write(self.style.SUCCESS("Poblado de RAMOS GENERALES completado."))
-
-
 
     def _slugify_codigo(self, texto: str) -> str:
 
@@ -187,8 +169,6 @@ class Command(BaseCommand):
         """
 
         import re
-
-
 
         base = texto.upper()
 
@@ -214,8 +194,6 @@ class Command(BaseCommand):
 
             base = base.replace(orig, repl)
 
-
-
         base = re.sub(r"[^A-Z0-9]+", "_", base)
 
         base = base.strip("_")
@@ -223,4 +201,3 @@ class Command(BaseCommand):
         # Limitar longitud por si acaso
 
         return base[:20]
-

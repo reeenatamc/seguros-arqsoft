@@ -9,7 +9,6 @@ filtros por entidad, y generación de reportes personalizables.
 """
 
 
-
 from django.db.models import Sum, Count, Avg, Q, F, Value, Min, Max
 
 from django.db.models.functions import Coalesce, TruncMonth, TruncDay, TruncWeek
@@ -23,9 +22,6 @@ from decimal import Decimal
 from typing import Dict, List, Any, Optional, Tuple
 
 import json
-
-
-
 
 
 class DateRangePresets:
@@ -66,8 +62,6 @@ class DateRangePresets:
 
     CUSTOM = 'custom'
 
-    
-
     CHOICES = {
 
         TODAY: 'Hoy',
@@ -102,17 +96,12 @@ class DateRangePresets:
 
     }
 
-    
-
     @classmethod
-
     def get_date_range(cls, preset: str, custom_start: date = None, custom_end: date = None) -> Tuple[date, date]:
 
         """
 
         Obtiene el rango de fechas para un preset dado.
-
-        
 
         Returns:
 
@@ -122,21 +111,15 @@ class DateRangePresets:
 
         today = timezone.now().date()
 
-        
-
         if preset == cls.TODAY:
 
             return today, today
-
-            
 
         elif preset == cls.YESTERDAY:
 
             yesterday = today - timedelta(days=1)
 
             return yesterday, yesterday
-
-            
 
         elif preset == cls.THIS_WEEK:
 
@@ -146,8 +129,6 @@ class DateRangePresets:
 
             return start, today
 
-            
-
         elif preset == cls.LAST_WEEK:
 
             start = today - timedelta(days=today.weekday() + 7)
@@ -156,15 +137,11 @@ class DateRangePresets:
 
             return start, end
 
-            
-
         elif preset == cls.THIS_MONTH:
 
             start = date(today.year, today.month, 1)
 
             return start, today
-
-            
 
         elif preset == cls.LAST_MONTH:
 
@@ -186,8 +163,6 @@ class DateRangePresets:
 
             return start, end
 
-            
-
         elif preset == cls.THIS_QUARTER:
 
             quarter = (today.month - 1) // 3
@@ -195,8 +170,6 @@ class DateRangePresets:
             start = date(today.year, quarter * 3 + 1, 1)
 
             return start, today
-
-            
 
         elif preset == cls.LAST_QUARTER:
 
@@ -216,15 +189,11 @@ class DateRangePresets:
 
             return start, end
 
-            
-
         elif preset == cls.THIS_YEAR:
 
             start = date(today.year, 1, 1)
 
             return start, today
-
-            
 
         elif preset == cls.LAST_YEAR:
 
@@ -234,15 +203,11 @@ class DateRangePresets:
 
             return start, end
 
-            
-
         elif preset == cls.LAST_7_DAYS:
 
             start = today - timedelta(days=6)
 
             return start, today
-
-            
 
         elif preset == cls.LAST_30_DAYS:
 
@@ -250,15 +215,11 @@ class DateRangePresets:
 
             return start, today
 
-            
-
         elif preset == cls.LAST_90_DAYS:
 
             start = today - timedelta(days=89)
 
             return start, today
-
-            
 
         elif preset == cls.LAST_365_DAYS:
 
@@ -266,21 +227,13 @@ class DateRangePresets:
 
             return start, today
 
-            
-
         elif preset == cls.CUSTOM and custom_start and custom_end:
 
             return custom_start, custom_end
 
-            
-
         # Default: últimos 30 días
 
         return today - timedelta(days=29), today
-
-
-
-
 
 class DashboardFiltersService:
 
@@ -292,10 +245,7 @@ class DashboardFiltersService:
 
     """
 
-    
-
     @classmethod
-
     def get_available_filters(cls) -> Dict[str, Any]:
 
         """
@@ -308,13 +258,11 @@ class DashboardFiltersService:
 
         from app.models import (
 
-            CompaniaAseguradora, CorredorSeguros, TipoPoliza, 
+            CompaniaAseguradora, CorredorSeguros, TipoPoliza,
 
             TipoSiniestro, Poliza, Factura, Siniestro
 
         )
-
-        
 
         return {
 
@@ -362,7 +310,7 @@ class DashboardFiltersService:
 
             'policy_states': [
 
-                {'value': choice[0], 'label': choice[1]} 
+                {'value': choice[0], 'label': choice[1]}
 
                 for choice in Poliza.ESTADO_CHOICES
 
@@ -370,7 +318,7 @@ class DashboardFiltersService:
 
             'invoice_states': [
 
-                {'value': choice[0], 'label': choice[1]} 
+                {'value': choice[0], 'label': choice[1]}
 
                 for choice in Factura.ESTADO_CHOICES
 
@@ -378,7 +326,7 @@ class DashboardFiltersService:
 
             'claim_states': [
 
-                {'value': choice[0], 'label': choice[1]} 
+                {'value': choice[0], 'label': choice[1]}
 
                 for choice in Siniestro.ESTADO_CHOICES
 
@@ -386,10 +334,7 @@ class DashboardFiltersService:
 
         }
 
-
-
     @classmethod
-
     def parse_filters_from_request(cls, request) -> Dict[str, Any]:
 
         """
@@ -400,8 +345,6 @@ class DashboardFiltersService:
 
         params = request.GET
 
-        
-
         # Date range
 
         date_preset = params.get('date_preset', DateRangePresets.THIS_MONTH)
@@ -409,8 +352,6 @@ class DashboardFiltersService:
         custom_start = None
 
         custom_end = None
-
-        
 
         if date_preset == DateRangePresets.CUSTOM:
 
@@ -424,11 +365,7 @@ class DashboardFiltersService:
 
                 date_preset = DateRangePresets.THIS_MONTH
 
-        
-
         start_date, end_date = DateRangePresets.get_date_range(date_preset, custom_start, custom_end)
-
-        
 
         # Parsear listas (pueden venir múltiples valores)
 
@@ -446,8 +383,6 @@ class DashboardFiltersService:
 
             return [int(v) for v in values if v.isdigit()] if values else []
 
-        
-
         def parse_string_list(key):
 
             values = params.getlist(key)
@@ -461,8 +396,6 @@ class DashboardFiltersService:
                     values = [v.strip() for v in value.split(',') if v.strip()]
 
             return values
-
-        
 
         return {
 
@@ -490,10 +423,7 @@ class DashboardFiltersService:
 
         }
 
-
-
     @classmethod
-
     def get_filtered_stats(cls, filters: Dict[str, Any]) -> Dict[str, Any]:
 
         """
@@ -504,13 +434,9 @@ class DashboardFiltersService:
 
         from app.models import Poliza, Factura, Siniestro, Alerta
 
-        
-
         date_from = filters.get('date_from')
 
         date_to = filters.get('date_to')
-
-        
 
         # Construir querysets base con filtros
 
@@ -519,8 +445,6 @@ class DashboardFiltersService:
         invoices_qs = cls._build_invoice_queryset(filters)
 
         claims_qs = cls._build_claim_queryset(filters)
-
-        
 
         # Estadísticas de pólizas
 
@@ -537,8 +461,6 @@ class DashboardFiltersService:
             total_insured=Coalesce(Sum('suma_asegurada'), Value(Decimal('0'))),
 
         )
-
-        
 
         # Estadísticas de facturas
 
@@ -560,8 +482,6 @@ class DashboardFiltersService:
 
         )
 
-        
-
         # Estadísticas de siniestros
 
         claim_stats = claims_qs.aggregate(
@@ -582,8 +502,6 @@ class DashboardFiltersService:
 
         )
 
-        
-
         # Alertas activas (no filtradas por fecha, son globales)
 
         alert_stats = {
@@ -595,8 +513,6 @@ class DashboardFiltersService:
             'total_active': Alerta.objects.filter(estado__in=['pendiente', 'enviada']).count(),
 
         }
-
-        
 
         # Calcular KPIs
 
@@ -610,8 +526,6 @@ class DashboardFiltersService:
 
             )
 
-        
-
         loss_ratio = 0
 
         if invoice_stats['paid_amount'] > 0:
@@ -621,8 +535,6 @@ class DashboardFiltersService:
                 (claim_stats['total_indemnified'] / invoice_stats['paid_amount']) * 100, 1
 
             )
-
-        
 
         return {
 
@@ -702,10 +614,7 @@ class DashboardFiltersService:
 
         }
 
-
-
     @classmethod
-
     def get_chart_data(cls, filters: Dict[str, Any]) -> Dict[str, Any]:
 
         """
@@ -716,13 +625,9 @@ class DashboardFiltersService:
 
         from app.models import Poliza, Factura, Siniestro
 
-        
-
         date_from = filters.get('date_from')
 
         date_to = filters.get('date_to')
-
-        
 
         # Determinar granularidad basada en el rango de fechas
 
@@ -746,15 +651,11 @@ class DashboardFiltersService:
 
             date_format = '%b %Y'
 
-        
-
         # Construir querysets
 
         invoices_qs = cls._build_invoice_queryset(filters)
 
         claims_qs = cls._build_claim_queryset(filters)
-
-        
 
         # Facturación por período
 
@@ -780,8 +681,6 @@ class DashboardFiltersService:
 
         )
 
-        
-
         # Siniestros por período
 
         claims_by_period = list(
@@ -804,8 +703,6 @@ class DashboardFiltersService:
 
         )
 
-        
-
         # Formatear datos para Chart.js
 
         invoicing_labels = [
@@ -816,8 +713,6 @@ class DashboardFiltersService:
 
         ]
 
-        
-
         claims_labels = [
 
             item['period'].strftime(date_format) if item['period'] else ''
@@ -825,8 +720,6 @@ class DashboardFiltersService:
             for item in claims_by_period
 
         ]
-
-        
 
         # Distribución por compañía
 
@@ -850,8 +743,6 @@ class DashboardFiltersService:
 
         )
 
-        
-
         # Distribución por tipo de póliza
 
         by_policy_type = list(
@@ -866,8 +757,6 @@ class DashboardFiltersService:
 
         )
 
-        
-
         # Distribución por estado de póliza
 
         by_policy_state = list(
@@ -881,8 +770,6 @@ class DashboardFiltersService:
             .order_by('estado')
 
         )
-
-        
 
         # Distribución por tipo de siniestro (sin límite para mostrar todos)
 
@@ -903,8 +790,6 @@ class DashboardFiltersService:
             .order_by('-count')
 
         )
-
-        
 
         return {
 
@@ -970,10 +855,7 @@ class DashboardFiltersService:
 
         }
 
-
-
     @classmethod
-
     def get_lists_data(cls, filters: Dict[str, Any], limit: int = 5) -> Dict[str, Any]:
 
         """
@@ -984,11 +866,7 @@ class DashboardFiltersService:
 
         from app.models import Poliza, Factura, Siniestro
 
-        
-
         today = timezone.now().date()
-
-        
 
         # Pólizas por vencer (próximos 30 días)
 
@@ -1020,13 +898,9 @@ class DashboardFiltersService:
 
         )
 
-        
-
         for p in expiring_policies:
 
             p['days_to_expire'] = (p['fecha_fin'] - today).days
-
-        
 
         # Facturas pendientes
 
@@ -1050,15 +924,11 @@ class DashboardFiltersService:
 
         )
 
-        
-
         for f in pending_invoices:
 
             f['is_overdue'] = f['fecha_vencimiento'] < today
 
             f['monto_total'] = float(f['monto_total'])
-
-        
 
         # Siniestros activos
 
@@ -1082,8 +952,6 @@ class DashboardFiltersService:
 
         )
 
-        
-
         for c in active_claims:
 
             c['monto_estimado'] = float(c['monto_estimado']) if c['monto_estimado'] else 0
@@ -1091,8 +959,6 @@ class DashboardFiltersService:
             c['state_label'] = cls._get_state_label(c['estado'], 'claim')
 
             c['state_color'] = cls._get_state_color(c['estado'], 'claim')
-
-        
 
         return {
 
@@ -1104,10 +970,7 @@ class DashboardFiltersService:
 
         }
 
-
-
     @classmethod
-
     def export_filtered_data(cls, filters: Dict[str, Any], export_type: str = 'summary') -> Dict[str, Any]:
 
         """
@@ -1121,8 +984,6 @@ class DashboardFiltersService:
         charts = cls.get_chart_data(filters)
 
         lists = cls.get_lists_data(filters, limit=100)
-
-        
 
         return {
 
@@ -1138,35 +999,24 @@ class DashboardFiltersService:
 
         }
 
-
-
     # =========================================================================
 
     # Métodos privados de ayuda
 
     # =========================================================================
 
-    
-
     @classmethod
-
     def _build_policy_queryset(cls, filters: Dict[str, Any]):
 
         """Construye el queryset de pólizas con los filtros aplicados."""
 
         from app.models import Poliza
 
-        
-
         qs = Poliza.objects.all()
-
-        
 
         date_from = filters.get('date_from')
 
         date_to = filters.get('date_to')
-
-        
 
         if date_from and date_to:
 
@@ -1180,31 +1030,21 @@ class DashboardFiltersService:
 
             )
 
-        
-
         if filters.get('insurers'):
 
             qs = qs.filter(compania_aseguradora_id__in=filters['insurers'])
-
-        
 
         if filters.get('brokers'):
 
             qs = qs.filter(corredor_seguros_id__in=filters['brokers'])
 
-        
-
         if filters.get('policy_types'):
 
             qs = qs.filter(tipo_poliza_id__in=filters['policy_types'])
 
-        
-
         if filters.get('policy_states'):
 
             qs = qs.filter(estado__in=filters['policy_states'])
-
-        
 
         if filters.get('search_query'):
 
@@ -1222,49 +1062,32 @@ class DashboardFiltersService:
 
             )
 
-        
-
         return qs.distinct()
 
-
-
     @classmethod
-
     def _build_invoice_queryset(cls, filters: Dict[str, Any]):
 
         """Construye el queryset de facturas con los filtros aplicados."""
 
         from app.models import Factura
 
-        
-
         qs = Factura.objects.all()
-
-        
 
         date_from = filters.get('date_from')
 
         date_to = filters.get('date_to')
 
-        
-
         if date_from and date_to:
 
             qs = qs.filter(fecha_emision__gte=date_from, fecha_emision__lte=date_to)
-
-        
 
         if filters.get('insurers'):
 
             qs = qs.filter(poliza__compania_aseguradora_id__in=filters['insurers'])
 
-        
-
         if filters.get('invoice_states'):
 
             qs = qs.filter(estado__in=filters['invoice_states'])
-
-        
 
         if filters.get('search_query'):
 
@@ -1278,31 +1101,20 @@ class DashboardFiltersService:
 
             )
 
-        
-
         return qs.distinct()
 
-
-
     @classmethod
-
     def _build_claim_queryset(cls, filters: Dict[str, Any]):
 
         """Construye el queryset de siniestros con los filtros aplicados."""
 
         from app.models import Siniestro
 
-        
-
         qs = Siniestro.objects.all()
-
-        
 
         date_from = filters.get('date_from')
 
         date_to = filters.get('date_to')
-
-        
 
         if date_from and date_to:
 
@@ -1314,25 +1126,17 @@ class DashboardFiltersService:
 
             )
 
-        
-
         if filters.get('insurers'):
 
             qs = qs.filter(poliza__compania_aseguradora_id__in=filters['insurers'])
-
-        
 
         if filters.get('claim_types'):
 
             qs = qs.filter(tipo_siniestro_id__in=filters['claim_types'])
 
-        
-
         if filters.get('claim_states'):
 
             qs = qs.filter(estado__in=filters['claim_states'])
-
-        
 
         if filters.get('search_query'):
 
@@ -1348,14 +1152,9 @@ class DashboardFiltersService:
 
             )
 
-        
-
         return qs.distinct()
 
-
-
     @classmethod
-
     def _get_date_range_label(cls, filters: Dict[str, Any]) -> str:
 
         """Genera una etiqueta legible para el rango de fechas."""
@@ -1366,8 +1165,6 @@ class DashboardFiltersService:
 
             return DateRangePresets.CHOICES[preset]
 
-        
-
         date_from = filters.get('date_from')
 
         date_to = filters.get('date_to')
@@ -1376,21 +1173,14 @@ class DashboardFiltersService:
 
             return f"{date_from.strftime('%d/%m/%Y')} - {date_to.strftime('%d/%m/%Y')}"
 
-        
-
         return 'Período no definido'
 
-
-
     @classmethod
-
     def _get_state_label(cls, state: str, entity_type: str) -> str:
 
         """Obtiene la etiqueta de un estado."""
 
         from app.models import Poliza, Factura, Siniestro
-
-        
 
         if entity_type == 'policy':
 
@@ -1408,14 +1198,9 @@ class DashboardFiltersService:
 
             return state.replace('_', ' ').title()
 
-        
-
         return choices.get(state, state.replace('_', ' ').title())
 
-
-
     @classmethod
-
     def _get_state_color(cls, state: str, entity_type: str) -> str:
 
         """Obtiene el color para un estado."""
@@ -1461,4 +1246,3 @@ class DashboardFiltersService:
         }
 
         return colors.get(state, '#6B7280')
-

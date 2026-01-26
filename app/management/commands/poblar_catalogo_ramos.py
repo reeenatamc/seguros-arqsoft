@@ -7,24 +7,17 @@ Crea la estructura jerárquica: TipoRamo > GrupoRamo > SubgrupoRamo
 """
 
 
-
 from django.core.management.base import BaseCommand
 
 from django.db import transaction
 
 
-
 from app.models import TipoRamo, GrupoRamo, SubgrupoRamo
-
-
-
 
 
 class Command(BaseCommand):
 
     help = 'Pobla el catálogo de ramos con los datos predefinidos de Ramos Generales'
-
-
 
     def add_arguments(self, parser):
 
@@ -38,17 +31,11 @@ class Command(BaseCommand):
 
         )
 
-
-
     def handle(self, *args, **options):
 
         force = options.get('force', False)
 
-        
-
         self.stdout.write('Iniciando población del catálogo de ramos...\n')
-
-        
 
         with transaction.atomic():
 
@@ -72,8 +59,6 @@ class Command(BaseCommand):
 
             )
 
-            
-
             if created:
 
                 self.stdout.write(self.style.SUCCESS(f'✓ Tipo de ramo creado: {tipo_rg}'))
@@ -81,8 +66,6 @@ class Command(BaseCommand):
             else:
 
                 self.stdout.write(f'  Tipo de ramo existente: {tipo_rg}')
-
-            
 
             # Definición de grupos y subgrupos
 
@@ -260,8 +243,6 @@ class Command(BaseCommand):
 
             ]
 
-            
-
             grupos_creados = 0
 
             grupos_existentes = 0
@@ -269,8 +250,6 @@ class Command(BaseCommand):
             subgrupos_creados = 0
 
             subgrupos_existentes = 0
-
-            
 
             for grupo_data in catalogo:
 
@@ -296,8 +275,6 @@ class Command(BaseCommand):
 
                 )
 
-                
-
                 if created:
 
                     grupos_creados += 1
@@ -319,8 +296,6 @@ class Command(BaseCommand):
                         grupo.save()
 
                         self.stdout.write(f'  ↻ Grupo actualizado: {grupo}')
-
-                
 
                 # Crear subgrupos
 
@@ -348,8 +323,6 @@ class Command(BaseCommand):
 
                     )
 
-                    
-
                     if sub_created:
 
                         subgrupos_creados += 1
@@ -370,8 +343,6 @@ class Command(BaseCommand):
 
                             subgrupo.save()
 
-            
-
             self.stdout.write('\n' + '='*60)
 
             self.stdout.write(self.style.SUCCESS('Resumen de población:'))
@@ -388,11 +359,8 @@ class Command(BaseCommand):
 
             self.stdout.write('='*60 + '\n')
 
-            
-
             self.stdout.write(self.style.SUCCESS(
 
                 '¡Catálogo de ramos poblado exitosamente!'
 
             ))
-

@@ -1,9 +1,6 @@
 from .models import Alerta
 
 
-
-
-
 def alertas_context(request):
 
     if request.user.is_authenticated:
@@ -14,7 +11,6 @@ def alertas_context(request):
 
         ).count()
 
-        
 
         alertas_recientes = Alerta.objects.filter(
 
@@ -26,7 +22,6 @@ def alertas_context(request):
 
         ).order_by('-fecha_creacion')[:5]
 
-        
 
         return {
 
@@ -43,4 +38,3 @@ def alertas_context(request):
         'alertas_recientes': [],
 
     }
-

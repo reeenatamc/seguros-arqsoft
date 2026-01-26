@@ -7,11 +7,7 @@ Responsabilidad única: notificaciones sobre pólizas (vencimiento, renovación)
 """
 
 
-
 from .base import BaseNotifier
-
-
-
 
 
 class PolizaNotifier(BaseNotifier):
@@ -19,8 +15,6 @@ class PolizaNotifier(BaseNotifier):
     """
 
     Notificador especializado para comunicaciones sobre pólizas.
-
-    
 
     USO:
 
@@ -30,15 +24,11 @@ class PolizaNotifier(BaseNotifier):
 
     """
 
-    
-
     def notificar_vencimiento(self, poliza, dias_antes: int = 30, usuario=None):
 
         """
 
         Notifica sobre el próximo vencimiento de una póliza.
-
-        
 
         Args:
 
@@ -47,8 +37,6 @@ class PolizaNotifier(BaseNotifier):
             dias_antes: Días de anticipación para la notificación
 
             usuario: Usuario que realiza la acción
-
-            
 
         Returns:
 
@@ -62,17 +50,11 @@ class PolizaNotifier(BaseNotifier):
 
             email_broker = poliza.corredor_seguros.email
 
-
-
         if not email_broker:
 
             return None
 
-
-
         asunto = f"Aviso de Vencimiento - Póliza {poliza.numero_poliza}"
-
-
 
         bloques = [
 
@@ -112,8 +94,6 @@ class PolizaNotifier(BaseNotifier):
 
         ]
 
-
-
         contenido_html = self._renderizar_email(
 
             titulo=asunto,
@@ -125,8 +105,6 @@ class PolizaNotifier(BaseNotifier):
             nota='Por favor, iniciar el proceso de renovación con la debida anticipación.',
 
         )
-
-
 
         contenido_texto = (
 
@@ -141,8 +119,6 @@ class PolizaNotifier(BaseNotifier):
             f"Días para vencer: {poliza.dias_para_vencer}\n"
 
         )
-
-
 
         notificacion = self._crear_notificacion(
 
@@ -162,21 +138,15 @@ class PolizaNotifier(BaseNotifier):
 
         )
 
-
-
         self._enviar_email(notificacion)
 
         return notificacion
-
-
 
     def notificar_renovacion(self, poliza_anterior, poliza_nueva, usuario=None):
 
         """
 
         Notifica sobre la renovación exitosa de una póliza.
-
-        
 
         Args:
 
@@ -185,8 +155,6 @@ class PolizaNotifier(BaseNotifier):
             poliza_nueva: Nueva póliza emitida
 
             usuario: Usuario que realiza la acción
-
-            
 
         Returns:
 
@@ -200,17 +168,11 @@ class PolizaNotifier(BaseNotifier):
 
             email_broker = poliza_nueva.corredor_seguros.email
 
-
-
         if not email_broker:
 
             return None
 
-
-
         asunto = f"Renovación de Póliza - {poliza_nueva.numero_poliza}"
-
-
 
         bloques = [
 
@@ -248,8 +210,6 @@ class PolizaNotifier(BaseNotifier):
 
         ]
 
-
-
         contenido_html = self._renderizar_email(
 
             titulo=asunto,
@@ -262,8 +222,6 @@ class PolizaNotifier(BaseNotifier):
 
         )
 
-
-
         contenido_texto = (
 
             f"{asunto}\n\n"
@@ -275,8 +233,6 @@ class PolizaNotifier(BaseNotifier):
             f"Nueva vigencia: {poliza_nueva.fecha_inicio.strftime('%d/%m/%Y')} - {poliza_nueva.fecha_fin.strftime('%d/%m/%Y')}\n"
 
         )
-
-
 
         notificacion = self._crear_notificacion(
 
@@ -296,9 +252,6 @@ class PolizaNotifier(BaseNotifier):
 
         )
 
-
-
         self._enviar_email(notificacion)
 
         return notificacion
-

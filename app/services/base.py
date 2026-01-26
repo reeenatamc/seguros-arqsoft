@@ -5,17 +5,12 @@ Clases base y tipos compartidos para los servicios de dominio.
 """
 
 
-
 from dataclasses import dataclass
 
 from typing import Dict, Any, Optional
 
 
-
-
-
 @dataclass
-
 class ResultadoValidacion:
 
     """Resultado de una validación de negocio."""
@@ -24,15 +19,11 @@ class ResultadoValidacion:
 
     errores: Dict[str, str] = None
 
-    
-
     def __post_init__(self):
 
         if self.errores is None:
 
             self.errores = {}
-
-    
 
     def agregar_error(self, campo: str, mensaje: str) -> 'ResultadoValidacion':
 
@@ -43,8 +34,6 @@ class ResultadoValidacion:
         self.es_valido = False
 
         return self
-
-    
 
     def fusionar(self, otro: 'ResultadoValidacion') -> 'ResultadoValidacion':
 
@@ -58,12 +47,7 @@ class ResultadoValidacion:
 
         return self
 
-
-
-
-
 @dataclass
-
 class ResultadoOperacion:
 
     """Resultado de una operación de servicio."""
@@ -76,38 +60,27 @@ class ResultadoOperacion:
 
     mensaje: str = ""
 
-    
-
     def __post_init__(self):
 
         if self.errores is None:
 
             self.errores = {}
 
-    
-
     @classmethod
-
     def exito(cls, objeto: Any, mensaje: str = "") -> 'ResultadoOperacion':
 
         """Factory para resultado exitoso."""
 
         return cls(exitoso=True, objeto=objeto, mensaje=mensaje)
 
-    
-
     @classmethod
-
     def fallo(cls, errores: Dict[str, str], mensaje: str = "") -> 'ResultadoOperacion':
 
         """Factory para resultado fallido."""
 
         return cls(exitoso=False, errores=errores, mensaje=mensaje)
 
-    
-
     @classmethod
-
     def desde_validacion(cls, validacion: ResultadoValidacion, mensaje: str = "") -> 'ResultadoOperacion':
 
         """Crea ResultadoOperacion desde ResultadoValidacion fallida."""
@@ -122,18 +95,11 @@ class ResultadoOperacion:
 
         )
 
-
-
-
-
 class BaseService:
 
     """Clase base para servicios de dominio."""
 
-    
-
     @staticmethod
-
     def _get_config(clave: str, default: Any) -> Any:
 
         """Obtiene configuración del sistema."""
@@ -141,4 +107,3 @@ class BaseService:
         from app.models import ConfiguracionSistema
 
         return ConfiguracionSistema.get_config(clave, default)
-

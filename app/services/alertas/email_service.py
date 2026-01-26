@@ -9,7 +9,6 @@ pólizas, facturas y alertas del sistema.
 """
 
 
-
 from django.core.mail import send_mail, EmailMultiAlternatives
 
 from django.template.loader import render_to_string
@@ -21,7 +20,6 @@ from django.conf import settings
 from datetime import timedelta
 
 
-
 from app.models import (
 
     Siniestro, Poliza, Factura, NotificacionEmail,
@@ -31,17 +29,11 @@ from app.models import (
 )
 
 
-
-
-
 class NotificacionesService:
 
     """Servicio para gestión de notificaciones por email"""
 
-
-
     @staticmethod
-
     def _crear_notificacion(tipo, destinatario, asunto, contenido,
 
                             siniestro=None, poliza=None, factura=None,
@@ -74,10 +66,7 @@ class NotificacionesService:
 
         )
 
-
-
     @staticmethod
-
     def _enviar_email(notificacion):
 
         """Envía el email y actualiza el estado de la notificación"""
@@ -85,8 +74,6 @@ class NotificacionesService:
         try:
 
             cc_list = [e.strip() for e in notificacion.cc.split(',') if e.strip()]
-
-
 
             if notificacion.contenido_html:
 
@@ -128,13 +115,9 @@ class NotificacionesService:
 
                 )
 
-
-
             notificacion.marcar_como_enviado()
 
             return True
-
-
 
         except Exception as e:
 
@@ -142,10 +125,7 @@ class NotificacionesService:
 
             return False
 
-
-
     @classmethod
-
     def notificar_siniestro_a_broker(cls, siniestro, usuario=None):
 
         """
@@ -154,15 +134,11 @@ class NotificacionesService:
 
         usando la plantilla de correo profesional reutilizable.
 
-
-
         Args:
 
             siniestro: Instancia del modelo Siniestro
 
             usuario: Usuario que realiza la acción
-
-
 
         Returns:
 
@@ -174,8 +150,6 @@ class NotificacionesService:
 
         from django.template.loader import render_to_string
 
-
-
         # Obtener email del broker desde el siniestro o la póliza
 
         email_broker = siniestro.email_broker
@@ -184,17 +158,11 @@ class NotificacionesService:
 
             email_broker = siniestro.poliza.corredor_seguros.email
 
-
-
         if not email_broker:
 
             raise ValueError("No se encontró email del broker para notificar")
 
-
-
         asunto = f"Notificación de Siniestro - {siniestro.numero_siniestro}"
-
-
 
         context = {
 
@@ -308,11 +276,7 @@ class NotificacionesService:
 
         }
 
-
-
         contenido_html = render_to_string("emails/base_notificacion.html", context)
-
-
 
         # Versión texto plano (fallback)
 
@@ -329,8 +293,6 @@ class NotificacionesService:
             f"Ubicación: {siniestro.ubicacion}\n"
 
         )
-
-
 
         notificacion = cls._crear_notificacion(
 
@@ -350,8 +312,6 @@ class NotificacionesService:
 
         )
 
-
-
         # Actualizar fecha de notificación en el siniestro
 
         siniestro.fecha_notificacion_broker = timezone.now()
@@ -362,20 +322,13 @@ class NotificacionesService:
 
         siniestro.save(update_fields=['fecha_notificacion_broker', 'fecha_respuesta_esperada'])
 
-
-
         # Intentar enviar
 
         cls._enviar_email(notificacion)
 
-
-
         return notificacion
 
-
-
     @classmethod
-
     def notificar_siniestro_a_usuario(cls, siniestro, usuario=None):
 
         """
@@ -388,17 +341,11 @@ class NotificacionesService:
 
             return None
 
-
-
         from django.conf import settings
 
         from django.template.loader import render_to_string
 
-
-
         asunto = f"Confirmación de Registro de Siniestro - {siniestro.numero_siniestro}"
-
-
 
         context = {
 
@@ -478,11 +425,7 @@ class NotificacionesService:
 
         }
 
-
-
         contenido_html = render_to_string("emails/base_notificacion.html", context)
-
-
 
         contenido_texto = (
 
@@ -497,8 +440,6 @@ class NotificacionesService:
             f"Bien Afectado: {siniestro.bien_nombre}\n"
 
         )
-
-
 
         notificacion = cls._crear_notificacion(
 
@@ -518,16 +459,11 @@ class NotificacionesService:
 
         )
 
-
-
         cls._enviar_email(notificacion)
 
         return notificacion
 
-
-
     @classmethod
-
     def notificar_responsable_bien(cls, siniestro, usuario=None):
 
         """
@@ -536,15 +472,11 @@ class NotificacionesService:
 
         Se usa cuando han pasado más de 15 días sin resolver.
 
-
-
         Args:
 
             siniestro: Instancia del modelo Siniestro
 
             usuario: Usuario que realiza la acción
-
-
 
         Returns:
 
@@ -556,25 +488,15 @@ class NotificacionesService:
 
             return None
 
-
-
         email_responsable = siniestro.responsable_custodio.email
-
-
 
         from django.conf import settings
 
         from django.template.loader import render_to_string
 
-
-
         asunto = f"Aviso: Siniestro Pendiente - {siniestro.numero_siniestro}"
 
-
-
         dias_transcurridos = siniestro.dias_gestion
-
-
 
         context = {
 
@@ -630,11 +552,7 @@ class NotificacionesService:
 
         }
 
-
-
         contenido_html = render_to_string("emails/base_notificacion.html", context)
-
-
 
         contenido_texto = (
 
@@ -649,8 +567,6 @@ class NotificacionesService:
             f"Estado Actual: {siniestro.get_estado_display()}\n"
 
         )
-
-
 
         notificacion = cls._crear_notificacion(
 
@@ -670,41 +586,28 @@ class NotificacionesService:
 
         )
 
-
-
         # Actualizar fecha de notificación
 
         siniestro.fecha_notificacion_responsable = timezone.now().date()
 
         siniestro.save(update_fields=['fecha_notificacion_responsable'])
 
-
-
         cls._enviar_email(notificacion)
-
-
 
         return notificacion
 
-
-
     @classmethod
-
     def notificar_cierre_siniestro(cls, siniestro, usuario=None):
 
         """
 
         Notifica el cierre de un siniestro al responsable y gerencia.
 
-
-
         Args:
 
             siniestro: Instancia del modelo Siniestro
 
             usuario: Usuario que realiza la acción
-
-
 
         Returns:
 
@@ -714,21 +617,15 @@ class NotificacionesService:
 
         notificaciones = []
 
-
-
         # Determinar destinatarios
 
         destinatarios = []
-
-
 
         # Responsable del bien (cliente interno)
 
         if siniestro.responsable_custodio and siniestro.responsable_custodio.email:
 
             destinatarios.append(siniestro.responsable_custodio.email)
-
-
 
         # Gerencia: correo configurado en ConfiguracionSistema
 
@@ -738,17 +635,11 @@ class NotificacionesService:
 
             destinatarios.append(email_gerente)
 
-
-
         from django.conf import settings
 
         from django.template.loader import render_to_string
 
-
-
         asunto = f"Cierre de Siniestro - {siniestro.numero_siniestro}"
-
-
 
         context = {
 
@@ -876,11 +767,7 @@ class NotificacionesService:
 
         }
 
-
-
         contenido_html = render_to_string("emails/base_notificacion.html", context)
-
-
 
         contenido_texto = (
 
@@ -901,8 +788,6 @@ class NotificacionesService:
             f"Valor Pagado: ${siniestro.valor_pagado or 0:,.2f}\n"
 
         )
-
-
 
         for destinatario in destinatarios:
 
@@ -928,14 +813,9 @@ class NotificacionesService:
 
             notificaciones.append(notificacion)
 
-
-
         return notificaciones
 
-
-
     @classmethod
-
     def verificar_alertas_siniestros(cls):
 
         """
@@ -943,8 +823,6 @@ class NotificacionesService:
         Verifica siniestros que requieren alertas automáticas.
 
         Diseñado para ejecutarse como tarea periódica (Celery).
-
-
 
         Returns:
 
@@ -966,8 +844,6 @@ class NotificacionesService:
 
         }
 
-
-
         # Siniestros con alerta de respuesta pendiente
 
         siniestros_sin_respuesta = Siniestro.objects.filter(
@@ -979,8 +855,6 @@ class NotificacionesService:
             fecha_respuesta_aseguradora__isnull=True,
 
         )
-
-
 
         for siniestro in siniestros_sin_respuesta:
 
@@ -998,8 +872,6 @@ class NotificacionesService:
 
                     resultados['errores'].append(f"Siniestro {siniestro.numero_siniestro}: {str(e)}")
 
-
-
         # Siniestros que requieren notificar al responsable
 
         siniestros_pendientes = Siniestro.objects.filter(
@@ -1009,8 +881,6 @@ class NotificacionesService:
             fecha_notificacion_responsable__isnull=True,
 
         )
-
-
 
         for siniestro in siniestros_pendientes:
 
@@ -1026,8 +896,6 @@ class NotificacionesService:
 
                     resultados['errores'].append(f"Siniestro {siniestro.numero_siniestro}: {str(e)}")
 
-
-
         # Siniestros con documentación pendiente: recordar cada 8 días
 
         siniestros_doc_pendiente = Siniestro.objects.filter(
@@ -1035,8 +903,6 @@ class NotificacionesService:
             estado='documentacion_pendiente',
 
         )
-
-
 
         for siniestro in siniestros_doc_pendiente:
 
@@ -1054,8 +920,6 @@ class NotificacionesService:
 
                     resultados['errores'].append(f"Siniestro {siniestro.numero_siniestro}: {str(e)}")
 
-
-
         # Siniestros con depósito pendiente
 
         siniestros_firmados = Siniestro.objects.filter(
@@ -1065,8 +929,6 @@ class NotificacionesService:
             fecha_pago__isnull=True,
 
         )
-
-
 
         for siniestro in siniestros_firmados:
 
@@ -1082,14 +944,9 @@ class NotificacionesService:
 
                     resultados['errores'].append(f"Siniestro {siniestro.numero_siniestro}: {str(e)}")
 
-
-
         return resultados
 
-
-
     @classmethod
-
     def _crear_alerta_respuesta(cls, siniestro):
 
         """Crea una notificación de alerta por respuesta pendiente"""
@@ -1106,13 +963,9 @@ class NotificacionesService:
 
         ).exists()
 
-
-
         if alerta_reciente:
 
             return None
-
-
 
         email_broker = siniestro.email_broker or (
 
@@ -1120,25 +973,15 @@ class NotificacionesService:
 
         )
 
-
-
         if not email_broker:
 
             return None
 
-
-
         from django.template.loader import render_to_string
-
-
 
         asunto = f"ALERTA: Respuesta Pendiente - Siniestro {siniestro.numero_siniestro}"
 
-
-
         dias_espera = siniestro.dias_espera_respuesta
-
-
 
         context = {
 
@@ -1186,11 +1029,7 @@ class NotificacionesService:
 
         }
 
-
-
         contenido_html = render_to_string("emails/base_notificacion.html", context)
-
-
 
         contenido_texto = (
 
@@ -1201,8 +1040,6 @@ class NotificacionesService:
             f"Días transcurridos desde envío: {dias_espera}\n"
 
         )
-
-
 
         notificacion = cls._crear_notificacion(
 
@@ -1220,16 +1057,11 @@ class NotificacionesService:
 
         )
 
-
-
         cls._enviar_email(notificacion)
 
         return notificacion
 
-
-
     @classmethod
-
     def _crear_alerta_deposito(cls, siniestro):
 
         """Crea una notificación de alerta por depósito pendiente"""
@@ -1246,13 +1078,9 @@ class NotificacionesService:
 
         ).exists()
 
-
-
         if alerta_reciente:
 
             return None
-
-
 
         email_broker = siniestro.email_broker or (
 
@@ -1260,29 +1088,19 @@ class NotificacionesService:
 
         )
 
-
-
         if not email_broker:
 
             return None
 
-
-
         from django.template.loader import render_to_string
 
-
-
         asunto = f"ALERTA: Depósito Pendiente - Siniestro {siniestro.numero_siniestro}"
-
-
 
         horas_transcurridas = int(
 
             (timezone.now() - siniestro.fecha_firma_indemnizacion).total_seconds() / 3600
 
         )
-
-
 
         context = {
 
@@ -1332,11 +1150,7 @@ class NotificacionesService:
 
         }
 
-
-
         contenido_html = render_to_string("emails/base_notificacion.html", context)
-
-
 
         contenido_texto = (
 
@@ -1347,8 +1161,6 @@ class NotificacionesService:
             f"Horas transcurridas desde firma: {horas_transcurridas}\n"
 
         )
-
-
 
         notificacion = cls._crear_notificacion(
 
@@ -1366,23 +1178,16 @@ class NotificacionesService:
 
         )
 
-
-
         cls._enviar_email(notificacion)
 
         return notificacion
 
-
-
     @classmethod
-
     def notificar_vencimiento_poliza(cls, poliza, dias_antes=30, usuario=None):
 
         """
 
         Notifica sobre el próximo vencimiento de una póliza.
-
-
 
         Args:
 
@@ -1392,8 +1197,6 @@ class NotificacionesService:
 
             usuario: Usuario que realiza la acción
 
-
-
         Returns:
 
             NotificacionEmail: La notificación creada o None
@@ -1402,21 +1205,13 @@ class NotificacionesService:
 
         email_broker = poliza.corredor_seguros.email if poliza.corredor_seguros else None
 
-
-
         if not email_broker:
 
             return None
 
-
-
         from django.template.loader import render_to_string
 
-
-
         asunto = f"Aviso de Vencimiento - Póliza {poliza.numero_poliza}"
-
-
 
         context = {
 
@@ -1500,11 +1295,7 @@ class NotificacionesService:
 
         }
 
-
-
         contenido_html = render_to_string("emails/base_notificacion.html", context)
-
-
 
         contenido_texto = (
 
@@ -1519,8 +1310,6 @@ class NotificacionesService:
             f"Fecha de Vencimiento: {poliza.fecha_fin.strftime('%d/%m/%Y')}\n"
 
         )
-
-
 
         notificacion = cls._crear_notificacion(
 
@@ -1540,29 +1329,20 @@ class NotificacionesService:
 
         )
 
-
-
         cls._enviar_email(notificacion)
 
         return notificacion
 
-
-
     @classmethod
-
     def reenviar_notificacion(cls, notificacion_id):
 
         """
 
         Reintenta enviar una notificación fallida.
 
-
-
         Args:
 
             notificacion_id: ID de la notificación a reenviar
-
-
 
         Returns:
 
@@ -1583,4 +1363,3 @@ class NotificacionesService:
         except NotificacionEmail.DoesNotExist:
 
             return False
-

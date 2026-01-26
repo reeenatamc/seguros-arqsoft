@@ -5,7 +5,6 @@ Comando para crear respaldos de la base de datos.
 Soporta SQLite, PostgreSQL y MySQL.
 
 
-
 Uso:
 
     python manage.py backup_database
@@ -19,7 +18,6 @@ Uso:
 """
 
 
-
 import os
 
 import gzip
@@ -31,7 +29,6 @@ from datetime import datetime
 from pathlib import Path
 
 
-
 from django.core.management.base import BaseCommand, CommandError
 
 from django.conf import settings
@@ -39,14 +36,9 @@ from django.conf import settings
 from django.core.management import call_command
 
 
-
-
-
 class Command(BaseCommand):
 
     help = 'Crea un respaldo completo de la base de datos y opcionalmente archivos media'
-
-
 
     def add_arguments(self, parser):
 
@@ -104,21 +96,15 @@ class Command(BaseCommand):
 
         )
 
-
-
     def handle(self, *args, **options):
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
         backup_dir = self._get_backup_dir()
 
-        
-
         # Crear directorio de backups si no existe
 
         backup_dir.mkdir(parents=True, exist_ok=True)
-
-        
 
         # Determinar nombre del archivo
 
@@ -132,23 +118,17 @@ class Command(BaseCommand):
 
             backup_path = backup_dir / f'backup_{timestamp}.{ext}'
 
-        
-
         try:
 
             # Crear backup de la base de datos
 
             self._backup_database(backup_path, options)
 
-            
-
             # Comprimir si se solicita
 
             if options['compress']:
 
                 backup_path = self._compress_file(backup_path)
-
-            
 
             # Incluir media si se solicita
 
@@ -164,13 +144,9 @@ class Command(BaseCommand):
 
                     )
 
-            
-
             # Registrar backup en la base de datos
 
             self._register_backup(backup_path, options)
-
-            
 
             if not options['quiet']:
 
@@ -196,17 +172,11 @@ class Command(BaseCommand):
 
                 )
 
-            
-
             return str(backup_path)
-
-            
 
         except Exception as e:
 
             raise CommandError(f'Error al crear backup: {str(e)}')
-
-
 
     def _get_backup_dir(self):
 
@@ -220,8 +190,6 @@ class Command(BaseCommand):
 
         return Path(settings.BASE_DIR) / 'backups'
 
-
-
     def _backup_database(self, backup_path, options):
 
         """Crea el backup de la base de datos usando dumpdata."""
@@ -229,8 +197,6 @@ class Command(BaseCommand):
         if not options['quiet']:
 
             self.stdout.write('Creando backup de la base de datos...')
-
-        
 
         # Usar dumpdata de Django para compatibilidad
 
@@ -260,15 +226,11 @@ class Command(BaseCommand):
 
             )
 
-
-
     def _compress_file(self, file_path):
 
         """Comprime un archivo con gzip."""
 
         compressed_path = Path(str(file_path) + '.gz')
-
-        
 
         with open(file_path, 'rb') as f_in:
 
@@ -276,17 +238,11 @@ class Command(BaseCommand):
 
                 shutil.copyfileobj(f_in, f_out)
 
-        
-
         # Eliminar archivo original
 
         file_path.unlink()
 
-        
-
         return compressed_path
-
-
 
     def _backup_media(self, backup_dir, timestamp):
 
@@ -294,27 +250,17 @@ class Command(BaseCommand):
 
         media_root = getattr(settings, 'MEDIA_ROOT', None)
 
-        
-
         if not media_root:
 
             return None
 
-            
-
         media_root = Path(media_root)
-
-        
 
         if not media_root.exists():
 
             return None
 
-        
-
         media_backup = backup_dir / f'media_{timestamp}'
-
-        
 
         # Crear archivo tar.gz
 
@@ -328,11 +274,7 @@ class Command(BaseCommand):
 
         )
 
-        
-
         return Path(str(media_backup) + '.tar.gz')
-
-
 
     def _register_backup(self, backup_path, options):
 
@@ -341,8 +283,6 @@ class Command(BaseCommand):
         try:
 
             from app.models import BackupRegistro
-
-            
 
             BackupRegistro.objects.create(
 
@@ -370,8 +310,6 @@ class Command(BaseCommand):
 
             pass
 
-
-
     def _format_size(self, size):
 
         """Formatea el tamaño en bytes a formato legible."""
@@ -385,4 +323,3 @@ class Command(BaseCommand):
             size /= 1024
 
         return f'{size:.2f} TB'
-
