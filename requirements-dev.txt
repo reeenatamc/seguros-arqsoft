@@ -1,0 +1,65 @@
+# ============================================
+# Requirements Dev - Herramientas de Desarrollo
+# ============================================
+# Este archivo contiene todas las dependencias necesarias
+# para desarrollo, testing y CI/CD
+
+# Testing
+# ============================================
+pytest==8.0.0
+pytest-django==4.7.0
+pytest-cov==4.1.0
+pytest-xdist==3.5.0  # Para ejecutar tests en paralelo
+factory-boy==3.3.0    # Para crear fixtures de testing
+faker==22.0.0         # Para generar datos de prueba
+
+# Code Quality & Linting
+# ============================================
+flake8==7.0.0
+flake8-docstrings==1.7.0
+flake8-bugbear==24.1.17
+flake8-comprehensions==3.14.0
+flake8-simplify==0.21.0
+black==24.1.1
+isort==5.13.2
+pylint==3.0.3
+pylint-django==2.5.5
+
+# Security
+# ============================================
+bandit==1.7.6         # Análisis de seguridad del código
+safety==3.0.1         # Verificación de vulnerabilidades en dependencias
+
+# Code Coverage
+# ============================================
+coverage==7.4.1
+coverage-badge==1.1.0
+
+# Pre-commit Hooks
+# ============================================
+pre-commit==3.6.0
+
+# Documentation
+# ============================================
+sphinx==7.2.6
+sphinx-rtd-theme==2.0.0
+
+# Database
+# ============================================
+psycopg2-binary==2.9.9  # PostgreSQL adapter
+
+# Para desarrollo local
+# ============================================
+django-debug-toolbar==4.2.0
+django-extensions==3.2.3
+ipython==8.20.0
+ipdb==0.13.13
+
+# Type Checking (Opcional)
+# ============================================
+mypy==1.8.0
+django-stubs==4.2.7
+
+# Performance Testing (Opcional)
+# ============================================
+locust==2.20.0        # Para pruebas de carga

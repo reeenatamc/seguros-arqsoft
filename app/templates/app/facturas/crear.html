@@ -15,9 +15,9 @@
         </div>
     </div>
 
-    <!-- Formulario -->
+    <!-- Formulario con cálculos en vivo -->
     <div class="bg-white rounded-xl shadow-card p-6">
-        <form method="post" class="space-y-6">
+        <form method="post" class="space-y-6" data-calc-form="factura">
             {% csrf_token %}
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -52,7 +52,12 @@
 
             <hr class="border-slate-200">
 
-            <h3 class="text-lg font-semibold text-slate-800">Montos</h3>
+            <div class="flex items-center gap-2 mb-2">
+                <h3 class="text-lg font-semibold text-slate-800">Montos</h3>
+                <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                    <i class="fas fa-calculator mr-1"></i>Cálculo automático
+                </span>
+            </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
@@ -60,32 +65,33 @@
                         Subtotal <span class="text-red-500">*</span>
                     </label>
                     {{ form.subtotal }}
+                    <p class="text-xs text-slate-500 mt-1">Ingresa el subtotal para calcular automáticamente</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">
-                        IVA
+                        <i class="fas fa-lock text-slate-400 mr-1"></i>IVA (15%)
                     </label>
                     {{ form.iva }}
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">
-                        Monto Total <span class="text-red-500">*</span>
+                    <label class="block text-sm font-medium text-emerald-700 mb-2">
+                        <i class="fas fa-calculator mr-1"></i>Monto Total
                     </label>
                     {{ form.monto_total }}
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">
-                        Contribución Superintendencia
+                        <i class="fas fa-lock text-slate-400 mr-1"></i>Contrib. Superintendencia (3.5%)
                     </label>
                     {{ form.contribucion_superintendencia }}
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">
-                        Seguro Campesino
+                        <i class="fas fa-lock text-slate-400 mr-1"></i>Seguro Campesino (0.5%)
                     </label>
                     {{ form.contribucion_seguro_campesino }}
                 </div>

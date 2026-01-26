@@ -1,0 +1,162 @@
+{% extends 'app/layouts/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - Sistema de Seguros{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">{{ titulo }}</h1>
+                <p class="mt-1 text-sm text-slate-500">
+                    Gestiona los parámetros y valores del sistema
+                </p>
+            </div>
+            {% if user.is_superuser %}
+            <a href="{% url 'configuracion_restablecer' %}" 
+               class="inline-flex items-center px-4 py-2 border border-red-300 rounded-lg shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Restablecer Todo
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Categorías de configuración -->
+    <div class="space-y-8">
+        {% for cat_key, categoria in categorias.items %}
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <!-- Header de categoría -->
+            <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        {% if cat_key == 'facturas' %}
+                        <div class="p-2 bg-emerald-100 rounded-lg">
+                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+                            </svg>
+                        </div>
+                        {% elif cat_key == 'polizas' %}
+                        <div class="p-2 bg-blue-100 rounded-lg">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        {% elif cat_key == 'siniestros' %}
+                        <div class="p-2 bg-amber-100 rounded-lg">
+                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        {% else %}
+                        <div class="p-2 bg-slate-100 rounded-lg">
+                            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        {% endif %}
+                        <h2 class="text-lg font-semibold text-slate-900">{{ categoria.nombre }}</h2>
+                        <span class="px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">
+                            {{ categoria.items|length }} configuraciones
+                        </span>
+                    </div>
+                    <a href="{% url 'configuracion_categoria' cat_key %}" 
+                       class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Editar Todas
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Lista de configuraciones -->
+            <div class="divide-y divide-slate-100">
+                {% for config in categoria.items %}
+                <div class="px-6 py-4 hover:bg-slate-50 transition-colors">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-sm font-medium text-slate-900 font-mono">
+                                    {{ config.clave }}
+                                </h3>
+                                <span class="px-2 py-0.5 text-xs font-medium rounded-full
+                                    {% if config.tipo == 'decimal' %}bg-purple-100 text-purple-700
+                                    {% elif config.tipo == 'entero' %}bg-blue-100 text-blue-700
+                                    {% elif config.tipo == 'json' %}bg-amber-100 text-amber-700
+                                    {% else %}bg-slate-100 text-slate-700{% endif %}">
+                                    {{ config.tipo }}
+                                </span>
+                            </div>
+                            <p class="mt-1 text-sm text-slate-500">{{ config.descripcion }}</p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="text-right">
+                                <span class="inline-block px-3 py-1.5 text-sm font-mono 
+                                    {% if config.tipo == 'json' %}
+                                    max-w-xs truncate bg-slate-100 text-slate-700
+                                    {% else %}
+                                    bg-brand-50 text-brand-700
+                                    {% endif %} rounded-lg">
+                                    {% if config.tipo == 'decimal' %}
+                                        {{ config.valor }}
+                                        {% if 'PORCENTAJE' in config.clave %}
+                                            ({{ config.valor|floatformat:2 }}%)
+                                        {% endif %}
+                                    {% elif config.tipo == 'json' %}
+                                        [JSON]
+                                    {% else %}
+                                        {{ config.valor }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <a href="{% url 'configuracion_editar' config.pk %}" 
+                               class="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                               title="Editar">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <h3 class="mt-4 text-lg font-medium text-slate-900">No hay configuraciones</h3>
+            <p class="mt-2 text-sm text-slate-500">No se encontraron configuraciones del sistema.</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Información adicional -->
+    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
+        <div class="flex gap-4">
+            <div class="flex-shrink-0">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-blue-900">Sobre las configuraciones</h3>
+                <div class="mt-2 text-sm text-blue-700 space-y-1">
+                    <p>Los cambios en estas configuraciones afectan el comportamiento del sistema de forma inmediata.</p>
+                    <p>Los porcentajes deben ingresarse como decimales (ej: 0.15 para 15%).</p>
+                    <p>Las configuraciones JSON deben ser válidas y seguir el formato especificado.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

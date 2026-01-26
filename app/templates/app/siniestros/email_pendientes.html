@@ -1,0 +1,510 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Siniestros por Email - Pendientes{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-fade-in">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-3">
+                <a href="{% url 'siniestros_lista' %}" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">Siniestros por Email</h1>
+                    <p class="text-slate-500 mt-1">{{ pendientes.count }} pendiente{{ pendientes.count|pluralize:"s" }} de revisión</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{% url 'siniestros_lista' %}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition font-medium text-sm">
+                <i class="fas fa-list"></i>
+                Ver Siniestros
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <i class="fas fa-clock text-amber-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-800">{{ stats.pendientes }}</p>
+                    <p class="text-sm text-slate-500">Pendientes</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <i class="fas fa-check text-emerald-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-800">{{ stats.procesados }}</p>
+                    <p class="text-sm text-slate-500">Procesados</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-800">{{ stats.errores }}</p>
+                    <p class="text-sm text-slate-500">Con Errores</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-envelope text-blue-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-800">{{ stats.total }}</p>
+                    <p class="text-sm text-slate-500">Total Emails</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-4">
+        <form method="GET" class="flex flex-col lg:flex-row gap-4">
+            <div class="flex-1">
+                <div class="relative">
+                    <input type="text" name="q" value="{{ query }}" placeholder="Buscar por serie, responsable o asunto..." 
+                           class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition">
+                    <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <select name="estado" onchange="this.form.submit()" 
+                        class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                    <option value="">Todos los estados</option>
+                    <option value="pendiente" {% if estado_filtro == 'pendiente' %}selected{% endif %}>Pendientes</option>
+                    <option value="procesado" {% if estado_filtro == 'procesado' %}selected{% endif %}>Procesados</option>
+                    <option value="error" {% if estado_filtro == 'error' %}selected{% endif %}>Con Error</option>
+                    <option value="descartado" {% if estado_filtro == 'descartado' %}selected{% endif %}>Descartados</option>
+                </select>
+                <button type="submit" class="px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition text-sm font-medium">
+                    <i class="fas fa-filter mr-2"></i>Filtrar
+                </button>
+                {% if query or estado_filtro %}
+                    <a href="{% url 'siniestros_email_pendientes' %}" class="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition text-sm font-medium">
+                        <i class="fas fa-times mr-2"></i>Limpiar
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    
+    <!-- Lista de Siniestros Email -->
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Correo</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Equipo</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Responsable</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Estado</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Mensaje</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for email in pendientes %}
+                    <tr class="hover:bg-slate-50/50 transition">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                                    <i class="fas fa-envelope text-blue-600"></i>
+                                </div>
+                                <div class="max-w-xs">
+                                    <p class="font-semibold text-slate-800 truncate" title="{{ email.email_subject }}">{{ email.email_subject|truncatechars:40 }}</p>
+                                    <p class="text-xs text-slate-500">{{ email.fecha_recepcion|date:"d/m/Y H:i" }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div>
+                                <p class="text-sm font-medium text-slate-700">{{ email.periferico }} {{ email.marca }}</p>
+                                <p class="text-xs text-slate-500">Modelo: {{ email.modelo }}</p>
+                                <p class="text-xs font-mono text-amber-600">Serie: {{ email.serie }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-sm text-slate-700">{{ email.responsable_nombre }}</p>
+                            <p class="text-xs text-slate-500">{{ email.fecha_reporte }}</p>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold
+                                {% if email.estado_procesamiento == 'pendiente' %}bg-amber-100 text-amber-700
+                                {% elif email.estado_procesamiento == 'procesado' %}bg-emerald-100 text-emerald-700
+                                {% elif email.estado_procesamiento == 'error' %}bg-red-100 text-red-700
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ email.get_estado_procesamiento_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-xs text-slate-500 max-w-xs truncate" title="{{ email.mensaje_procesamiento }}">
+                                {{ email.mensaje_procesamiento|truncatechars:50 }}
+                            </p>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                {% if email.estado_procesamiento == 'pendiente' %}
+                                    <a href="{% url 'siniestro_email_procesar_auto' email.id %}"
+                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-xs font-medium"
+                                       title="Buscar bien por serie y crear siniestro automáticamente">
+                                        <i class="fas fa-magic"></i>
+                                        Auto
+                                    </a>
+                                    <button onclick="abrirModalCompletar({{ email.id }})"
+                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-xs font-medium"
+                                       title="Completar datos manualmente">
+                                        <i class="fas fa-edit"></i>
+                                        Manual
+                                    </button>
+                                {% endif %}
+                                {% if email.siniestro_creado %}
+                                    <a href="{% url 'siniestro_detalle' email.siniestro_creado.pk %}"
+                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition text-xs font-medium">
+                                        <i class="fas fa-eye"></i>
+                                        Ver Siniestro
+                                    </a>
+                                {% endif %}
+                                <button onclick="abrirModalDetalle({{ email.id }})"
+                                   class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mb-4">
+                                    <i class="fas fa-check-circle text-3xl text-emerald-500"></i>
+                                </div>
+                                <p class="text-slate-600 font-medium">¡No hay siniestros pendientes!</p>
+                                <p class="text-slate-400 text-sm mt-1">Todos los correos han sido procesados</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if pendientes %}
+            {% include 'app/components/pagination.html' with page_obj=pendientes %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para Completar Siniestro -->
+<div id="modal-completar" class="fixed top-0 left-0 right-0 bottom-0 w-full h-full bg-black/60 z-[9999] hidden items-center justify-center p-4" style="margin:0 !important;">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h3 class="text-lg font-bold text-slate-800">
+                <i class="fas fa-edit text-brand-600 mr-2"></i>
+                Completar Información del Siniestro
+            </h3>
+            <button onclick="cerrarModal('modal-completar')" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="form-completar" method="POST" action="">
+            {% csrf_token %}
+            <div class="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+                <!-- Datos del correo (solo lectura) -->
+                <div class="bg-slate-50 rounded-xl p-4">
+                    <h4 class="text-sm font-semibold text-slate-700 mb-3">
+                        <i class="fas fa-envelope mr-2"></i>Datos del Correo
+                    </h4>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <span class="text-slate-500">Responsable:</span>
+                            <p id="modal-responsable" class="font-medium text-slate-800"></p>
+                        </div>
+                        <div>
+                            <span class="text-slate-500">Fecha Reporte:</span>
+                            <p id="modal-fecha" class="font-medium text-slate-800"></p>
+                        </div>
+                        <div>
+                            <span class="text-slate-500">Equipo:</span>
+                            <p id="modal-equipo" class="font-medium text-slate-800"></p>
+                        </div>
+                        <div>
+                            <span class="text-slate-500">Serie:</span>
+                            <p id="modal-serie" class="font-medium font-mono text-amber-600"></p>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="text-slate-500">Problema:</span>
+                            <p id="modal-problema" class="font-medium text-slate-800"></p>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="text-slate-500">Causa:</span>
+                            <p id="modal-causa" class="font-medium text-slate-800"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Campos a completar -->
+                <div class="space-y-4">
+                    <h4 class="text-sm font-semibold text-slate-700">
+                        <i class="fas fa-plus-circle mr-2 text-brand-600"></i>Información Adicional Requerida
+                    </h4>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">
+                            Póliza <span class="text-red-500">*</span>
+                        </label>
+                        <select name="poliza" required
+                                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                            <option value="">Seleccionar póliza...</option>
+                            {% for poliza in polizas %}
+                                <option value="{{ poliza.id }}">{{ poliza.numero_poliza }} - {{ poliza.compania_aseguradora.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">
+                            Tipo de Siniestro <span class="text-red-500">*</span>
+                        </label>
+                        <select name="tipo_siniestro" required
+                                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                            {% for tipo in tipos_siniestro %}
+                                <option value="{{ tipo.id }}" {% if tipo.nombre == 'daño' %}selected{% endif %}>{{ tipo.get_nombre_display }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">
+                            Ubicación del Siniestro <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="ubicacion" required placeholder="Ej: Edificio Principal, Piso 2, Oficina 201"
+                               class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">
+                            Monto Estimado del Daño ($) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" name="monto_estimado" required min="0.01" step="0.01" placeholder="0.00"
+                               class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">
+                            Responsable/Custodio
+                        </label>
+                        <select name="responsable_custodio"
+                                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                            <option value="">Seleccionar o crear nuevo...</option>
+                            {% for resp in responsables %}
+                                <option value="{{ resp.id }}">{{ resp.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="text-xs text-slate-500 mt-1">Si no existe, se creará automáticamente con el nombre del correo</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3">
+                <button type="button" onclick="cerrarModal('modal-completar')"
+                        class="px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition font-medium text-sm">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition font-medium text-sm">
+                    <i class="fas fa-check mr-2"></i>
+                    Crear Siniestro
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para Ver Detalle -->
+<div id="modal-detalle" class="fixed top-0 left-0 right-0 bottom-0 w-full h-full bg-black/60 z-[9999] hidden items-center justify-center p-4" style="margin:0 !important;">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h3 class="text-lg font-bold text-slate-800">
+                <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                Detalle del Correo
+            </h3>
+            <button onclick="cerrarModal('modal-detalle')" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div id="detalle-contenido"></div>
+        </div>
+        
+        <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-end">
+            <button type="button" onclick="cerrarModal('modal-detalle')"
+                    class="px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition font-medium text-sm">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mover modales al body para evitar problemas con contenedores overflow
+document.addEventListener('DOMContentLoaded', function() {
+    const modals = document.querySelectorAll('[id^="modal-"]');
+    modals.forEach(modal => {
+        document.body.appendChild(modal);
+    });
+});
+
+// Datos de los emails para los modales
+const emailsData = {
+    {% for email in pendientes %}
+    {{ email.id }}: {
+        responsable: "{{ email.responsable_nombre|escapejs }}",
+        fecha: "{{ email.fecha_reporte|escapejs }}",
+        equipo: "{{ email.periferico|escapejs }} {{ email.marca|escapejs }} {{ email.modelo|escapejs }}",
+        serie: "{{ email.serie|escapejs }}",
+        problema: "{{ email.problema|escapejs|truncatechars:200 }}",
+        causa: "{{ email.causa|escapejs }}",
+        asunto: "{{ email.email_subject|escapejs }}",
+        remitente: "{{ email.email_from|escapejs }}",
+        fecha_email: "{{ email.email_date|date:'d/m/Y H:i'|default:'No disponible' }}",
+        estado: "{{ email.get_estado_procesamiento_display }}",
+        mensaje: "{{ email.mensaje_procesamiento|escapejs }}",
+        cuerpo: `{{ email.email_body|escapejs|truncatechars:500 }}`
+    },
+    {% endfor %}
+};
+
+function abrirModalCompletar(emailId) {
+    const data = emailsData[emailId];
+    if (!data) return;
+    
+    // Llenar datos del correo
+    document.getElementById('modal-responsable').textContent = data.responsable;
+    document.getElementById('modal-fecha').textContent = data.fecha;
+    document.getElementById('modal-equipo').textContent = data.equipo;
+    document.getElementById('modal-serie').textContent = data.serie;
+    document.getElementById('modal-problema').textContent = data.problema;
+    document.getElementById('modal-causa').textContent = data.causa;
+    
+    // Actualizar action del form
+    document.getElementById('form-completar').action = "{% url 'siniestro_email_completar' 0 %}".replace('0', emailId);
+    
+    // Bloquear scroll del body
+    document.body.style.overflow = 'hidden';
+    
+    // Mostrar modal
+    document.getElementById('modal-completar').classList.remove('hidden');
+    document.getElementById('modal-completar').classList.add('flex');
+}
+
+function abrirModalDetalle(emailId) {
+    const data = emailsData[emailId];
+    if (!data) return;
+    
+    const contenido = `
+        <div class="space-y-4">
+            <div class="bg-blue-50 rounded-xl p-4">
+                <h4 class="text-sm font-semibold text-blue-800 mb-2">
+                    <i class="fas fa-envelope mr-2"></i>Información del Correo
+                </h4>
+                <div class="space-y-2 text-sm">
+                    <p><span class="text-blue-600">Asunto:</span> <span class="font-medium">${data.asunto}</span></p>
+                    <p><span class="text-blue-600">De:</span> ${data.remitente}</p>
+                    <p><span class="text-blue-600">Fecha:</span> ${data.fecha_email}</p>
+                </div>
+            </div>
+            
+            <div class="bg-amber-50 rounded-xl p-4">
+                <h4 class="text-sm font-semibold text-amber-800 mb-2">
+                    <i class="fas fa-laptop mr-2"></i>Datos del Equipo
+                </h4>
+                <div class="space-y-2 text-sm">
+                    <p><span class="text-amber-600">Equipo:</span> <span class="font-medium">${data.equipo}</span></p>
+                    <p><span class="text-amber-600">Serie:</span> <span class="font-mono font-medium">${data.serie}</span></p>
+                    <p><span class="text-amber-600">Responsable:</span> ${data.responsable}</p>
+                    <p><span class="text-amber-600">Fecha Reporte:</span> ${data.fecha}</p>
+                </div>
+            </div>
+            
+            <div class="bg-red-50 rounded-xl p-4">
+                <h4 class="text-sm font-semibold text-red-800 mb-2">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Descripción del Problema
+                </h4>
+                <div class="space-y-2 text-sm">
+                    <p><span class="text-red-600">Problema:</span></p>
+                    <p class="font-medium">${data.problema}</p>
+                    <p class="mt-2"><span class="text-red-600">Causa:</span></p>
+                    <p class="font-medium">${data.causa}</p>
+                </div>
+            </div>
+            
+            <div class="bg-slate-50 rounded-xl p-4">
+                <h4 class="text-sm font-semibold text-slate-800 mb-2">
+                    <i class="fas fa-cog mr-2"></i>Estado de Procesamiento
+                </h4>
+                <div class="space-y-2 text-sm">
+                    <p><span class="text-slate-600">Estado:</span> <span class="font-medium">${data.estado}</span></p>
+                    <p><span class="text-slate-600">Mensaje:</span></p>
+                    <p class="text-slate-700">${data.mensaje || 'Sin mensaje'}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('detalle-contenido').innerHTML = contenido;
+    
+    // Bloquear scroll del body
+    document.body.style.overflow = 'hidden';
+    
+    document.getElementById('modal-detalle').classList.remove('hidden');
+    document.getElementById('modal-detalle').classList.add('flex');
+}
+
+function cerrarModal(modalId) {
+    document.getElementById(modalId).classList.remove('flex');
+    document.getElementById(modalId).classList.add('hidden');
+    // Restaurar scroll del body
+    document.body.style.overflow = '';
+}
+
+// Cerrar modal al hacer clic fuera
+document.querySelectorAll('[id^="modal-"]').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            cerrarModal(this.id);
+        }
+    });
+});
+
+// Cerrar con ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('[id^="modal-"]').forEach(modal => {
+            cerrarModal(modal.id);
+        });
+    }
+});
+</script>
+{% endblock %}

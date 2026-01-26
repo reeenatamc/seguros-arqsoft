@@ -1,0 +1,156 @@
+{% extends 'app/layouts/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - Sistema de Seguros{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <nav class="flex mb-4" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-2">
+                <li>
+                    <a href="{% url 'backups_lista' %}" class="text-slate-400 hover:text-slate-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <svg class="w-5 h-5 text-slate-300" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </li>
+                <li>
+                    <span class="text-sm font-medium text-slate-900">Configuración</span>
+                </li>
+            </ol>
+        </nav>
+        <h1 class="text-2xl font-bold text-slate-900">{{ titulo }}</h1>
+        <p class="mt-1 text-sm text-slate-500">Configura los backups automáticos del sistema</p>
+    </div>
+
+    <!-- Formulario -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="px-6 py-5 space-y-6">
+                <!-- Estado -->
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-slate-900">Backup Automático</p>
+                        <p class="text-xs text-slate-500">Activar respaldos programados</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="activo" {% if config.activo %}checked{% endif %}
+                               class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+                
+                <!-- Frecuencia -->
+                <div>
+                    <label for="frecuencia" class="block text-sm font-medium text-slate-700 mb-2">
+                        Frecuencia
+                    </label>
+                    <select name="frecuencia" id="frecuencia"
+                            class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500">
+                        {% for value, label in frecuencias %}
+                        {% if value != 'manual' %}
+                        <option value="{{ value }}" {% if config.frecuencia == value %}selected{% endif %}>{{ label }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Hora de ejecución -->
+                <div>
+                    <label for="hora_ejecucion" class="block text-sm font-medium text-slate-700 mb-2">
+                        Hora de Ejecución
+                    </label>
+                    <input type="time" name="hora_ejecucion" id="hora_ejecucion"
+                           value="{{ config.hora_ejecucion|time:'H:i' }}"
+                           class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500">
+                    <p class="mt-1 text-xs text-slate-500">Se recomienda ejecutar en horas de bajo tráfico (ej: 02:00)</p>
+                </div>
+                
+                <!-- Días de retención -->
+                <div>
+                    <label for="dias_retener" class="block text-sm font-medium text-slate-700 mb-2">
+                        Días de Retención
+                    </label>
+                    <input type="number" name="dias_retener" id="dias_retener"
+                           value="{{ config.dias_retener }}" min="7" max="365"
+                           class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500">
+                    <p class="mt-1 text-xs text-slate-500">Los backups más antiguos serán eliminados automáticamente (mínimo 5 se conservan siempre)</p>
+                </div>
+                
+                <!-- Opciones -->
+                <div class="space-y-4">
+                    <h3 class="text-sm font-medium text-slate-900">Opciones</h3>
+                    
+                    <label class="flex items-start gap-3 p-4 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                        <input type="checkbox" name="comprimir" {% if config.comprimir %}checked{% endif %}
+                               class="mt-1 h-4 w-4 text-brand-600 border-slate-300 rounded focus:ring-brand-500">
+                        <div>
+                            <p class="text-sm font-medium text-slate-900">Comprimir backups</p>
+                            <p class="text-xs text-slate-500">Reduce significativamente el espacio de almacenamiento</p>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-start gap-3 p-4 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                        <input type="checkbox" name="incluir_media" {% if config.incluir_media %}checked{% endif %}
+                               class="mt-1 h-4 w-4 text-brand-600 border-slate-300 rounded focus:ring-brand-500">
+                        <div>
+                            <p class="text-sm font-medium text-slate-900">Incluir archivos media</p>
+                            <p class="text-xs text-slate-500">Incluye documentos y archivos adjuntos (aumenta el tamaño)</p>
+                        </div>
+                    </label>
+                </div>
+                
+                <!-- Email de notificación -->
+                <div>
+                    <label for="notificar_email" class="block text-sm font-medium text-slate-700 mb-2">
+                        Email de Notificación (opcional)
+                    </label>
+                    <input type="email" name="notificar_email" id="notificar_email"
+                           value="{{ config.notificar_email }}"
+                           placeholder="admin@ejemplo.com"
+                           class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500">
+                    <p class="mt-1 text-xs text-slate-500">Recibe notificaciones sobre el estado de los backups</p>
+                </div>
+            </div>
+            
+            <!-- Último backup -->
+            {% if config.ultimo_backup %}
+            <div class="px-6 py-4 bg-emerald-50 border-t border-emerald-200">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-sm text-emerald-700">
+                        Último backup exitoso: <strong>{{ config.ultimo_backup|date:"d/m/Y H:i" }}</strong>
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Botones -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                <a href="{% url 'backups_lista' %}" 
+                   class="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" 
+                        class="inline-flex items-center px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Guardar Configuración
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

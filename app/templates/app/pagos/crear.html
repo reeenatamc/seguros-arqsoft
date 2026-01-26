@@ -15,9 +15,9 @@
         </div>
     </div>
 
-    <!-- Formulario -->
+    <!-- Formulario con validación de saldo -->
     <div class="bg-white rounded-xl shadow-card p-6">
-        <form method="post" class="space-y-6">
+        <form method="post" class="space-y-6" data-calc-form="pago">
             {% csrf_token %}
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -26,6 +26,7 @@
                         Factura <span class="text-red-500">*</span>
                     </label>
                     {{ form.factura }}
+                    <p class="text-xs text-slate-500 mt-1">Selecciona la factura para ver el saldo disponible</p>
                 </div>
 
                 <div>
@@ -33,6 +34,9 @@
                         Monto <span class="text-red-500">*</span>
                     </label>
                     {{ form.monto }}
+                    <p class="text-xs text-slate-500 mt-1">
+                        Saldo pendiente: <span data-calc-display="saldo_pendiente" class="font-medium text-emerald-600">-</span>
+                    </p>
                 </div>
 
                 <div>

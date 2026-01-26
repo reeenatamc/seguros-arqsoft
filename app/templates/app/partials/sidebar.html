@@ -1,3 +1,4 @@
+{% load static %}
 <!-- Sidebar con menú colapsable y animaciones -->
 <aside id="sidebar" class="sidebar-expanded w-72 gradient-brand flex flex-col shadow-2xl relative overflow-visible transition-all duration-300 ease-in-out lg:translate-x-0 -translate-x-full fixed lg:relative h-full z-50">
     <!-- Decoración de fondo -->
@@ -16,8 +17,8 @@
     <!-- Logo y título -->
     <div class="relative z-10 p-5 border-b border-white/10">
         <div class="flex items-center gap-3 justify-center lg:justify-start">
-            <div class="logo-icon w-11 h-11 gradient-gold rounded-xl flex items-center justify-center shadow-lg transform hover:scale-110 hover:rotate-3 transition-all duration-300 cursor-pointer flex-shrink-0">
-                <i class="fas fa-shield-halved text-brand-900 text-lg"></i>
+            <div class="logo-icon flex items-center justify-center transform hover:scale-110 transition-all duration-300 cursor-pointer flex-shrink-0">
+                <img src="{% static 'images/minilogo-final-final.png' %}" alt="Seguros UTPL" class="h-12 w-auto object-contain drop-shadow-2xl filter brightness-110">
             </div>
             <div class="sidebar-text overflow-hidden">
                 <h1 class="text-xl font-bold text-white tracking-tight whitespace-nowrap">Seguros</h1>
@@ -170,12 +171,21 @@
             </button>
             <div id="analisis-menu" class="submenu space-y-1 mt-1 overflow-hidden transition-all duration-300" style="max-height: 400px;">
                 <a href="{% url 'reportes_dashboard' %}" 
-                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'reportes' in request.path %}active{% endif %}"
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'reportes' in request.path and 'dias-gestion' not in request.path %}active{% endif %}"
                    title="Reportes">
                     <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Reportes</span>
+                </a>
+                
+                <a href="{% url 'reporte_dias_gestion' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'dias-gestion' in request.path %}active{% endif %}"
+                   title="Días de Gestión - Contaduría">
+                    <div class="nav-icon w-9 h-9 rounded-lg bg-indigo-500/30 flex items-center justify-center group-hover:bg-indigo-500/50 transition-all duration-300 flex-shrink-0">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Contaduría</span>
                 </a>
                 
                 <a href="{% url 'analytics_dashboard' %}" 
@@ -221,13 +231,22 @@
                     <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Administración</span>
                 </a>
                 
-                <a href="/admin/app/configuracionsistema/" 
-                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group"
-                   title="Configuración">
+                <a href="{% url 'configuracion_lista' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'configuracion' in request.path %}active{% endif %}"
+                   title="Configuración del Sistema">
                     <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
                         <i class="fas fa-sliders"></i>
                     </div>
                     <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Configuración</span>
+                </a>
+                
+                <a href="{% url 'backups_lista' %}" 
+                   class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/90 hover:bg-white/10 group {% if 'backups' in request.path %}active{% endif %}"
+                   title="Respaldos del Sistema">
+                    <div class="nav-icon w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300 flex-shrink-0">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <span class="sidebar-text font-medium whitespace-nowrap overflow-hidden">Respaldos</span>
                 </a>
             </div>
         </div>

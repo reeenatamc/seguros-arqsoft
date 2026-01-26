@@ -10,6 +10,14 @@
             <p class="text-slate-500 mt-1">{{ total_resultados }} siniestros encontrados</p>
         </div>
         <div class="flex items-center gap-3">
+            <!-- Botón Siniestros por Email -->
+            <a href="{% url 'siniestros_email_pendientes' %}" id="btn-email-pendientes"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl hover:bg-amber-100 transition font-medium text-sm relative">
+                <i class="fas fa-envelope"></i>
+                <span>Por Email</span>
+                <span id="badge-email-count" class="hidden absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center"></span>
+            </a>
+            
             <div class="relative">
                 <button onclick="toggleExportMenu()" data-dropdown="export" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition font-medium text-sm">
                     <i class="fas fa-download"></i>
@@ -109,7 +117,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <p class="text-sm font-medium text-slate-700">{{ siniestro.bien_nombre }}</p>
+                            <p class="text-sm font-medium text-slate-700">{{ siniestro.bien_asegurado.nombre|default:siniestro.bien_nombre|default:"-" }}</p>
                             <p class="text-xs text-slate-500">{{ siniestro.ubicacion|truncatechars:30 }}</p>
                         </td>
                         <td class="px-6 py-4">
@@ -177,4 +185,23 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Cargar contador de siniestros email pendientes
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('{% url "siniestros_email_count" %}')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('badge-email-count');
+            if (data.count > 0) {
+                badge.textContent = data.count;
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            }
+        })
+        .catch(error => console.log('Error cargando contador:', error));
+});
+</script>
 {% endblock %}
