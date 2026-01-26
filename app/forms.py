@@ -1,10 +1,49 @@
 """
+Módulo de Formularios Django para el Sistema de Gestión de Seguros.
 
-Formularios Custom para el Sistema de Seguros.
+Este módulo define todos los formularios ModelForm utilizados en la capa de
+presentación del sistema. Implementa validaciones de cliente y servidor,
+widgets personalizados HTML5, y lógica de filtrado dinámico de opciones.
 
-Formularios Django para gestión de pólizas, siniestros, ramos y bienes asegurados.
+Arquitectura de Formularios:
+    - Widgets Personalizados: DateInput, DateTimeInput para inputs HTML5
+    - Entidades Base: CompaniaAseguradora, CorredorSeguros, ResponsableCustodio
+    - Catálogo de Ramos: TipoRamo → GrupoRamo → SubgrupoRamo (jerarquía)
+    - Pólizas: PolizaForm + DetallePolizaRamoFormSet (inline)
+    - Siniestros: SiniestroForm + gestión de adjuntos y checklist
+    - Transacciones: FacturaForm, PagoForm, NotaCreditoForm
 
+Características Implementadas:
+    1. **Widgets HTML5**: type="date", type="datetime-local" para UX moderna
+    2. **Filtrado Dinámico**: Querysets que solo muestran registros activos
+    3. **Validación Server-side**: clean_* methods para reglas de negocio
+    4. **Bootstrap Integration**: Clases CSS form-control, form-select
+    5. **Formsets Inline**: Para relaciones 1:N (póliza-detalles, etc.)
+
+Patrones Utilizados:
+    - ModelForm: Mapeo automático modelo-formulario
+    - InlineFormSet: Edición de relaciones hijo en mismo form
+    - Widget Customization: HTML5 inputs con fallback
+
+Autor: Equipo de Desarrollo UTPL
+Versión: 1.0.0
+Última Actualización: Enero 2026
+
+Example:
+    Uso en una vista Django::
+
+        from app.forms import PolizaForm, DetallePolizaRamoFormSet
+
+        def crear_poliza(request):
+            if request.method == 'POST':
+                form = PolizaForm(request.POST)
+                formset = DetallePolizaRamoFormSet(request.POST)
+                if form.is_valid() and formset.is_valid():
+                    poliza = form.save()
+                    formset.instance = poliza
+                    formset.save()
 """
+
 
 from decimal import Decimal
 
