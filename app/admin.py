@@ -25,6 +25,7 @@ Autor: Equipo de Desarrollo UTPL
 Versión: 1.0.0
 Última Actualización: Enero 2026
 """
+from app.models import BienAsegurado
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
@@ -43,17 +44,11 @@ from .models import (
 )
 
 
-
-
-
-
-
 # =============================================================================
 
 # RECURSOS DE IMPORTACIÓN/EXPORTACIÓN
 
 # =============================================================================
-
 
 
 class CompaniaAseguradoraResource(resources.ModelResource):
@@ -69,9 +64,6 @@ class CompaniaAseguradoraResource(resources.ModelResource):
         export_order = fields
 
 
-
-
-
 class CorredorSegurosResource(resources.ModelResource):
 
     class Meta:
@@ -85,9 +77,6 @@ class CorredorSegurosResource(resources.ModelResource):
         export_order = fields
 
 
-
-
-
 class TipoPolizaResource(resources.ModelResource):
 
     class Meta:
@@ -99,9 +88,6 @@ class TipoPolizaResource(resources.ModelResource):
         fields = ('nombre', 'descripcion', 'activo')
 
 
-
-
-
 class TipoSiniestroResource(resources.ModelResource):
 
     class Meta:
@@ -111,9 +97,6 @@ class TipoSiniestroResource(resources.ModelResource):
         import_id_fields = ['nombre']
 
         fields = ('nombre', 'descripcion', 'activo')
-
-
-
 
 
 class PolizaResource(resources.ModelResource):
@@ -168,8 +151,6 @@ class PolizaResource(resources.ModelResource):
 
     )
 
-    
-
     class Meta:
 
         model = Poliza
@@ -181,9 +162,6 @@ class PolizaResource(resources.ModelResource):
                   'suma_asegurada', 'coberturas', 'fecha_inicio', 'fecha_fin', 'estado', 'observaciones')
 
         export_order = fields
-
-
-
 
 
 class FacturaResource(resources.ModelResource):
@@ -218,8 +196,6 @@ class FacturaResource(resources.ModelResource):
 
     )
 
-    
-
     class Meta:
 
         model = Factura
@@ -231,9 +207,6 @@ class FacturaResource(resources.ModelResource):
                   'subtotal', 'iva', 'monto_total', 'concepto', 'estado')
 
         export_order = fields
-
-
-
 
 
 class SiniestroResource(resources.ModelResource):
@@ -268,8 +241,6 @@ class SiniestroResource(resources.ModelResource):
 
     )
 
-    
-
     class Meta:
 
         model = Siniestro
@@ -281,9 +252,6 @@ class SiniestroResource(resources.ModelResource):
                   'descripcion_detallada', 'ubicacion', 'monto_estimado', 'monto_indemnizado', 'estado')
 
         export_order = fields
-
-
-
 
 
 class HistoryModelAdmin(ImportExportMixin, ModelAdmin, SimpleHistoryAdmin):
@@ -298,10 +266,7 @@ class HistoryModelAdmin(ImportExportMixin, ModelAdmin, SimpleHistoryAdmin):
 
     history_list_display = ['changed_fields', 'history_user']
 
-    
-
     def changed_fields(self, obj):
-
         """Muestra los campos que cambiaron."""
 
         if obj.prev_record:
@@ -319,9 +284,6 @@ class HistoryModelAdmin(ImportExportMixin, ModelAdmin, SimpleHistoryAdmin):
     changed_fields.short_description = 'Campos modificados'
 
 
-
-
-
 class ImportExportModelAdmin(ImportExportMixin, ModelAdmin):
 
     """
@@ -335,11 +297,7 @@ class ImportExportModelAdmin(ImportExportMixin, ModelAdmin):
     pass
 
 
-
-
-
 @admin.register(ConfiguracionSistema)
-
 class ConfiguracionSistemaAdmin(ModelAdmin):
 
     icon_name = "settings"
@@ -351,8 +309,6 @@ class ConfiguracionSistemaAdmin(ModelAdmin):
     search_fields = ['clave', 'descripcion']
 
     list_editable = ['valor']
-
-    
 
     fieldsets = (
 
@@ -370,8 +326,6 @@ class ConfiguracionSistemaAdmin(ModelAdmin):
 
     )
 
-    
-
     def descripcion_corta(self, obj):
 
         if len(obj.descripcion) > 50:
@@ -382,18 +336,12 @@ class ConfiguracionSistemaAdmin(ModelAdmin):
 
     descripcion_corta.short_description = 'Descripción'
 
-    
-
     def has_delete_permission(self, request, obj=None):
 
         return False
 
 
-
-
-
 @admin.register(CompaniaAseguradora)
-
 class CompaniaAseguradoraAdmin(ImportExportModelAdmin):
 
     icon_name = "business"
@@ -408,8 +356,6 @@ class CompaniaAseguradoraAdmin(ImportExportModelAdmin):
 
     readonly_fields = ['fecha_creacion', 'fecha_modificacion']
 
-    
-
     fieldsets = (
 
         ('Información Básica', {
@@ -435,11 +381,7 @@ class CompaniaAseguradoraAdmin(ImportExportModelAdmin):
     )
 
 
-
-
-
 @admin.register(CorredorSeguros)
-
 class CorredorSegurosAdmin(ImportExportModelAdmin):
 
     icon_name = "handshake"
@@ -454,8 +396,6 @@ class CorredorSegurosAdmin(ImportExportModelAdmin):
 
     readonly_fields = ['fecha_creacion', 'fecha_modificacion']
 
-    
-
     fieldsets = (
 
         ('Información Básica', {
@@ -481,11 +421,7 @@ class CorredorSegurosAdmin(ImportExportModelAdmin):
     )
 
 
-
-
-
 @admin.register(TipoPoliza)
-
 class TipoPolizaAdmin(ImportExportModelAdmin):
 
     icon_name = "category"
@@ -499,11 +435,7 @@ class TipoPolizaAdmin(ImportExportModelAdmin):
     search_fields = ['nombre', 'descripcion']
 
 
-
-
-
 @admin.register(ResponsableCustodio)
-
 class ResponsableCustodioAdmin(ImportExportModelAdmin):
 
     icon_name = "person"
@@ -547,9 +479,6 @@ class ResponsableCustodioAdmin(ImportExportModelAdmin):
     readonly_fields = ['fecha_creacion', 'fecha_modificacion']
 
 
-
-
-
 class DocumentoInline(TabularInline):
 
     model = Documento
@@ -559,9 +488,6 @@ class DocumentoInline(TabularInline):
     fields = ['tipo_documento', 'nombre', 'archivo', 'fecha_subida']
 
     readonly_fields = ['fecha_subida']
-
-
-
 
 
 class FacturaInline(TabularInline):
@@ -575,9 +501,6 @@ class FacturaInline(TabularInline):
     readonly_fields = ['monto_total']
 
 
-
-
-
 class SiniestroInline(TabularInline):
 
     model = Siniestro
@@ -587,11 +510,7 @@ class SiniestroInline(TabularInline):
     fields = ['numero_siniestro', 'tipo_siniestro', 'fecha_siniestro', 'estado']
 
 
-
-
-
 @admin.register(Poliza)
-
 class PolizaAdmin(HistoryModelAdmin):
 
     icon_name = "verified"
@@ -600,15 +519,15 @@ class PolizaAdmin(HistoryModelAdmin):
 
     list_display = [
 
-        'numero_poliza', 
+        'numero_poliza',
 
-        'compania_aseguradora', 
+        'compania_aseguradora',
 
-        'tipo_poliza', 
+        'tipo_poliza',
 
         'suma_asegurada_formatted',
 
-        'fecha_inicio', 
+        'fecha_inicio',
 
         'fecha_fin',
 
@@ -620,11 +539,11 @@ class PolizaAdmin(HistoryModelAdmin):
 
     list_filter = [
 
-        'estado', 
+        'estado',
 
-        'compania_aseguradora', 
+        'compania_aseguradora',
 
-        'tipo_poliza', 
+        'tipo_poliza',
 
         'fecha_inicio',
 
@@ -634,9 +553,9 @@ class PolizaAdmin(HistoryModelAdmin):
 
     search_fields = [
 
-        'numero_poliza', 
+        'numero_poliza',
 
-        'compania_aseguradora__nombre', 
+        'compania_aseguradora__nombre',
 
         'corredor_seguros__nombre',
 
@@ -646,11 +565,11 @@ class PolizaAdmin(HistoryModelAdmin):
 
     readonly_fields = [
 
-        'estado', 
+        'estado',
 
-        'fecha_creacion', 
+        'fecha_creacion',
 
-        'fecha_modificacion', 
+        'fecha_modificacion',
 
         'creado_por',
 
@@ -663,8 +582,6 @@ class PolizaAdmin(HistoryModelAdmin):
     date_hierarchy = 'fecha_inicio'
 
     inlines = [DocumentoInline, FacturaInline, SiniestroInline]
-
-    
 
     fieldsets = (
 
@@ -704,18 +621,12 @@ class PolizaAdmin(HistoryModelAdmin):
 
     )
 
-
-
     @display(description='Suma Asegurada', ordering='suma_asegurada')
-
     def suma_asegurada_formatted(self, obj):
 
         return f"${obj.suma_asegurada:,.2f}"
 
-
-
     @display(description='Estado', ordering='estado')
-
     def estado_badge(self, obj):
 
         colors = {
@@ -742,10 +653,7 @@ class PolizaAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='Días para Vencer')
-
     def dias_vencer(self, obj):
 
         dias = obj.dias_para_vencer
@@ -772,23 +680,15 @@ class PolizaAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='Días para Vencer')
-
     def dias_para_vencer_display(self, obj):
 
         return f"{obj.dias_para_vencer} días"
 
-
-
     @display(description='¿Está Vigente?', boolean=True)
-
     def esta_vigente_display(self, obj):
 
         return obj.esta_vigente
-
-
 
     def save_model(self, request, obj, form, change):
 
@@ -797,9 +697,6 @@ class PolizaAdmin(HistoryModelAdmin):
             obj.creado_por = request.user
 
         super().save_model(request, obj, form, change)
-
-
-
 
 
 class PagoInline(TabularInline):
@@ -811,11 +708,7 @@ class PagoInline(TabularInline):
     fields = ['fecha_pago', 'monto', 'forma_pago', 'referencia', 'estado']
 
 
-
-
-
 @admin.register(Factura)
-
 class FacturaAdmin(HistoryModelAdmin):
 
     icon_name = "receipt"
@@ -892,8 +785,6 @@ class FacturaAdmin(HistoryModelAdmin):
 
     inlines = [PagoInline, DocumentoInline]
 
-    
-
     fieldsets = (
 
         ('Información Básica', {
@@ -940,26 +831,17 @@ class FacturaAdmin(HistoryModelAdmin):
 
     )
 
-
-
     @display(description='Subtotal', ordering='subtotal')
-
     def subtotal_formatted(self, obj):
 
         return f"${obj.subtotal:,.2f}"
 
-
-
     @display(description='Monto Total', ordering='monto_total')
-
     def monto_total_formatted(self, obj):
 
         return f"${obj.monto_total:,.2f}"
 
-
-
     @display(description='Estado', ordering='estado')
-
     def estado_badge(self, obj):
 
         colors = {
@@ -986,10 +868,7 @@ class FacturaAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='Saldo Pendiente')
-
     def saldo_pendiente_display(self, obj):
 
         saldo = obj.saldo_pendiente
@@ -1008,15 +887,10 @@ class FacturaAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='¿Puede Aplicar Descuento?', boolean=True)
-
     def puede_aplicar_descuento_display(self, obj):
 
         return obj.puede_aplicar_descuento
-
-
 
     def save_model(self, request, obj, form, change):
 
@@ -1027,11 +901,7 @@ class FacturaAdmin(HistoryModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-
-
-
 @admin.register(Pago)
-
 class PagoAdmin(HistoryModelAdmin):
 
     icon_name = "payments"
@@ -1076,8 +946,6 @@ class PagoAdmin(HistoryModelAdmin):
 
     date_hierarchy = 'fecha_pago'
 
-    
-
     fieldsets = (
 
         ('Información del Pago', {
@@ -1102,18 +970,12 @@ class PagoAdmin(HistoryModelAdmin):
 
     )
 
-
-
     @display(description='Monto', ordering='monto')
-
     def monto_formatted(self, obj):
 
         return f"${obj.monto:,.2f}"
 
-
-
     @display(description='Estado', ordering='estado')
-
     def estado_badge(self, obj):
 
         colors = {
@@ -1138,8 +1000,6 @@ class PagoAdmin(HistoryModelAdmin):
 
         )
 
-
-
     def save_model(self, request, obj, form, change):
 
         if not change:  # Si es un nuevo registro
@@ -1149,11 +1009,7 @@ class PagoAdmin(HistoryModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-
-
-
 @admin.register(TipoSiniestro)
-
 class TipoSiniestroAdmin(ImportExportModelAdmin):
 
     icon_name = "label"
@@ -1167,11 +1023,7 @@ class TipoSiniestroAdmin(ImportExportModelAdmin):
     search_fields = ['nombre', 'descripcion']
 
 
-
-
-
 @admin.register(Siniestro)
-
 class SiniestroAdmin(HistoryModelAdmin):
 
     icon_name = "warning"
@@ -1253,8 +1105,6 @@ class SiniestroAdmin(HistoryModelAdmin):
     date_hierarchy = 'fecha_siniestro'
 
     inlines = [DocumentoInline]
-
-    
 
     fieldsets = (
 
@@ -1346,18 +1196,12 @@ class SiniestroAdmin(HistoryModelAdmin):
 
     )
 
-
-
     @display(description='Monto Estimado', ordering='monto_estimado')
-
     def monto_estimado_formatted(self, obj):
 
         return f"${obj.monto_estimado:,.2f}"
 
-
-
     @display(description='Estado', ordering='estado')
-
     def estado_badge(self, obj):
 
         colors = {
@@ -1392,10 +1236,7 @@ class SiniestroAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='Días desde Registro')
-
     def dias_desde_registro_display(self, obj):
 
         dias = obj.dias_desde_registro
@@ -1412,34 +1253,22 @@ class SiniestroAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='⚠️ Doc', boolean=True)
-
     def alerta_documentacion(self, obj):
 
         return obj.requiere_alerta_documentacion
 
-
-
     @display(description='⚠️ Resp', boolean=True)
-
     def alerta_respuesta(self, obj):
 
         return obj.requiere_alerta_respuesta
 
-
-
     @display(description='Requiere Alerta Documentación', boolean=True)
-
     def requiere_alerta_documentacion_display(self, obj):
 
         return obj.requiere_alerta_documentacion
 
-
-
     @display(description='Días Espera Respuesta')
-
     def dias_espera_respuesta_display(self, obj):
 
         dias = obj.dias_espera_respuesta
@@ -1460,15 +1289,10 @@ class SiniestroAdmin(HistoryModelAdmin):
 
         return "N/A"
 
-
-
     @display(description='Requiere Alerta Respuesta', boolean=True)
-
     def requiere_alerta_respuesta_display(self, obj):
 
         return obj.requiere_alerta_respuesta
-
-
 
     def save_model(self, request, obj, form, change):
 
@@ -1479,11 +1303,7 @@ class SiniestroAdmin(HistoryModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-
-
-
 @admin.register(Documento)
-
 class DocumentoAdmin(HistoryModelAdmin):
 
     icon_name = "description"
@@ -1536,8 +1356,6 @@ class DocumentoAdmin(HistoryModelAdmin):
 
     date_hierarchy = 'fecha_subida'
 
-    
-
     fieldsets = (
 
         ('Información del Documento', {
@@ -1562,10 +1380,7 @@ class DocumentoAdmin(HistoryModelAdmin):
 
     )
 
-    
-
     @display(description="Acciones", ordering="archivo")
-
     def acciones_documento(self, obj):
 
         if obj.archivo:
@@ -1586,29 +1401,19 @@ class DocumentoAdmin(HistoryModelAdmin):
 
         return "-"
 
-    
-
     @display(description="Tamaño")
-
     def tamanio_display(self, obj):
 
         return obj.tamanio_formateado
 
-    
-
     @display(description="Vista Previa")
-
     def preview_documento(self, obj):
 
         if not obj.archivo:
 
             return "Sin archivo"
 
-        
-
         ext = obj.extension.lower()
-
-        
 
         if ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
 
@@ -1672,8 +1477,6 @@ class DocumentoAdmin(HistoryModelAdmin):
 
                 icon_color = '#059669'
 
-            
-
             return format_html(
 
                 '<div style="text-align: center; padding: 20px; background: #f8fafc; '
@@ -1692,8 +1495,6 @@ class DocumentoAdmin(HistoryModelAdmin):
 
             )
 
-
-
     def save_model(self, request, obj, form, change):
 
         if not change:  # Si es un nuevo registro
@@ -1703,11 +1504,7 @@ class DocumentoAdmin(HistoryModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-
-
-
 @admin.register(Alerta)
-
 class AlertaAdmin(ModelAdmin):
 
     icon_name = "notifications"
@@ -1762,8 +1559,6 @@ class AlertaAdmin(ModelAdmin):
 
     filter_horizontal = ['destinatarios']
 
-    
-
     fieldsets = (
 
         ('Información de la Alerta', {
@@ -1794,10 +1589,7 @@ class AlertaAdmin(ModelAdmin):
 
     )
 
-
-
     @display(description='Estado', ordering='estado')
-
     def estado_badge(self, obj):
 
         colors = {
@@ -1824,14 +1616,9 @@ class AlertaAdmin(ModelAdmin):
 
         )
 
-
-
     actions = ['marcar_como_enviadas', 'marcar_como_leidas']
 
-
-
     @admin.action(description='Marcar como enviadas')
-
     def marcar_como_enviadas(self, request, queryset):
 
         for alerta in queryset:
@@ -1840,10 +1627,7 @@ class AlertaAdmin(ModelAdmin):
 
         self.message_user(request, f"{queryset.count()} alertas marcadas como enviadas.")
 
-
-
     @admin.action(description='Marcar como leídas')
-
     def marcar_como_leidas(self, request, queryset):
 
         for alerta in queryset:
@@ -1853,15 +1637,11 @@ class AlertaAdmin(ModelAdmin):
         self.message_user(request, f"{queryset.count()} alertas marcadas como leídas.")
 
 
-
-
-
 # =============================================================================
 
 # NUEVOS MODELOS (Código en inglés, interfaz en español)
 
 # =============================================================================
-
 
 
 class QuoteOptionInline(TabularInline):
@@ -1877,9 +1657,6 @@ class QuoteOptionInline(TabularInline):
     readonly_fields = []
 
 
-
-
-
 # =============================================================================
 
 # BIENES ASEGURADOS - MODELO UNIFICADO
@@ -1887,13 +1664,7 @@ class QuoteOptionInline(TabularInline):
 # =============================================================================
 
 
-
-from app.models import BienAsegurado
-
-
-
 @admin.register(BienAsegurado)
-
 class BienAseguradoAdmin(HistoryModelAdmin):
 
     """Administración de bienes asegurados (modelo unificado)"""
@@ -1969,8 +1740,6 @@ class BienAseguradoAdmin(HistoryModelAdmin):
     date_hierarchy = 'fecha_adquisicion'
 
     autocomplete_fields = ['poliza', 'responsable_custodio']
-
-    
 
     fieldsets = (
 
@@ -2056,10 +1825,7 @@ class BienAseguradoAdmin(HistoryModelAdmin):
 
     )
 
-
-
     @display(description='Póliza')
-
     def poliza_display(self, obj):
 
         if obj.poliza:
@@ -2076,20 +1842,14 @@ class BienAseguradoAdmin(HistoryModelAdmin):
 
         return format_html('<span class="text-muted">Sin póliza</span>')
 
-
-
     @display(description='Valor Asegurado')
-
     def valor_asegurado_formatted(self, obj):
 
         valor = obj.valor_asegurado or 0
 
         return f"${valor:,.2f}"
 
-
-
     @display(description='Estado')
-
     def estado_badge(self, obj):
 
         colors = {
@@ -2118,10 +1878,7 @@ class BienAseguradoAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='Condición')
-
     def condicion_badge(self, obj):
 
         colors = {
@@ -2148,8 +1905,6 @@ class BienAseguradoAdmin(HistoryModelAdmin):
 
         )
 
-
-
     def save_model(self, request, obj, form, change):
 
         if not change:
@@ -2159,11 +1914,7 @@ class BienAseguradoAdmin(HistoryModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-
-
-
 @admin.register(Quote)
-
 class QuoteAdmin(HistoryModelAdmin):
 
     """Administración de cotizaciones"""
@@ -2236,8 +1987,6 @@ class QuoteAdmin(HistoryModelAdmin):
 
     inlines = [QuoteOptionInline]
 
-    
-
     fieldsets = (
 
         ('Identificación', {
@@ -2288,18 +2037,12 @@ class QuoteAdmin(HistoryModelAdmin):
 
     )
 
-
-
     @display(description='Suma Asegurada', ordering='sum_insured')
-
     def sum_insured_formatted(self, obj):
 
         return f"${obj.sum_insured:,.2f}"
 
-
-
     @display(description='Estado', ordering='status')
-
     def status_badge(self, obj):
 
         colors = {
@@ -2330,10 +2073,7 @@ class QuoteAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='Prioridad', ordering='priority')
-
     def priority_badge(self, obj):
 
         colors = {
@@ -2358,10 +2098,7 @@ class QuoteAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='Opciones')
-
     def options_count(self, obj):
 
         count = obj.options.count()
@@ -2374,10 +2111,7 @@ class QuoteAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='Mejor Opción')
-
     def best_option_display(self, obj):
 
         best = obj.best_option
@@ -2396,18 +2130,12 @@ class QuoteAdmin(HistoryModelAdmin):
 
         return '-'
 
-
-
     @display(description='¿Expirada?', boolean=True)
-
     def is_expired_display(self, obj):
 
         return obj.is_expired
 
-
-
     @display(description='Días para Expirar')
-
     def days_until_expiry_display(self, obj):
 
         days = obj.days_until_expiry
@@ -2422,8 +2150,6 @@ class QuoteAdmin(HistoryModelAdmin):
 
         )
 
-
-
     def save_model(self, request, obj, form, change):
 
         if not change:
@@ -2432,24 +2158,16 @@ class QuoteAdmin(HistoryModelAdmin):
 
         super().save_model(request, obj, form, change)
 
-
-
     actions = ['convert_to_draft', 'mark_as_sent']
 
-
-
     @admin.action(description='Marcar como borrador')
-
     def convert_to_draft(self, request, queryset):
 
         queryset.update(status='draft')
 
         self.message_user(request, f"{queryset.count()} cotizaciones marcadas como borrador.")
 
-
-
     @admin.action(description='Marcar como enviadas')
-
     def mark_as_sent(self, request, queryset):
 
         queryset.update(status='sent')
@@ -2457,11 +2175,7 @@ class QuoteAdmin(HistoryModelAdmin):
         self.message_user(request, f"{queryset.count()} cotizaciones marcadas como enviadas.")
 
 
-
-
-
 @admin.register(QuoteOption)
-
 class QuoteOptionAdmin(ModelAdmin):
 
     """Administración de opciones de cotización"""
@@ -2511,8 +2225,6 @@ class QuoteOptionAdmin(ModelAdmin):
     ]
 
     readonly_fields = ['created_at', 'updated_at', 'premium_per_thousand_display']
-
-    
 
     fieldsets = (
 
@@ -2568,34 +2280,22 @@ class QuoteOptionAdmin(ModelAdmin):
 
     )
 
-
-
     @display(description='Prima Anual', ordering='premium_amount')
-
     def premium_amount_formatted(self, obj):
 
         return f"${obj.premium_amount:,.2f}"
 
-
-
     @display(description='Deducible', ordering='deductible')
-
     def deductible_formatted(self, obj):
 
         return f"${obj.deductible:,.2f}"
 
-
-
     @display(description='Recomendada', boolean=True)
-
     def is_recommended_badge(self, obj):
 
         return obj.is_recommended
 
-
-
     @display(description='Calificación')
-
     def rating_display(self, obj):
 
         if obj.rating:
@@ -2606,20 +2306,13 @@ class QuoteOptionAdmin(ModelAdmin):
 
         return '-'
 
-
-
     @display(description='Prima por Mil')
-
     def premium_per_thousand_display(self, obj):
 
         return f"${obj.premium_per_thousand:,.2f}"
 
 
-
-
-
 @admin.register(PolicyRenewal)
-
 class PolicyRenewalAdmin(HistoryModelAdmin):
 
     """Administración de renovaciones de pólizas"""
@@ -2689,8 +2382,6 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
     date_hierarchy = 'due_date'
 
     autocomplete_fields = ['original_policy', 'new_policy', 'quote']
-
-    
 
     fieldsets = (
 
@@ -2776,10 +2467,7 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
 
     )
 
-
-
     @display(description='Días para Vencer')
-
     def days_until_due_display(self, obj):
 
         days = obj.days_until_due
@@ -2816,18 +2504,12 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='¿Vencida?', boolean=True)
-
     def is_overdue_display(self, obj):
 
         return obj.is_overdue
 
-
-
     @display(description='Estado', ordering='status')
-
     def status_badge(self, obj):
 
         colors = {
@@ -2858,10 +2540,7 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='Decisión', ordering='decision')
-
     def decision_badge(self, obj):
 
         colors = {
@@ -2886,10 +2565,7 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='Cambio Prima')
-
     def premium_comparison(self, obj):
 
         pct = obj.premium_change_percentage
@@ -2922,10 +2598,7 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='% Cambio Prima')
-
     def premium_change_percentage_display(self, obj):
 
         pct = obj.premium_change_percentage
@@ -2956,10 +2629,7 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
 
         )
 
-
-
     @display(description='Nueva Póliza')
-
     def new_policy_display(self, obj):
 
         if obj.new_policy:
@@ -2976,8 +2646,6 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
 
         return '-'
 
-
-
     def save_model(self, request, obj, form, change):
 
         if not change:
@@ -2986,24 +2654,16 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
 
         super().save_model(request, obj, form, change)
 
-
-
     actions = ['mark_as_in_progress', 'send_reminders']
 
-
-
     @admin.action(description='Marcar como en proceso')
-
     def mark_as_in_progress(self, request, queryset):
 
         queryset.update(status='in_progress')
 
         self.message_user(request, f"{queryset.count()} renovaciones marcadas como en proceso.")
 
-
-
     @admin.action(description='Enviar recordatorios')
-
     def send_reminders(self, request, queryset):
 
         count = 0
@@ -3021,11 +2681,7 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
         self.message_user(request, f"Recordatorios enviados para {count} renovaciones.")
 
 
-
-
-
 @admin.register(PaymentApproval)
-
 class PaymentApprovalAdmin(ModelAdmin):
 
     """Administración de aprobaciones de pago"""
@@ -3082,8 +2738,6 @@ class PaymentApprovalAdmin(ModelAdmin):
 
     ]
 
-    
-
     fieldsets = (
 
         ('Pago', {
@@ -3126,10 +2780,7 @@ class PaymentApprovalAdmin(ModelAdmin):
 
     )
 
-
-
     @display(description='Nivel Aprobación', ordering='approval_level')
-
     def approval_level_badge(self, obj):
 
         colors = {
@@ -3154,10 +2805,7 @@ class PaymentApprovalAdmin(ModelAdmin):
 
         )
 
-
-
     @display(description='Nivel Requerido', ordering='required_level')
-
     def required_level_badge(self, obj):
 
         colors = {
@@ -3182,10 +2830,7 @@ class PaymentApprovalAdmin(ModelAdmin):
 
         )
 
-
-
     @display(description='Estado', ordering='status')
-
     def status_badge(self, obj):
 
         colors = {
@@ -3210,22 +2855,14 @@ class PaymentApprovalAdmin(ModelAdmin):
 
         )
 
-
-
     @display(description='Firma', boolean=True)
-
     def digital_signature_display(self, obj):
 
         return obj.digital_signature
 
-
-
     actions = ['approve_payments', 'reject_payments']
 
-
-
     @admin.action(description='Aprobar pagos seleccionados')
-
     def approve_payments(self, request, queryset):
 
         for approval in queryset.filter(status='pending'):
@@ -3234,10 +2871,7 @@ class PaymentApprovalAdmin(ModelAdmin):
 
         self.message_user(request, f"Pagos aprobados correctamente.")
 
-
-
     @admin.action(description='Rechazar pagos seleccionados')
-
     def reject_payments(self, request, queryset):
 
         for approval in queryset.filter(status='pending'):
@@ -3247,11 +2881,7 @@ class PaymentApprovalAdmin(ModelAdmin):
         self.message_user(request, f"Pagos rechazados correctamente.")
 
 
-
-
-
 @admin.register(CalendarEvent)
-
 class CalendarEventAdmin(ModelAdmin):
 
     """Administración de eventos del calendario"""
@@ -3320,8 +2950,6 @@ class CalendarEventAdmin(ModelAdmin):
 
     date_hierarchy = 'start_date'
 
-    
-
     fieldsets = (
 
         ('Información del Evento', {
@@ -3366,10 +2994,7 @@ class CalendarEventAdmin(ModelAdmin):
 
     )
 
-
-
     @display(description='Tipo', ordering='event_type')
-
     def event_type_badge(self, obj):
 
         return format_html(
@@ -3380,10 +3005,7 @@ class CalendarEventAdmin(ModelAdmin):
 
         )
 
-
-
     @display(description='Prioridad', ordering='priority')
-
     def priority_badge(self, obj):
 
         colors = {
@@ -3408,10 +3030,7 @@ class CalendarEventAdmin(ModelAdmin):
 
         )
 
-
-
     @display(description='Entidad Relacionada')
-
     def related_entity(self, obj):
 
         if obj.policy:
@@ -3436,10 +3055,7 @@ class CalendarEventAdmin(ModelAdmin):
 
         return '-'
 
-
-
     @display(description='Días')
-
     def days_until_display(self, obj):
 
         days = obj.days_until
@@ -3476,26 +3092,17 @@ class CalendarEventAdmin(ModelAdmin):
 
         )
 
-
-
     @display(description='Completado', boolean=True)
-
     def is_completed_display(self, obj):
 
         return obj.is_completed
 
-
-
     @display(description='Recordatorio', boolean=True)
-
     def reminder_sent_display(self, obj):
 
         return obj.reminder_sent
 
-
-
     @display(description='Color')
-
     def color_preview(self, obj):
 
         return format_html(
@@ -3508,8 +3115,6 @@ class CalendarEventAdmin(ModelAdmin):
 
         )
 
-
-
     def save_model(self, request, obj, form, change):
 
         if not change:
@@ -3518,32 +3123,21 @@ class CalendarEventAdmin(ModelAdmin):
 
         super().save_model(request, obj, form, change)
 
-
-
     actions = ['mark_as_completed', 'send_reminders']
 
-
-
     @admin.action(description='Marcar como completados')
-
     def mark_as_completed(self, request, queryset):
 
         queryset.update(is_completed=True)
 
         self.message_user(request, f"{queryset.count()} eventos marcados como completados.")
 
-
-
     @admin.action(description='Enviar recordatorios')
-
     def send_reminders(self, request, queryset):
 
         count = queryset.filter(reminder_sent=False).update(reminder_sent=True)
 
         self.message_user(request, f"Recordatorios enviados para {count} eventos.")
-
-
-
 
 
 # ==============================================================================
@@ -3553,9 +3147,7 @@ class CalendarEventAdmin(ModelAdmin):
 # ==============================================================================
 
 
-
 @admin.register(BackupRegistro)
-
 class BackupRegistroAdmin(admin.ModelAdmin):
 
     list_display = ['nombre', 'tipo', 'estado', 'tamaño_display', 'fecha_creacion', 'creado_por']
@@ -3570,31 +3162,20 @@ class BackupRegistroAdmin(admin.ModelAdmin):
 
     ordering = ['-fecha_creacion']
 
-    
-
     @display(description='Tamaño')
-
     def tamaño_display(self, obj):
 
         return obj.tamaño_legible
-
-    
 
     def has_add_permission(self, request):
 
         return False  # Los backups se crean solo desde comandos/vistas
 
 
-
-
-
 @admin.register(ConfiguracionBackup)
-
 class ConfiguracionBackupAdmin(admin.ModelAdmin):
 
     list_display = ['activo', 'frecuencia', 'hora_ejecucion', 'dias_retener', 'ultimo_backup']
-
-    
 
     def has_add_permission(self, request):
 
@@ -3602,9 +3183,6 @@ class ConfiguracionBackupAdmin(admin.ModelAdmin):
 
         return not ConfiguracionBackup.objects.exists()
 
-    
-
     def has_delete_permission(self, request, obj=None):
 
         return False
-

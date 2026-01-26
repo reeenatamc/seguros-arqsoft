@@ -82,8 +82,6 @@ Note:
 """
 
 
-
-
 from decimal import Decimal
 
 from datetime import timedelta
@@ -91,9 +89,6 @@ from datetime import timedelta
 from typing import Optional, Dict, Any
 
 from django.utils import timezone
-
-
-
 
 
 class FacturaCalculationService:
@@ -106,17 +101,13 @@ class FacturaCalculationService:
 
     """
 
-    
-
     @staticmethod
-
     def calcular_contribuciones(subtotal: Decimal, config_provider=None) -> Dict[str, Decimal]:
-
         """
 
         Calcula las contribuciones de superintendencia y seguro campesino.
 
-        
+
 
         Args:
 
@@ -124,7 +115,7 @@ class FacturaCalculationService:
 
             config_provider: Función para obtener configuración (opcional)
 
-            
+
 
         Returns:
 
@@ -134,19 +125,13 @@ class FacturaCalculationService:
 
         from app.models import ConfiguracionSistema
 
-        
-
         if config_provider is None:
 
             config_provider = ConfiguracionSistema.get_config
 
-        
-
         pct_super = config_provider('PORCENTAJE_SUPERINTENDENCIA', Decimal('0.035'))
 
         pct_campesino = config_provider('PORCENTAJE_SEGURO_CAMPESINO', Decimal('0.005'))
-
-        
 
         return {
 
@@ -156,10 +141,7 @@ class FacturaCalculationService:
 
         }
 
-    
-
     @staticmethod
-
     def calcular_descuento_pronto_pago(
 
         subtotal: Decimal,
@@ -171,12 +153,11 @@ class FacturaCalculationService:
         config_provider=None
 
     ) -> Decimal:
-
         """
 
         Calcula el descuento por pronto pago.
 
-        
+
 
         Args:
 
@@ -188,7 +169,7 @@ class FacturaCalculationService:
 
             config_provider: Función para obtener configuración
 
-            
+
 
         Returns:
 
@@ -198,42 +179,27 @@ class FacturaCalculationService:
 
         from app.models import ConfiguracionSistema
 
-        
-
         if config_provider is None:
 
             config_provider = ConfiguracionSistema.get_config
-
-        
 
         if not fecha_emision or not fecha_primer_pago:
 
             return Decimal('0.00')
 
-        
-
         dias_limite = config_provider('DIAS_LIMITE_DESCUENTO_PRONTO_PAGO', 20)
 
         pct_descuento = config_provider('PORCENTAJE_DESCUENTO_PRONTO_PAGO', Decimal('0.05'))
 
-        
-
         fecha_limite = fecha_emision + timedelta(days=dias_limite)
-
-        
 
         if fecha_primer_pago <= fecha_limite:
 
             return subtotal * pct_descuento
 
-        
-
         return Decimal('0.00')
 
-    
-
     @staticmethod
-
     def calcular_monto_total(
 
         subtotal: Decimal,
@@ -249,12 +215,11 @@ class FacturaCalculationService:
         descuento: Decimal = Decimal('0.00')
 
     ) -> Decimal:
-
         """
 
         Calcula el monto total de la factura.
 
-        
+
 
         Returns:
 
@@ -264,26 +229,23 @@ class FacturaCalculationService:
 
         total = (
 
-            subtotal +
+            subtotal
 
-            iva +
+            + iva
 
-            contribucion_super +
+            + contribucion_super
 
-            contribucion_campesino -
+            + contribucion_campesino
 
-            retenciones -
+            - retenciones
 
-            descuento
+            - descuento
 
         )
 
         return max(total, Decimal('0.00'))
 
-    
-
     @staticmethod
-
     def determinar_estado_factura(
 
         monto_total: Decimal,
@@ -295,12 +257,11 @@ class FacturaCalculationService:
         fecha_actual=None
 
     ) -> str:
-
         """
 
         Determina el estado de una factura basándose en pagos.
 
-        
+
 
         Returns:
 
@@ -311,8 +272,6 @@ class FacturaCalculationService:
         if fecha_actual is None:
 
             fecha_actual = timezone.now().date()
-
-        
 
         if total_pagado >= monto_total:
 
@@ -330,10 +289,7 @@ class FacturaCalculationService:
 
             return 'pendiente'
 
-    
-
     @classmethod
-
     def calcular_factura_completa(
 
         cls,
@@ -353,14 +309,13 @@ class FacturaCalculationService:
         total_pagado: Decimal = Decimal('0.00')
 
     ) -> Dict[str, Any]:
-
         """
 
         Calcula todos los valores de una factura en una sola llamada.
 
         Útil para APIs y operaciones batch.
 
-        
+
 
         Returns:
 
@@ -369,8 +324,6 @@ class FacturaCalculationService:
         """
 
         contribuciones = cls.calcular_contribuciones(subtotal)
-
-        
 
         descuento = Decimal('0.00')
 
@@ -381,8 +334,6 @@ class FacturaCalculationService:
                 subtotal, fecha_emision, fecha_primer_pago
 
             )
-
-        
 
         monto_total = cls.calcular_monto_total(
 
@@ -400,8 +351,6 @@ class FacturaCalculationService:
 
         )
 
-        
-
         estado = 'pendiente'
 
         if fecha_vencimiento:
@@ -411,8 +360,6 @@ class FacturaCalculationService:
                 monto_total, total_pagado, fecha_vencimiento
 
             )
-
-        
 
         return {
 
@@ -429,9 +376,6 @@ class FacturaCalculationService:
         }
 
 
-
-
-
 class DetalleRamoCalculationService:
 
     """
@@ -442,17 +386,13 @@ class DetalleRamoCalculationService:
 
     """
 
-    
-
     @staticmethod
-
     def get_tabla_tasas_emision(config_provider=None) -> list:
-
         """
 
         Obtiene la tabla de tasas de emisión desde configuración.
 
-        
+
 
         Returns:
 
@@ -462,25 +402,17 @@ class DetalleRamoCalculationService:
 
         from app.models import ConfiguracionSistema
 
-        
-
         if config_provider is None:
 
             config_provider = ConfiguracionSistema.get_config
-
-        
 
         # Intentar obtener desde configuración
 
         tabla_config = config_provider('TABLA_TASAS_EMISION', None)
 
-        
-
         if tabla_config and isinstance(tabla_config, list):
 
             return tabla_config
-
-        
 
         # Valores por defecto (pueden ser editados en admin)
 
@@ -500,17 +432,13 @@ class DetalleRamoCalculationService:
 
         ]
 
-    
-
     @classmethod
-
     def calcular_derechos_emision(cls, valor_prima: Decimal, config_provider=None) -> Decimal:
-
         """
 
         Calcula los derechos de emisión según tabla escalonada configurable.
 
-        
+
 
         Args:
 
@@ -518,7 +446,7 @@ class DetalleRamoCalculationService:
 
             config_provider: Función para obtener configuración
 
-            
+
 
         Returns:
 
@@ -528,30 +456,21 @@ class DetalleRamoCalculationService:
 
         tabla = cls.get_tabla_tasas_emision(config_provider)
 
-        
-
         for rango in tabla:
 
             limite = rango.get('limite')
 
             tasa = Decimal(str(rango.get('tasa', '0')))
 
-            
-
             if limite is None or valor_prima <= Decimal(str(limite)):
 
                 return tasa
-
-        
 
         # Fallback al último valor si no hay match
 
         return Decimal(str(tabla[-1].get('tasa', '9.00')))
 
-    
-
     @classmethod
-
     def calcular_valores_detalle(
 
         cls,
@@ -565,12 +484,11 @@ class DetalleRamoCalculationService:
         config_provider=None
 
     ) -> Dict[str, Decimal]:
-
         """
 
         Calcula todos los valores de un detalle de ramo.
 
-        
+
 
         Args:
 
@@ -582,7 +500,7 @@ class DetalleRamoCalculationService:
 
             config_provider: Función para obtener configuración
 
-            
+
 
         Returns:
 
@@ -592,19 +510,13 @@ class DetalleRamoCalculationService:
 
         from app.models import ConfiguracionSistema
 
-        
-
         if config_provider is None:
 
             config_provider = ConfiguracionSistema.get_config
 
-        
-
         # Calcular prima
 
         total_prima = suma_asegurada * (tasa / Decimal('100'))
-
-        
 
         # Obtener porcentajes de configuración
 
@@ -614,39 +526,27 @@ class DetalleRamoCalculationService:
 
         pct_iva = config_provider('PORCENTAJE_IVA', Decimal('0.15'))
 
-        
-
         # Calcular contribuciones
 
         contrib_super = total_prima * pct_super
 
         seguro_campesino = total_prima * pct_campesino
 
-        
-
         # Calcular derechos de emisión
 
         emision = cls.calcular_derechos_emision(total_prima, config_provider)
-
-        
 
         # Base imponible
 
         base_imponible = total_prima + contrib_super + seguro_campesino + emision
 
-        
-
         # IVA
 
         iva = base_imponible * pct_iva
 
-        
-
         # Total facturado
 
         total_facturado = base_imponible + iva
-
-        
 
         # Retenciones (solo para grandes contribuyentes)
 
@@ -662,13 +562,9 @@ class DetalleRamoCalculationService:
 
             retencion_iva = Decimal('0.00')
 
-        
-
         # Valor por pagar
 
         valor_por_pagar = total_facturado - retencion_prima - retencion_iva
-
-        
 
         return {
 
@@ -695,9 +591,6 @@ class DetalleRamoCalculationService:
         }
 
 
-
-
-
 class PolizaCalculationService:
 
     """
@@ -706,10 +599,7 @@ class PolizaCalculationService:
 
     """
 
-    
-
     @staticmethod
-
     def determinar_estado_poliza(
 
         fecha_inicio,
@@ -723,12 +613,11 @@ class PolizaCalculationService:
         estado_actual: str = None
 
     ) -> str:
-
         """
 
         Determina el estado de una póliza basándose en fechas.
 
-        
+
 
         Args:
 
@@ -742,7 +631,7 @@ class PolizaCalculationService:
 
             estado_actual: Estado actual (para preservar 'cancelada')
 
-            
+
 
         Returns:
 
@@ -754,13 +643,9 @@ class PolizaCalculationService:
 
             fecha_actual = timezone.now().date()
 
-        
-
         if not fecha_inicio or not fecha_fin:
 
             return 'vigente'
-
-        
 
         if fecha_fin < fecha_actual:
 
@@ -778,36 +663,23 @@ class PolizaCalculationService:
 
             return 'vigente'
 
-        
-
         return estado_actual or 'vigente'
 
-    
-
     @staticmethod
-
     def calcular_dias_para_vencer(fecha_fin, fecha_actual=None) -> int:
-
         """Calcula los días restantes hasta el vencimiento."""
 
         if fecha_actual is None:
 
             fecha_actual = timezone.now().date()
 
-        
-
         if not fecha_fin:
 
             return 0
 
-        
-
         return (fecha_fin - fecha_actual).days
 
-    
-
     @staticmethod
-
     def calcular_deducible_aplicable(
 
         monto_siniestro: Decimal,
@@ -819,18 +691,17 @@ class PolizaCalculationService:
         deducible_minimo: Decimal = Decimal('0.00')
 
     ) -> Decimal:
-
         """
 
         Calcula el deducible aplicable para un monto de siniestro dado.
 
-        
+
 
         La lógica es: el mayor entre el deducible fijo y el calculado por porcentaje,
 
         respetando el mínimo establecido.
 
-        
+
 
         Args:
 
@@ -842,7 +713,7 @@ class PolizaCalculationService:
 
             deducible_minimo: Deducible mínimo aplicable
 
-            
+
 
         Returns:
 
@@ -866,16 +737,11 @@ class PolizaCalculationService:
 
             return max(deducible_fijo, deducible_porcentaje)
 
-        
-
         # Si no hay porcentaje, usar el deducible fijo
 
         return deducible_fijo
 
-    
-
     @staticmethod
-
     def calcular_monto_indemnizacion(
 
         monto_siniestro: Decimal,
@@ -885,12 +751,11 @@ class PolizaCalculationService:
         depreciacion: Decimal = Decimal('0.00')
 
     ) -> Decimal:
-
         """
 
         Calcula el monto a indemnizar después de deducciones.
 
-        
+
 
         Args:
 
@@ -900,7 +765,7 @@ class PolizaCalculationService:
 
             depreciacion: Depreciación del bien
 
-            
+
 
         Returns:
 
@@ -911,4 +776,3 @@ class PolizaCalculationService:
         resultado = monto_siniestro - deducible - depreciacion
 
         return max(resultado, Decimal('0.00'))
-
