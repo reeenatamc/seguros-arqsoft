@@ -85,12 +85,24 @@ def main():
         )
     )
 
-    # 6. TEST: pytest
+    # 6. TEST: pytest (con coverage como en CI/CD)
     results.append(
         run_command(
-            [sys.executable, "-m", "pytest", "app/tests.py", "--tb=short", "-v"],
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "app/tests.py",
+                "--verbose",
+                "--tb=short",
+                "--cov=app",
+                "--cov=seguros",
+                "--cov-report=term-missing",
+                "--cov-report=html",
+                "--cov-report=xml",
+            ],
             env=env,
-            description="6/6: Pytest - Tests unitarios",
+            description="6/6: Pytest - Tests unitarios (con coverage)",
         )
     )
 
