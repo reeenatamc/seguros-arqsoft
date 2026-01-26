@@ -1,2 +1,1 @@
 # Templatetags para la aplicación
-

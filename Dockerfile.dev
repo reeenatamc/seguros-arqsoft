@@ -1,0 +1,28 @@
+# Dockerfile simplificado para desarrollo
+FROM python:3.12-slim
+
+# Variables de entorno
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+# Crear directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de dependencias
+COPY requirements.txt .
+
+# Instalar dependencias Python (sin dependencias del sistema por ahora)
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar código
+COPY . .
+
+# Crear directorios
+RUN mkdir -p /app/staticfiles /app/media /app/logs
+
+# Exponer puerto
+EXPOSE 8000
+
+# Comando de desarrollo (usar runserver)
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
