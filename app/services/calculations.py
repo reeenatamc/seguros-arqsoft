@@ -1,96 +1,86 @@
 """
+Módulo de Servicios de Cálculo Financiero para el Sistema de Gestión de Seguros.
 
-Servicios de Cálculo de Negocio.
+Este módulo centraliza toda la lógica de cálculo financiero del sistema, implementando
+funciones puras y stateless que pueden ser utilizadas desde cualquier contexto:
+vistas, APIs REST, tareas asíncronas (Celery), o scripts de migración.
 
-Centraliza la lógica de cálculo para facturas, pólizas y detalles de ramo.
+Principios de Diseño:
+    1. **Funciones Puras**: Los métodos no tienen efectos secundarios ni modifican
+       estado. Reciben inputs y retornan outputs de forma determinista.
+    2. **Stateless**: Los servicios no mantienen estado entre llamadas.
+    3. **Configuración Dinámica**: Los parámetros financieros (tasas, porcentajes)
+       se obtienen de ConfiguracionSistema, permitiendo ajustes sin redespliegue.
+    4. **Inyección de Dependencias**: config_provider permite mockear configuración
+       para testing aislado.
 
-Permite reutilización desde APIs, Celery tasks, o cualquier contexto.
+Servicios Disponibles:
+    - FacturaCalculationService: Cálculos de facturas (contribuciones, IVA, totales)
+    - DetalleRamoCalculationService: Cálculos de primas y derechos de emisión
+    - PolizaCalculationService: Estados de póliza, vencimientos, deducibles
 
+Fórmulas Implementadas:
 
+    Contribuciones Legales::
+        superintendencia = subtotal × 3.5%
+        seguro_campesino = subtotal × 0.5%
 
-ARQUITECTURA:
+    Prima de Seguro::
+        total_prima = suma_asegurada × (tasa / 100)
 
-- Los métodos save() de los modelos siguen funcionando para compatibilidad
+    Base Imponible::
+        base = prima + superintendencia + seguro_campesino + emision
 
-- Para nuevos desarrollos (APIs, Celery), usar estos servicios directamente
+    Monto Total Factura::
+        total = subtotal + IVA + contribuciones - retenciones - descuentos
 
-- Los servicios son stateless y testables de forma aislada
+    Deducible Aplicable::
+        deducible = max(fijo, monto × porcentaje, mínimo)
 
+    Indemnización::
+        indemnización = monto_siniestro - deducible - depreciación
 
+Autor: Equipo de Desarrollo UTPL
+Versión: 1.0.0
+Última Actualización: Enero 2026
 
-EJEMPLOS DE USO:
+Example:
+    Cálculo completo de factura para preview/validación::
 
+        from app.services.calculations import FacturaCalculationService
+        from decimal import Decimal
+        from datetime import date, timedelta
 
+        resultado = FacturaCalculationService.calcular_factura_completa(
+            subtotal=Decimal('1000'),
+            iva=Decimal('150'),
+            fecha_emision=date.today(),
+            fecha_vencimiento=date.today() + timedelta(days=30),
+        )
+        # resultado = {
+        #     'contribucion_superintendencia': Decimal('35.00'),
+        #     'contribucion_seguro_campesino': Decimal('5.00'),
+        #     'descuento_pronto_pago': Decimal('0.00'),
+        #     'monto_total': Decimal('1190.00'),
+        #     'estado': 'pendiente'
+        # }
 
-1. Calcular factura sin guardar (para preview/validación):
+    Cálculo de prima para un detalle de ramo::
 
-    ```
+        from app.services.calculations import DetalleRamoCalculationService
 
-    from app.services.calculations import FacturaCalculationService
+        valores = DetalleRamoCalculationService.calcular_valores_detalle(
+            suma_asegurada=Decimal('100000'),
+            tasa=Decimal('2.5'),
+            es_gran_contribuyente=True,
+        )
+        # valores contiene: prima, IVA, emisión, retenciones, valor_por_pagar
 
-    
-
-    resultado = FacturaCalculationService.calcular_factura_completa(
-
-        subtotal=Decimal('1000'),
-
-        iva=Decimal('150'),
-
-        fecha_emision=date.today(),
-
-        fecha_vencimiento=date.today() + timedelta(days=30),
-
-    )
-
-    # resultado contiene: contribuciones, descuentos, monto_total, estado
-
-    ```
-
-
-
-2. Desde una API REST (sin efectos secundarios del save()):
-
-    ```
-
-    from app.services.calculations import DetalleRamoCalculationService
-
-    
-
-    valores = DetalleRamoCalculationService.calcular_valores_detalle(
-
-        suma_asegurada=Decimal('100000'),
-
-        tasa=Decimal('2.5'),
-
-        es_gran_contribuyente=True,
-
-    )
-
-    # Ahora puedes crear el objeto con bulk_create o update
-
-    ```
-
-
-
-3. Obtener tasas de emisión (ahora configurables desde Admin):
-
-    ```
-
-    from app.services.calculations import DetalleRamoCalculationService
-
-    
-
-    # La tabla se lee de ConfiguracionSistema.TABLA_TASAS_EMISION
-
-    emision = DetalleRamoCalculationService.calcular_derechos_emision(
-
-        valor_prima=Decimal('1500')
-
-    )
-
-    ```
-
+Note:
+    Las tablas de tasas de emisión son configurables desde el panel de
+    administración en ConfiguracionSistema.TABLA_TASAS_EMISION.
 """
+
 
 
 
