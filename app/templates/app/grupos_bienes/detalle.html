@@ -111,24 +111,24 @@
                         <tbody class="divide-y divide-slate-200">
                             {% for bien in bienes %}
                             <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ bien.asset_code }}</td>
-                                <td class="px-4 py-3 text-sm text-slate-700">{{ bien.name }}</td>
+                                <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ bien.codigo_bien }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ bien.nombre }}</td>
                                 <td class="px-4 py-3 text-sm text-slate-600">
-                                    {% if bien.brand %}{{ bien.brand }}{% endif %}
-                                    {% if bien.model %} {{ bien.model }}{% endif %}
-                                    {% if not bien.brand and not bien.model %}-{% endif %}
+                                    {% if bien.marca %}{{ bien.marca }}{% endif %}
+                                    {% if bien.modelo %} {{ bien.modelo }}{% endif %}
+                                    {% if not bien.marca and not bien.modelo %}-{% endif %}
                                 </td>
-                                <td class="px-4 py-3 text-sm text-slate-600">{{ bien.location|default:"-" }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-600">{{ bien.ubicacion|default:"-" }}</td>
                                 <td class="px-4 py-3 text-sm font-medium text-slate-800">
-                                    {% if bien.insured_value %}${{ bien.insured_value|floatformat:2 }}{% else %}-{% endif %}
+                                    {% if bien.valor_asegurado %}${{ bien.valor_asegurado|floatformat:2 }}{% else %}-{% endif %}
                                 </td>
                                 <td class="px-4 py-3 text-sm">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                                        {% if bien.status == 'activo' %}bg-emerald-100 text-emerald-800
-                                        {% elif bien.status == 'inactivo' %}bg-slate-100 text-slate-600
-                                        {% elif bien.status == 'mantenimiento' %}bg-amber-100 text-amber-800
+                                        {% if bien.estado == 'activo' %}bg-emerald-100 text-emerald-800
+                                        {% elif bien.estado == 'inactivo' %}bg-slate-100 text-slate-600
+                                        {% elif bien.estado == 'siniestrado' %}bg-amber-100 text-amber-800
                                         {% else %}bg-red-100 text-red-800{% endif %}">
-                                        {{ bien.get_status_display }}
+                                        {{ bien.get_estado_display }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-sm">

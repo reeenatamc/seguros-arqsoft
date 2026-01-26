@@ -1,0 +1,344 @@
+name: CI/CD Pipeline - Sistema de Gestión de Seguros
+
+on:
+  push:
+    branches: [ main, master, develop, rama-samuel ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  DJANGO_SETTINGS_MODULE: seguros.settings
+
+jobs:
+  # ============================================
+  # JOB 1: LINT - Verificación de Calidad
+  # ============================================
+  lint:
+    name: 🔍 Lint - Calidad de Código
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+
+    - name: 🐍 Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: 📦 Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+
+    - name: 🔍 Ejecutar flake8
+      run: |
+        echo "🔍 Analizando código con flake8..."
+        flake8 . --count --statistics --show-source
+
+    - name: ⚫ Verificar formato con black
+      run: |
+        echo "⚫ Verificando formato de código..."
+        black --check --diff .
+
+    - name: 📋 Verificar orden de imports con isort
+      run: |
+        echo "📋 Verificando orden de imports..."
+        isort --check-only --diff .
+
+    - name: ✅ Lint completado
+      run: echo "✅ Todas las verificaciones de lint pasaron correctamente"
+
+  # ============================================
+  # JOB 2: TEST - Pruebas y Cobertura
+  # ============================================
+  test:
+    name: 🧪 Test - Pruebas Unitarias
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_seguros
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+
+    - name: 🐍 Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: 📦 Instalar dependencias del sistema
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libmagic1 libpq-dev
+
+    - name: 📦 Instalar dependencias de Python
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+
+    - name: ⚙️ Configurar variables de entorno
+      run: |
+        echo "SECRET_KEY=test-secret-key-for-ci-pipeline" >> $GITHUB_ENV
+        echo "DEBUG=False" >> $GITHUB_ENV
+        echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> $GITHUB_ENV
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_seguros" >> $GITHUB_ENV
+        echo "CELERY_BROKER_URL=redis://localhost:6379/0" >> $GITHUB_ENV
+
+    - name: 🔍 Verificar migraciones pendientes
+      run: |
+        echo "🔍 Verificando que no haya migraciones sin crear..."
+        python manage.py makemigrations --check --dry-run --no-input
+
+    - name: 🗄️ Ejecutar migraciones
+      run: |
+        echo "🗄️ Aplicando migraciones..."
+        python manage.py migrate --no-input
+
+    - name: ✅ Verificar configuración de deploy
+      run: |
+        echo "✅ Verificando configuración para producción..."
+        python manage.py check --deploy --fail-level WARNING
+
+    - name: 📁 Recolectar archivos estáticos
+      run: |
+        echo "📁 Recolectando archivos estáticos..."
+        python manage.py collectstatic --no-input --clear
+
+    - name: 🧪 Ejecutar tests con pytest
+      run: |
+        echo "🧪 Ejecutando tests..."
+        pytest --verbose --tb=short --cov=app --cov=seguros --cov-report=term-missing --cov-report=xml --cov-report=html
+
+    - name: 📊 Subir reporte de cobertura
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          htmlcov/
+          coverage.xml
+        retention-days: 7
+
+    - name: 📈 Comentar cobertura en PR
+      if: github.event_name == 'pull_request'
+      run: |
+        COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); print(root.attrib['line-rate'])")
+        COVERAGE_PERCENT=$(python -c "print(f'{float($COVERAGE) * 100:.2f}%')")
+        echo "📈 Cobertura de código: $COVERAGE_PERCENT"
+
+    - name: ✅ Tests completados
+      run: echo "✅ Todos los tests pasaron correctamente"
+
+  # ============================================
+  # JOB 3: SECURITY - Análisis de Seguridad
+  # ============================================
+  security:
+    name: 🔒 Security - Análisis de Seguridad
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+
+    - name: 🐍 Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: 📦 Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+
+    - name: 🛡️ Verificar vulnerabilidades con safety
+      run: |
+        echo "🛡️ Verificando vulnerabilidades en dependencias..."
+        safety check --file requirements.txt --output text || true
+
+    - name: 🔐 Análisis de seguridad con bandit
+      run: |
+        echo "🔐 Analizando código en busca de problemas de seguridad..."
+        bandit -r app/ seguros/ -ll -f json -o bandit-report.json || true
+        bandit -r app/ seguros/ -ll
+
+    - name: 📊 Subir reporte de seguridad
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: bandit-report.json
+        retention-days: 7
+
+    - name: ✅ Security scan completado
+      run: echo "✅ Análisis de seguridad completado"
+
+  # ============================================
+  # JOB 4: BUILD - Verificación de Build
+  # ============================================
+  build:
+    name: 🏗️ Build - Verificación de Construcción
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+
+    - name: 🐍 Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: 📦 Instalar dependencias del sistema
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libmagic1
+
+    - name: 📦 Instalar dependencias de Python
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: ⚙️ Configurar variables de entorno
+      run: |
+        echo "SECRET_KEY=test-secret-key-for-build" >> $GITHUB_ENV
+        echo "DEBUG=False" >> $GITHUB_ENV
+        echo "ALLOWED_HOSTS=*" >> $GITHUB_ENV
+
+    - name: 🔍 Verificar migraciones
+      run: |
+        echo "🔍 Verificando migraciones..."
+        python manage.py makemigrations --check --dry-run --no-input
+
+    - name: ✅ Verificar configuración
+      run: |
+        echo "✅ Verificando configuración de producción..."
+        python manage.py check --deploy --fail-level WARNING
+
+    - name: 📁 Recolectar archivos estáticos
+      run: |
+        echo "📁 Recolectando archivos estáticos..."
+        python manage.py collectstatic --no-input --clear
+
+    - name: 📦 Crear artefacto de build
+      run: |
+        echo "📦 Build completado exitosamente"
+        echo "Versión: $(python --version)"
+        echo "Django: $(python -c 'import django; print(django.get_version())')"
+
+    - name: ✅ Build completado
+      run: echo "✅ Build verificado correctamente"
+
+  # ============================================
+  # JOB 5: DEPLOY - Despliegue Manual
+  # ============================================
+  deploy:
+    name: 🚀 Deploy - Despliegue a Producción
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment:
+      name: production
+      url: https://tu-dominio.com
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+
+    - name: ⏸️ Deploy manual requerido
+      run: |
+        echo "🚀 DEPLOY A PRODUCCIÓN"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "⚠️  Este job requiere aprobación manual"
+        echo "📝 Para configurar el deploy automático:"
+        echo "   1. Configura los secrets en GitHub:"
+        echo "      - HOST: Dirección del servidor"
+        echo "      - USERNAME: Usuario SSH"
+        echo "      - SSH_KEY: Clave privada SSH"
+        echo "   2. Descomenta el código de deploy a continuación"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    # Descomenta y configura según tu entorno de producción
+    # - name: 🔐 Setup SSH
+    #   uses: webfactory/ssh-agent@v0.8.0
+    #   with:
+    #     ssh-private-key: ${{ secrets.SSH_KEY }}
+    
+    # - name: 🚀 Deploy to Production
+    #   run: |
+    #     ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'ENDSSH'
+    #       cd /path/to/your/app
+    #       git pull origin main
+    #       source venv/bin/activate
+    #       pip install -r requirements.txt
+    #       python manage.py migrate --no-input
+    #       python manage.py collectstatic --no-input
+    #       sudo systemctl restart gunicorn
+    #       sudo systemctl restart nginx
+    #     ENDSSH
+
+    - name: ✅ Deploy process completed
+      run: echo "✅ Proceso de deploy completado (configuración requerida)"
+
+  # ============================================
+  # SUMMARY - Resumen del Pipeline
+  # ============================================
+  summary:
+    name: 📋 Resumen del Pipeline
+    runs-on: ubuntu-latest
+    needs: [lint, test, security, build]
+    if: always()
+    
+    steps:
+    - name: 📊 Generar resumen
+      run: |
+        echo "## 📋 Resumen del Pipeline CI/CD" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### ✅ Jobs Completados" >> $GITHUB_STEP_SUMMARY
+        echo "- 🔍 **Lint**: Verificación de calidad de código" >> $GITHUB_STEP_SUMMARY
+        echo "- 🧪 **Test**: Pruebas unitarias y cobertura" >> $GITHUB_STEP_SUMMARY
+        echo "- 🔒 **Security**: Análisis de seguridad" >> $GITHUB_STEP_SUMMARY
+        echo "- 🏗️ **Build**: Verificación de construcción" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📈 Métricas" >> $GITHUB_STEP_SUMMARY
+        echo "- **Rama**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Autor**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "---" >> $GITHUB_STEP_SUMMARY
+        echo "Universidad Técnica Particular de Loja" >> $GITHUB_STEP_SUMMARY
+        echo "Sistema de Gestión de Seguros - CI/CD Pipeline" >> $GITHUB_STEP_SUMMARY

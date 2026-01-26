@@ -12,7 +12,7 @@
             </a>
             <div>
                 <h1 class="text-2xl font-bold text-slate-800">{{ siniestro.numero_siniestro }}</h1>
-                <p class="text-slate-500 mt-1">{{ siniestro.bien_nombre }}</p>
+                <p class="text-slate-500 mt-1">{{ siniestro.bien_asegurado.nombre|default:siniestro.bien_nombre|default:"-" }}</p>
             </div>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -234,23 +234,23 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                         <span class="text-xs text-slate-500 uppercase">Nombre</span>
-                        <p class="font-medium text-slate-800">{{ siniestro.bien_nombre }}</p>
+                        <p class="font-medium text-slate-800">{{ siniestro.bien_asegurado.nombre|default:siniestro.bien_nombre|default:"-" }}</p>
                     </div>
                     <div>
                         <span class="text-xs text-slate-500 uppercase">Marca</span>
-                        <p class="font-medium text-slate-800">{{ siniestro.bien_marca|default:"-" }}</p>
+                        <p class="font-medium text-slate-800">{{ siniestro.bien_asegurado.marca|default:siniestro.bien_marca|default:"-" }}</p>
                     </div>
                     <div>
                         <span class="text-xs text-slate-500 uppercase">Modelo</span>
-                        <p class="font-medium text-slate-800">{{ siniestro.bien_modelo|default:"-" }}</p>
+                        <p class="font-medium text-slate-800">{{ siniestro.bien_asegurado.modelo|default:siniestro.bien_modelo|default:"-" }}</p>
                     </div>
                     <div>
                         <span class="text-xs text-slate-500 uppercase">Serie</span>
-                        <p class="font-medium text-slate-800">{{ siniestro.bien_serie|default:"-" }}</p>
+                        <p class="font-medium text-slate-800">{{ siniestro.bien_asegurado.serie|default:siniestro.bien_serie|default:"-" }}</p>
                     </div>
                     <div>
                         <span class="text-xs text-slate-500 uppercase">Código Activo</span>
-                        <p class="font-medium text-slate-800">{{ siniestro.bien_codigo_activo|default:"-" }}</p>
+                        <p class="font-medium text-slate-800">{{ siniestro.bien_asegurado.codigo_activo|default:siniestro.bien_codigo_activo|default:"-" }}</p>
                     </div>
                     <div>
                         <span class="text-xs text-slate-500 uppercase">Responsable</span>

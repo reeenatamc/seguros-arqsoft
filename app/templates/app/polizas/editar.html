@@ -32,15 +32,45 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Compañía Aseguradora</label>
-                    {{ form.compania_aseguradora }}
+                    <div class="flex gap-2">
+                        <div class="flex-1">{{ form.compania_aseguradora }}</div>
+                        <a href="{% url 'aseguradora_crear' %}?next={% url 'poliza_editar' object.pk %}" target="_blank"
+                           class="px-3 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition flex items-center"
+                           title="Crear nueva compañía (abre en nueva pestaña)">
+                            <i class="fas fa-plus"></i>
+                        </a>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Corredor de Seguros</label>
-                    {{ form.corredor_seguros }}
+                    <div class="flex gap-2">
+                        <div class="flex-1">{{ form.corredor_seguros }}</div>
+                        <a href="{% url 'corredor_crear' %}?next={% url 'poliza_editar' object.pk %}" target="_blank"
+                           class="px-3 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition flex items-center"
+                           title="Crear nuevo corredor (abre en nueva pestaña)" id="btn-crear-corredor">
+                            <i class="fas fa-plus"></i>
+                        </a>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500 hidden" id="corredor-hint">Primero seleccione una compañía aseguradora</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Tipo de Póliza</label>
-                    {{ form.tipo_poliza }}
+                    <div class="px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-700">
+                        <i class="fas fa-tag text-brand-500 mr-2"></i>
+                        {{ object.tipo_poliza.nombre|default:"Ramos Generales" }}
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Grupo de Ramo</label>
+                    <div class="flex gap-2">
+                        <div class="flex-1">{{ form.grupo_ramo }}</div>
+                        <a href="{% url 'ramo_crear' %}?next={% url 'poliza_editar' object.pk %}" target="_blank"
+                           class="px-3 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition flex items-center"
+                           title="Crear nuevo grupo (abre en nueva pestaña)">
+                            <i class="fas fa-plus"></i>
+                        </a>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">Categoría de la póliza</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Suma Asegurada Total</label>
@@ -107,8 +137,8 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Ramo</label>
-                            {{ form_detalle.ramo }}
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Grupo de Ramo</label>
+                            {{ form_detalle.grupo_ramo }}
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">N° Factura</label>
@@ -162,6 +192,79 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // =============================================
+        // Dependencia: Compañía -> Corredor
+        // =============================================
+        const companiaSelect = document.getElementById('id_compania_aseguradora');
+        const corredorSelect = document.getElementById('id_corredor_seguros');
+        const corredorHint = document.getElementById('corredor-hint');
+        const btnCrearCorredor = document.getElementById('btn-crear-corredor');
+        
+        // Guardar el corredor actual seleccionado (para edición)
+        const corredorActualId = corredorSelect.value;
+        
+        // Cargar corredores de una compañía
+        function cargarCorredores(companiaId, seleccionarId = null) {
+            if (!companiaId) {
+                corredorSelect.disabled = true;
+                corredorSelect.innerHTML = '<option value="">-- Seleccione primero una compañía --</option>';
+                if (corredorHint) corredorHint.classList.remove('hidden');
+                return;
+            }
+            
+            corredorSelect.disabled = true;
+            corredorSelect.innerHTML = '<option value="">Cargando corredores...</option>';
+            
+            fetch(`{% url 'api_corredores_por_compania' %}?compania_id=${companiaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    corredorSelect.innerHTML = '<option value="">-- Seleccione un corredor --</option>';
+                    
+                    if (data.corredores.length === 0) {
+                        corredorSelect.innerHTML = '<option value="">-- No hay corredores para esta compañía --</option>';
+                        if (corredorHint) {
+                            corredorHint.textContent = 'No hay corredores registrados para esta compañía.';
+                            corredorHint.classList.remove('hidden');
+                        }
+                    } else {
+                        data.corredores.forEach(corredor => {
+                            const option = new Option(corredor.nombre, corredor.id);
+                            if (seleccionarId && corredor.id == seleccionarId) {
+                                option.selected = true;
+                            }
+                            corredorSelect.add(option);
+                        });
+                        if (corredorHint) corredorHint.classList.add('hidden');
+                    }
+                    
+                    corredorSelect.disabled = false;
+                    
+                    // Actualizar link de crear corredor
+                    if (btnCrearCorredor) {
+                        const baseUrl = '{% url "corredor_crear" %}';
+                        btnCrearCorredor.href = `${baseUrl}?next={% url 'poliza_editar' object.pk %}&compania_id=${companiaId}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando corredores:', error);
+                    corredorSelect.innerHTML = '<option value="">Error al cargar</option>';
+                    corredorSelect.disabled = false;
+                });
+        }
+        
+        // Evento de cambio de compañía
+        companiaSelect.addEventListener('change', function() {
+            cargarCorredores(this.value);
+        });
+        
+        // Inicializar: cargar corredores de la compañía actual y seleccionar el corredor actual
+        if (companiaSelect.value) {
+            cargarCorredores(companiaSelect.value, corredorActualId);
+        }
+        
+        // =============================================
+        // Manejar formset dinámico de ramos
+        // =============================================
         const container = document.getElementById('ramos-container');
         const addBtn = document.getElementById('add-ramo-btn');
         const totalForms = document.getElementById('id_detalles_ramo-TOTAL_FORMS');

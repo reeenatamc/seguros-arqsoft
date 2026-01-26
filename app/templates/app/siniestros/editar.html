@@ -11,24 +11,42 @@
         </a>
         <div>
             <h1 class="text-2xl font-bold text-slate-800">Editar Siniestro</h1>
-            <p class="text-slate-500 mt-1">{{ siniestro.numero_siniestro }} - {{ siniestro.bien_nombre }}</p>
+            <p class="text-slate-500 mt-1">{{ siniestro.numero_siniestro }}{% if siniestro.bien_asegurado %} - {{ siniestro.bien_asegurado.nombre }}{% endif %}</p>
         </div>
     </div>
 
     <form method="post" enctype="multipart/form-data" class="space-y-6">
         {% csrf_token %}
 
-        <!-- Información de la Póliza y Tipo -->
+        <!-- Errores del formulario -->
+        {% if form.errors %}
+        <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div class="flex items-center gap-2 text-red-700 mb-2">
+                <i class="fas fa-exclamation-circle"></i>
+                <span class="font-medium">Por favor corrige los siguientes errores:</span>
+            </div>
+            <ul class="list-disc list-inside text-red-600 text-sm">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                    <li>{{ field }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Bien Asegurado y Tipo -->
         <div class="bg-white rounded-xl shadow-card p-6">
             <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-                <i class="fas fa-file-contract text-brand-500 mr-2"></i>
-                Información de la Póliza
+                <i class="fas fa-box text-brand-500 mr-2"></i>
+                Bien Asegurado y Clasificación
             </h2>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Póliza <span class="text-red-500">*</span></label>
-                    {{ form.poliza }}
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Bien Asegurado <span class="text-red-500">*</span></label>
+                    {{ form.bien_asegurado }}
+                    <p class="text-xs text-slate-500 mt-1">La póliza se obtiene automáticamente del bien seleccionado</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Número de Siniestro <span class="text-red-500">*</span></label>
@@ -39,6 +57,18 @@
                     {{ form.tipo_siniestro }}
                 </div>
             </div>
+
+            <!-- Info del bien seleccionado -->
+            {% if siniestro.bien_asegurado %}
+            <div class="mt-4 p-4 bg-slate-50 rounded-lg">
+                <p class="text-sm text-slate-600">
+                    <strong>Póliza:</strong> {{ siniestro.bien_asegurado.poliza.numero_poliza }} |
+                    <strong>Marca:</strong> {{ siniestro.bien_asegurado.marca|default:"-" }} |
+                    <strong>Modelo:</strong> {{ siniestro.bien_asegurado.modelo|default:"-" }} |
+                    <strong>Serie:</strong> {{ siniestro.bien_asegurado.serie|default:"-" }}
+                </p>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Información del Siniestro -->
@@ -59,6 +89,17 @@
                 </div>
             </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Responsable/Custodio</label>
+                    {{ form.responsable_custodio }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Email del Broker</label>
+                    {{ form.email_broker }}
+                </div>
+            </div>
+
             <div class="mt-6">
                 <label class="block text-sm font-medium text-slate-700 mb-2">Causa del Siniestro <span class="text-red-500">*</span></label>
                 {{ form.causa }}
@@ -67,41 +108,6 @@
             <div class="mt-6">
                 <label class="block text-sm font-medium text-slate-700 mb-2">Descripción Detallada <span class="text-red-500">*</span></label>
                 {{ form.descripcion_detallada }}
-            </div>
-        </div>
-
-        <!-- Información del Bien Afectado -->
-        <div class="bg-white rounded-xl shadow-card p-6">
-            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-                <i class="fas fa-box text-purple-500 mr-2"></i>
-                Bien Afectado
-            </h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Nombre del Bien <span class="text-red-500">*</span></label>
-                    {{ form.bien_nombre }}
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Marca</label>
-                    {{ form.bien_marca }}
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Modelo</label>
-                    {{ form.bien_modelo }}
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Número de Serie</label>
-                    {{ form.bien_serie }}
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Código de Activo</label>
-                    {{ form.bien_codigo_activo }}
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Responsable/Custodio</label>
-                    {{ form.responsable_custodio }}
-                </div>
             </div>
         </div>
 
@@ -126,16 +132,12 @@
                     {{ form.suma_asegurada_bien }}
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Deducible</label>
-                    {{ form.deducible }}
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Deducible Aplicado</label>
+                    {{ form.deducible_aplicado }}
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Depreciación</label>
                     {{ form.depreciacion }}
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Email del Broker</label>
-                    {{ form.email_broker }}
                 </div>
             </div>
 
@@ -167,16 +169,12 @@
                     {{ gestion_form.fecha_respuesta_aseguradora }}
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Monto Indemnizado</label>
-                    {{ gestion_form.monto_indemnizado }}
-                </div>
-                <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Fecha Liquidación</label>
                     {{ gestion_form.fecha_liquidacion }}
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Fecha Firma Indemnización</label>
-                    {{ gestion_form.fecha_firma_indemnizacion }}
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Monto Indemnizado</label>
+                    {{ gestion_form.monto_indemnizado }}
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Valor Pagado</label>
@@ -187,24 +185,51 @@
                     {{ gestion_form.fecha_pago }}
                 </div>
             </div>
+        </div>
+        {% endif %}
 
-            <div class="mt-6">
-                <label class="block text-sm font-medium text-slate-700 mb-2">Observaciones de Gestión</label>
-                {{ gestion_form.observaciones }}
+        <!-- Adjuntos -->
+        {% if adjuntos_formset %}
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                <i class="fas fa-paperclip text-slate-500 mr-2"></i>
+                Documentos Adjuntos
+            </h2>
+
+            {{ adjuntos_formset.management_form }}
+            <div id="adjuntos-container" class="space-y-4">
+                {% for adjunto_form in adjuntos_formset %}
+                <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-lg adjunto-row">
+                    <div class="flex-1">
+                        {{ adjunto_form.archivo }}
+                    </div>
+                    <div class="flex-1">
+                        {{ adjunto_form.descripcion }}
+                    </div>
+                    {% if adjunto_form.instance.pk %}
+                    <div class="flex items-center gap-2">
+                        <a href="{{ adjunto_form.instance.archivo.url }}" target="_blank" class="text-brand-600 hover:underline text-sm">
+                            <i class="fas fa-eye mr-1"></i>Ver
+                        </a>
+                        <label class="flex items-center gap-1 text-red-600 text-sm">
+                            {{ adjunto_form.DELETE }} Eliminar
+                        </label>
+                    </div>
+                    {% endif %}
+                    {{ adjunto_form.id }}
+                </div>
+                {% endfor %}
             </div>
         </div>
         {% endif %}
 
-        <!-- Botones de Acción -->
+        <!-- Botones -->
         <div class="flex justify-end gap-3">
-            <a href="{% url 'siniestro_detalle' siniestro.pk %}"
-               class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
+            <a href="{% url 'siniestro_detalle' siniestro.pk %}" class="px-6 py-3 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-50 transition font-medium">
                 Cancelar
             </a>
-            <button type="submit"
-                    class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
-                <i class="fas fa-save mr-2"></i>
-                Guardar Cambios
+            <button type="submit" class="px-6 py-3 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition font-medium shadow-lg">
+                <i class="fas fa-save mr-2"></i>Guardar Cambios
             </button>
         </div>
     </form>
