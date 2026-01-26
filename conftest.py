@@ -1,7 +1,9 @@
 """
 Configuración de pytest para el proyecto.
 """
+
 import os
+
 import django
 from django.conf import settings
 
