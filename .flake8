@@ -31,7 +31,8 @@ exclude =
     .mypy_cache,
     .pytest_cache,
     node_modules,
-    app/management/commands/poblar_datos_prueba.py
+    app/management/commands/poblar_datos_prueba.py,
+    validate-pipeline-complete.py
 
 # Códigos de error a ignorar
 ignore =
