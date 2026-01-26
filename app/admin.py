@@ -26,7 +26,7 @@ from .models import (
 
     Quote, QuoteOption, PolicyRenewal, PaymentApproval, CalendarEvent,
 
-    BackupRegistro, ConfiguracionBackup
+    BackupRegistro, ConfiguracionBackup, BienAsegurado
 
 )
 
@@ -1648,7 +1648,6 @@ class QuoteOptionInline(TabularInline):
 
 # =============================================================================
 
-from app.models import BienAsegurado
 
 
 @admin.register(BienAsegurado)
