@@ -125,9 +125,7 @@ class BaseDTO:
 # ==============================================================================
 
 
-
 @dataclass
-
 class PolizaResumen(BaseDTO):
 
     """
@@ -184,8 +182,6 @@ class PolizaResumen(BaseDTO):
 
 
 @dataclass
-
-
 class PolizaDetalle(BaseDTO):
 
     """
@@ -272,9 +268,7 @@ class PolizaDetalle(BaseDTO):
         )
 
 
-
 @dataclass
-
 class PolizaCard(BaseDTO):
 
     """
@@ -348,8 +342,6 @@ class PolizaCard(BaseDTO):
 
 
 @dataclass
-
-
 class SiniestroResumen(BaseDTO):
 
     """
@@ -392,9 +384,7 @@ class SiniestroResumen(BaseDTO):
         )
 
 
-
 @dataclass
-
 class SiniestroLista(BaseDTO):
 
     """
@@ -490,9 +480,7 @@ class SiniestroLista(BaseDTO):
         ]
 
 
-
 @dataclass
-
 class SiniestroDetalle(BaseDTO):
 
     """
@@ -623,9 +611,7 @@ class SiniestroDetalle(BaseDTO):
 # ==============================================================================
 
 
-
 @dataclass
-
 class FacturaResumen(BaseDTO):
 
     """
@@ -670,9 +656,7 @@ class FacturaResumen(BaseDTO):
         )
 
 
-
 @dataclass
-
 class FacturaLista(BaseDTO):
 
     """
@@ -767,9 +751,7 @@ class FacturaLista(BaseDTO):
 # ==============================================================================
 
 
-
 @dataclass
-
 class BienAseguradoResumen(BaseDTO):
 
     """
@@ -810,9 +792,7 @@ class BienAseguradoResumen(BaseDTO):
         )
 
 
-
 @dataclass
-
 class BienAseguradoLista(BaseDTO):
 
     """
@@ -903,9 +883,7 @@ class BienAseguradoLista(BaseDTO):
 # ==============================================================================
 
 
-
 @dataclass
-
 class DashboardStats(BaseDTO):
 
     """
@@ -1045,8 +1023,6 @@ class DashboardStats(BaseDTO):
 
 
 @dataclass
-
-
 class ReporteSiniestroContadora(BaseDTO):
 
     """

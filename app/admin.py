@@ -50,7 +50,6 @@ class CompaniaAseguradoraResource(resources.ModelResource):
         export_order = fields
 
 
-
 class CorredorSegurosResource(resources.ModelResource):
 
     class Meta:
@@ -64,7 +63,6 @@ class CorredorSegurosResource(resources.ModelResource):
         export_order = fields
 
 
-
 class TipoPolizaResource(resources.ModelResource):
 
     class Meta:
@@ -76,7 +74,6 @@ class TipoPolizaResource(resources.ModelResource):
         fields = ('nombre', 'descripcion', 'activo')
 
 
-
 class TipoSiniestroResource(resources.ModelResource):
 
     class Meta:
@@ -86,7 +83,6 @@ class TipoSiniestroResource(resources.ModelResource):
         import_id_fields = ['nombre']
 
         fields = ('nombre', 'descripcion', 'activo')
-
 
 
 class PolizaResource(resources.ModelResource):
@@ -154,7 +150,6 @@ class PolizaResource(resources.ModelResource):
         export_order = fields
 
 
-
 class FacturaResource(resources.ModelResource):
 
     poliza = fields.Field(
@@ -198,7 +193,6 @@ class FacturaResource(resources.ModelResource):
                   'subtotal', 'iva', 'monto_total', 'concepto', 'estado')
 
         export_order = fields
-
 
 
 class SiniestroResource(resources.ModelResource):
@@ -246,7 +240,6 @@ class SiniestroResource(resources.ModelResource):
         export_order = fields
 
 
-
 class HistoryModelAdmin(ImportExportMixin, ModelAdmin, SimpleHistoryAdmin):
 
     """
@@ -278,7 +271,6 @@ class HistoryModelAdmin(ImportExportMixin, ModelAdmin, SimpleHistoryAdmin):
     changed_fields.short_description = 'Campos modificados'
 
 
-
 class ImportExportModelAdmin(ImportExportMixin, ModelAdmin):
 
     """
@@ -292,9 +284,7 @@ class ImportExportModelAdmin(ImportExportMixin, ModelAdmin):
     pass
 
 
-
 @admin.register(ConfiguracionSistema)
-
 class ConfiguracionSistemaAdmin(ModelAdmin):
 
     icon_name = "settings"
@@ -339,8 +329,6 @@ class ConfiguracionSistemaAdmin(ModelAdmin):
 
 
 @admin.register(CompaniaAseguradora)
-
-
 class CompaniaAseguradoraAdmin(ImportExportModelAdmin):
 
     icon_name = "business"
@@ -380,9 +368,7 @@ class CompaniaAseguradoraAdmin(ImportExportModelAdmin):
     )
 
 
-
 @admin.register(CorredorSeguros)
-
 class CorredorSegurosAdmin(ImportExportModelAdmin):
 
     icon_name = "handshake"
@@ -423,8 +409,6 @@ class CorredorSegurosAdmin(ImportExportModelAdmin):
 
 
 @admin.register(TipoPoliza)
-
-
 class TipoPolizaAdmin(ImportExportModelAdmin):
 
     icon_name = "category"
@@ -438,9 +422,7 @@ class TipoPolizaAdmin(ImportExportModelAdmin):
     search_fields = ['nombre', 'descripcion']
 
 
-
 @admin.register(ResponsableCustodio)
-
 class ResponsableCustodioAdmin(ImportExportModelAdmin):
 
     icon_name = "person"
@@ -516,8 +498,6 @@ class SiniestroInline(TabularInline):
 
 
 @admin.register(Poliza)
-
-
 class PolizaAdmin(HistoryModelAdmin):
 
     icon_name = "verified"
@@ -716,8 +696,6 @@ class PagoInline(TabularInline):
 
 
 @admin.register(Factura)
-
-
 class FacturaAdmin(HistoryModelAdmin):
 
     icon_name = "receipt"
@@ -911,8 +889,6 @@ class FacturaAdmin(HistoryModelAdmin):
 
 
 @admin.register(Pago)
-
-
 class PagoAdmin(HistoryModelAdmin):
 
     icon_name = "payments"
@@ -1020,9 +996,7 @@ class PagoAdmin(HistoryModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-
 @admin.register(TipoSiniestro)
-
 class TipoSiniestroAdmin(ImportExportModelAdmin):
 
     icon_name = "label"
@@ -1036,10 +1010,7 @@ class TipoSiniestroAdmin(ImportExportModelAdmin):
     search_fields = ['nombre', 'descripcion']
 
 
-
 @admin.register(Siniestro)
-
-
 class SiniestroAdmin(HistoryModelAdmin):
 
     icon_name = "warning"
@@ -1319,9 +1290,7 @@ class SiniestroAdmin(HistoryModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-
 @admin.register(Documento)
-
 class DocumentoAdmin(HistoryModelAdmin):
 
     icon_name = "description"
@@ -1522,9 +1491,7 @@ class DocumentoAdmin(HistoryModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-
 @admin.register(Alerta)
-
 class AlertaAdmin(ModelAdmin):
 
     icon_name = "notifications"
@@ -1663,7 +1630,6 @@ class AlertaAdmin(ModelAdmin):
 # =============================================================================
 
 
-
 class QuoteOptionInline(TabularInline):
 
     """Inline para las opciones de cotización"""
@@ -1686,8 +1652,6 @@ from app.models import BienAsegurado
 
 
 @admin.register(BienAsegurado)
-
-
 class BienAseguradoAdmin(HistoryModelAdmin):
 
     """Administración de bienes asegurados (modelo unificado)"""
@@ -1937,10 +1901,7 @@ class BienAseguradoAdmin(HistoryModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-
 @admin.register(Quote)
-
-
 class QuoteAdmin(HistoryModelAdmin):
 
     """Administración de cotizaciones"""
@@ -2202,8 +2163,6 @@ class QuoteAdmin(HistoryModelAdmin):
 
 
 @admin.register(QuoteOption)
-
-
 class QuoteOptionAdmin(ModelAdmin):
 
     """Administración de opciones de cotización"""
@@ -2340,9 +2299,7 @@ class QuoteOptionAdmin(ModelAdmin):
         return f"${obj.premium_per_thousand:,.2f}"
 
 
-
 @admin.register(PolicyRenewal)
-
 class PolicyRenewalAdmin(HistoryModelAdmin):
 
     """Administración de renovaciones de pólizas"""
@@ -2712,8 +2669,6 @@ class PolicyRenewalAdmin(HistoryModelAdmin):
 
 
 @admin.register(PaymentApproval)
-
-
 class PaymentApprovalAdmin(ModelAdmin):
 
     """Administración de aprobaciones de pago"""
@@ -2913,9 +2868,7 @@ class PaymentApprovalAdmin(ModelAdmin):
         self.message_user(request, f"Pagos rechazados correctamente.")
 
 
-
 @admin.register(CalendarEvent)
-
 class CalendarEventAdmin(ModelAdmin):
 
     """Administración de eventos del calendario"""
@@ -3181,8 +3134,6 @@ class CalendarEventAdmin(ModelAdmin):
 
 
 @admin.register(BackupRegistro)
-
-
 class BackupRegistroAdmin(admin.ModelAdmin):
 
     list_display = ['nombre', 'tipo', 'estado', 'tamaño_display', 'fecha_creacion', 'creado_por']
@@ -3208,8 +3159,6 @@ class BackupRegistroAdmin(admin.ModelAdmin):
 
 
 @admin.register(ConfiguracionBackup)
-
-
 class ConfiguracionBackupAdmin(admin.ModelAdmin):
 
     list_display = ['activo', 'frecuencia', 'hora_ejecucion', 'dias_retener', 'ultimo_backup']

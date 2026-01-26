@@ -146,7 +146,6 @@ class PolizaManager(models.Manager):
         )
 
 
-
 class FacturaManager(models.Manager):
 
     """
@@ -216,7 +215,6 @@ class FacturaManager(models.Manager):
         """Facturas que tienen saldo por pagar."""
 
         return self.filter(estado__in=['pendiente', 'parcial', 'vencida'])
-
 
 
 class SiniestroManager(models.Manager):
@@ -382,7 +380,6 @@ class SiniestroManager(models.Manager):
         )
 
 
-
 class BienAseguradoManager(models.Manager):
 
     """
@@ -434,7 +431,6 @@ validador_ruc = RegexValidator(
 )
 
 # ==================== MODELOS ====================
-
 
 
 class ConfiguracionSistema(models.Model):
@@ -734,7 +730,6 @@ class ConfiguracionSistema(models.Model):
             )
 
 
-
 class CompaniaAseguradora(models.Model):
 
     """Modelo para las compañías aseguradoras"""
@@ -875,7 +870,6 @@ class TipoPoliza(models.Model):
         return self.nombre
 
 
-
 class ResponsableCustodio(models.Model):
 
     """Modelo para responsables/custodios de bienes asegurados"""
@@ -917,7 +911,6 @@ class ResponsableCustodio(models.Model):
             return f"{self.nombre} - {self.departamento}"
 
         return self.nombre
-
 
 
 class Poliza(models.Model):
@@ -1245,7 +1238,6 @@ class Poliza(models.Model):
             return max(deducible_fijo, deducible_porcentaje)
 
         return deducible_fijo
-
 
 
 class Factura(models.Model):
@@ -1589,7 +1581,6 @@ class TipoSiniestro(models.Model):
     def __str__(self):
 
         return self.get_nombre_display()
-
 
 
 class Siniestro(models.Model):
@@ -2264,7 +2255,6 @@ class Documento(models.Model):
 # ==================== MODELOS DE CHECKLIST Y ADJUNTOS DE SINIESTRO ====================
 
 
-
 class ChecklistSiniestroConfig(models.Model):
 
     """
@@ -2375,7 +2365,6 @@ class ChecklistSiniestro(models.Model):
         self.completado_por = usuario
 
         self.save()
-
 
 
 class AdjuntoSiniestro(models.Model):
@@ -2806,7 +2795,6 @@ class NotificacionEmail(models.Model):
 # ==================== MODELO NOTA DE CRÉDITO ====================
 
 
-
 class NotaCredito(models.Model):
 
     """
@@ -2898,7 +2886,6 @@ class NotaCredito(models.Model):
         return f"NC-{self.numero} - ${self.monto}"
 
 # ==================== NUEVOS MODELOS (Código en inglés, interfaz en español) ====================
-
 
 
 class Quote(models.Model):
@@ -3101,7 +3088,6 @@ class Quote(models.Model):
         self.save()
 
         return policy
-
 
 
 class QuoteOption(models.Model):
@@ -3594,7 +3580,6 @@ class PaymentApproval(models.Model):
 # ==================== MODELOS DE CATÁLOGO DE RAMOS (JERARQUÍA) ====================
 
 
-
 class TipoRamo(models.Model):
 
     """
@@ -3648,7 +3633,6 @@ class TipoRamo(models.Model):
             raise ValidationError("No se puede eliminar un tipo de ramo predefinido.")
 
         super().delete(*args, **kwargs)
-
 
 
 class GrupoRamo(models.Model):
@@ -3716,7 +3700,6 @@ class GrupoRamo(models.Model):
             raise ValidationError("No se puede eliminar un grupo de ramo predefinido.")
 
         super().delete(*args, **kwargs)
-
 
 
 class SubgrupoRamo(models.Model):
@@ -4053,7 +4036,6 @@ class BienAsegurado(models.Model):
         """Retorna el número total de siniestros del bien"""
 
         return self.siniestros.count()
-
 
 
 class DetallePolizaRamo(models.Model):
@@ -4427,7 +4409,6 @@ class GrupoBienes(models.Model):
             total=models.Sum('current_value')
 
         )['total'] or Decimal('0.00')
-
 
 
 class CalendarEvent(models.Model):

@@ -187,9 +187,7 @@ def dashboard(request):
     return render(request, 'app/dashboard/index.html', context)
 
 
-
 @login_required
-
 def polizas_lista(request):
 
     polizas = Poliza.objects.select_related(
@@ -252,10 +250,7 @@ def polizas_lista(request):
 
 
 @login_required
-
-
 @require_GET
-
 def polizas_exportar(request):
 
     formato = request.GET.get('formato', 'excel')
@@ -280,8 +275,6 @@ def polizas_exportar(request):
 
 
 @login_required
-
-
 def desglose_ramos_lista(request):
 
     """Vista para el módulo de Desglose por Ramos con filtros avanzados"""
@@ -451,12 +444,8 @@ def desglose_ramos_lista(request):
     return render(request, 'app/desglose_ramos/lista.html', context)
 
 
-
 @login_required
-
 @require_GET
-
-
 def desglose_ramos_exportar(request):
 
     """Exportar desglose por ramos a Excel o CSV"""
@@ -707,8 +696,6 @@ def desglose_ramos_exportar(request):
 
 
 @login_required
-
-
 def facturas_lista(request):
 
     facturas = Factura.objects.select_related(
@@ -758,12 +745,8 @@ def facturas_lista(request):
     return render(request, 'app/facturas/lista.html', context)
 
 
-
 @login_required
-
 @require_GET
-
-
 def facturas_exportar(request):
 
     formato = request.GET.get('formato', 'excel')
@@ -787,9 +770,7 @@ def facturas_exportar(request):
     return ExportacionService.exportar_facturas_excel(facturas)
 
 
-
 @login_required
-
 def siniestros_lista(request):
 
     siniestros = Siniestro.objects.select_related(
@@ -851,12 +832,8 @@ def siniestros_lista(request):
     return render(request, 'app/siniestros/lista.html', context)
 
 
-
 @login_required
-
 @require_GET
-
-
 def siniestros_exportar(request):
 
     formato = request.GET.get('formato', 'excel')
@@ -880,9 +857,7 @@ def siniestros_exportar(request):
     return ExportacionService.exportar_siniestros_excel(siniestros)
 
 
-
 @login_required
-
 def reportes_dashboard(request):
 
     stats = EstadisticasService.get_dashboard_stats()
@@ -924,9 +899,7 @@ def reportes_dashboard(request):
     return render(request, 'app/reportes/dashboard.html', context)
 
 
-
 @login_required
-
 def reportes_polizas(request):
 
     filtros = {
@@ -979,8 +952,6 @@ def reportes_polizas(request):
 
 
 @login_required
-
-
 def reportes_siniestros(request):
 
     filtros = {
@@ -1026,9 +997,7 @@ def reportes_siniestros(request):
     return render(request, 'app/reportes/siniestros.html', context)
 
 
-
 @login_required
-
 def reportes_polizas_pdf(request):
 
     """Exporta el reporte de pólizas en formato PDF."""
@@ -1101,8 +1070,6 @@ def reportes_polizas_pdf(request):
 
 
 @login_required
-
-
 def reportes_siniestros_pdf(request):
 
     """Exporta el reporte de siniestros en formato PDF."""
@@ -1160,9 +1127,7 @@ def reportes_siniestros_pdf(request):
     )
 
 
-
 @login_required
-
 def reportes_facturas_pdf(request):
 
     """Exporta el reporte de facturas en formato PDF."""
@@ -1207,8 +1172,6 @@ def reportes_facturas_pdf(request):
 
 
 @login_required
-
-
 def reportes_ejecutivo_pdf(request):
 
     """Genera un reporte ejecutivo general en PDF."""
@@ -1228,9 +1191,7 @@ def reportes_ejecutivo_pdf(request):
     return PDFReportesService.generar_reporte_ejecutivo_pdf(dashboard_data)
 
 
-
 @login_required
-
 def alertas_lista(request):
 
     alertas = Alerta.objects.select_related(
@@ -1271,10 +1232,7 @@ def alertas_lista(request):
 
 
 @login_required
-
-
 @require_POST
-
 def alerta_marcar_leida(request, pk):
 
     alerta = get_object_or_404(Alerta, pk=pk)
@@ -1296,9 +1254,7 @@ def api_stats(request):
     return JsonResponse(stats)
 
 
-
 @login_required
-
 def api_kpis(request):
 
     kpis = EstadisticasService.get_kpis()
@@ -1329,8 +1285,6 @@ import os
 
 
 @login_required
-
-
 def documentos_lista(request):
 
     documentos = Documento.objects.select_related(
@@ -1390,9 +1344,7 @@ def documentos_lista(request):
     return render(request, 'app/documentos/lista.html', context)
 
 
-
 @login_required
-
 def documento_ver(request, pk):
 
     documento = get_object_or_404(Documento, pk=pk)
@@ -1451,8 +1403,6 @@ def documento_ver(request, pk):
 
 
 @login_required
-
-
 def documento_descargar(request, pk):
 
     documento = get_object_or_404(Documento, pk=pk)
@@ -1486,9 +1436,7 @@ from django.contrib import messages
 from itertools import chain
 
 
-
 @login_required
-
 def busqueda_global(request):
 
     query = request.GET.get('q', '').strip()
@@ -1553,8 +1501,6 @@ def busqueda_global(request):
 
 
 @login_required
-
-
 def api_buscar(request):
 
     query = request.GET.get('q', '').strip()
@@ -1658,12 +1604,8 @@ def api_buscar(request):
 # ============================================================================
 
 
-
 @login_required
-
 @require_GET
-
-
 def api_dashboard_summary(request):
 
     """
@@ -1687,12 +1629,8 @@ def api_dashboard_summary(request):
     return JsonResponse(summary)
 
 
-
 @login_required
-
 @require_GET
-
-
 def api_dashboard_comparative(request):
 
     """
@@ -1716,12 +1654,8 @@ def api_dashboard_comparative(request):
     return JsonResponse(data)
 
 
-
 @login_required
-
 @require_GET
-
-
 def api_dashboard_trend(request):
 
     """
@@ -1757,9 +1691,7 @@ def api_dashboard_trend(request):
     return JsonResponse(data)
 
 
-
 @login_required
-
 @require_GET
 def api_dashboard_year_comparison(request):
 
@@ -1775,10 +1707,7 @@ def api_dashboard_year_comparison(request):
 
 
 @login_required
-
-
 @require_GET
-
 def api_dashboard_filters(request):
 
     """
@@ -1796,8 +1725,6 @@ def api_dashboard_filters(request):
 
 @login_required
 @require_GET
-
-
 def api_dashboard_filtered_stats(request):
 
     """
@@ -1815,12 +1742,8 @@ def api_dashboard_filtered_stats(request):
     return JsonResponse(stats)
 
 
-
 @login_required
-
 @require_GET
-
-
 def api_dashboard_filtered_charts(request):
 
     """
@@ -1837,10 +1760,7 @@ def api_dashboard_filtered_charts(request):
 
 
 @login_required
-
-
 @require_GET
-
 def api_dashboard_filtered_lists(request):
 
     """
@@ -1895,7 +1815,6 @@ def api_dashboard_export(request):
 # Vista personalizada de Login para manejar redirecciones inteligentes
 
 
-
 class CustomLoginView(DjangoLoginView):
 
     template_name = 'registration/login.html'
@@ -1945,9 +1864,7 @@ class CustomLoginView(DjangoLoginView):
 # Vista personalizada de Logout que acepta GET
 
 
-
 @login_required
-
 def custom_logout(request):
 
     """
@@ -1972,8 +1889,6 @@ def custom_logout(request):
 
 
 @login_required
-
-
 def renewals_list(request):
 
     """Lista de renovaciones de pólizas con filtros"""
@@ -2064,8 +1979,6 @@ def renewals_list(request):
 
 
 @login_required
-
-
 def quotes_list(request):
 
     """Lista de cotizaciones con filtros"""
@@ -2149,9 +2062,7 @@ def quotes_list(request):
 # --- BIENES ASEGURADOS ---
 
 
-
 @login_required
-
 def assets_list(request):
 
     """Lista de bienes asegurados con filtros (usa modelo unificado BienAsegurado)"""
@@ -2260,8 +2171,6 @@ def assets_list(request):
 
 
 @login_required
-
-
 def calendar_view(request):
 
     """Vista del calendario interactivo"""
@@ -2373,12 +2282,8 @@ def calendar_view(request):
     return render(request, 'app/calendar/view.html', context)
 
 
-
 @login_required
-
 @require_GET
-
-
 def api_calendar_events(request):
 
     """API para obtener eventos del calendario (para FullCalendar)"""
@@ -2442,9 +2347,7 @@ def api_calendar_events(request):
     return JsonResponse(events_data, safe=False)
 
 
-
 @login_required
-
 def generate_calendar_events(request):
 
     """Genera eventos automáticos del calendario basados en datos existentes"""
@@ -2584,9 +2487,7 @@ def generate_calendar_events(request):
 # --- APROBACIONES DE PAGO ---
 
 
-
 @login_required
-
 def payment_approvals_list(request):
 
     """Lista de aprobaciones de pago pendientes"""
@@ -2669,10 +2570,7 @@ def payment_approvals_list(request):
 
 
 @login_required
-
-
 @require_POST
-
 def approve_payment(request, pk):
 
     """Aprobar un pago"""
@@ -2697,10 +2595,7 @@ def approve_payment(request, pk):
 
 
 @login_required
-
-
 @require_POST
-
 def reject_payment(request, pk):
 
     """Rechazar un pago"""
@@ -2736,8 +2631,6 @@ def reject_payment(request, pk):
 # =============================================================================
 
 @login_required
-
-
 def analytics_dashboard(request):
 
     """
@@ -2789,12 +2682,8 @@ def analytics_dashboard(request):
     return render(request, 'app/analytics/dashboard.html', context)
 
 
-
 @login_required
-
 @require_GET
-
-
 def api_analytics_loss_ratio(request):
 
     """API para obtener ratio de siniestralidad"""
@@ -2804,12 +2693,8 @@ def api_analytics_loss_ratio(request):
     return JsonResponse({'data': data})
 
 
-
 @login_required
-
 @require_GET
-
-
 def api_analytics_trend(request):
 
     """API para obtener tendencia de primas vs indemnizaciones"""
@@ -2821,12 +2706,8 @@ def api_analytics_trend(request):
     return JsonResponse(data)
 
 
-
 @login_required
-
 @require_GET
-
-
 def api_analytics_locations(request):
 
     """API para obtener datos de ubicaciones"""
@@ -2836,10 +2717,7 @@ def api_analytics_locations(request):
     return JsonResponse({'data': data})
 
 @login_required
-
-
 @require_GET
-
 def api_analytics_insurers(request):
 
     """API para obtener rendimiento de aseguradoras"""
@@ -2853,7 +2731,6 @@ def api_analytics_insurers(request):
 # VISTAS BASADAS EN CLASES - RAMOS
 
 # =============================================================================
-
 
 
 class RamoListView(LoginRequiredMixin, ListView):
@@ -2893,7 +2770,6 @@ class RamoListView(LoginRequiredMixin, ListView):
         return context
 
 
-
 class RamoCreateView(LoginRequiredMixin, CreateView):
 
     """Crear ramo"""
@@ -2911,6 +2787,7 @@ class RamoCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Ramo creado exitosamente.')
 
         return super().form_valid(form)
+
 
 class RamoUpdateView(LoginRequiredMixin, UpdateView):
 
@@ -2976,7 +2853,6 @@ class CompaniaAseguradoraCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, f'Compañía aseguradora "{self.object.nombre}" creada exitosamente.')
 
         return response
-
 
 
 class CorredorSegurosCreateView(LoginRequiredMixin, CreateView):
@@ -3138,7 +3014,6 @@ class ResponsableCustodioCreateView(LoginRequiredMixin, CreateView):
 # =============================================================================
 
 
-
 class PolizaCreateView(LoginRequiredMixin, CreateView):
 
     """Crear póliza con formset de ramos"""
@@ -3200,7 +3075,6 @@ class PolizaCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, f'Póliza {self.object.numero_poliza} creada exitosamente.')
 
         return redirect('poliza_detalle', pk=self.object.pk)
-
 
 
 class PolizaUpdateView(LoginRequiredMixin, UpdateView):
@@ -3313,7 +3187,6 @@ class PolizaDetailView(LoginRequiredMixin, DetailView):
 # =============================================================================
 
 
-
 class SiniestroCreateView(LoginRequiredMixin, CreateView):
 
     """Crear siniestro con adjuntos y checklist"""
@@ -3403,7 +3276,6 @@ class SiniestroCreateView(LoginRequiredMixin, CreateView):
                     completado=False
 
                 )
-
 
 
 class SiniestroUpdateView(LoginRequiredMixin, UpdateView):
@@ -3730,7 +3602,6 @@ class SiniestroDetailView(LoginRequiredMixin, DetailView):
 # =============================================================================
 
 
-
 class GrupoBienesListView(LoginRequiredMixin, ListView):
 
     """Lista de grupos de bienes"""
@@ -3752,7 +3623,6 @@ class GrupoBienesListView(LoginRequiredMixin, ListView):
         ).order_by('nombre')
 
 
-
 class GrupoBienesCreateView(LoginRequiredMixin, CreateView):
 
     """Crear grupo de bienes"""
@@ -3772,7 +3642,6 @@ class GrupoBienesCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Grupo de bienes creado exitosamente.')
 
         return super().form_valid(form)
-
 
 
 class GrupoBienesDetailView(LoginRequiredMixin, DetailView):
@@ -3800,7 +3669,6 @@ class GrupoBienesDetailView(LoginRequiredMixin, DetailView):
 # =============================================================================
 
 
-
 class BienAseguradoCreateView(LoginRequiredMixin, CreateView):
 
     """Crear bien asegurado (modelo unificado BienAsegurado)"""
@@ -3822,7 +3690,6 @@ class BienAseguradoCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-
 class BienAseguradoUpdateView(LoginRequiredMixin, UpdateView):
 
     """Editar bien asegurado (modelo unificado BienAsegurado)"""
@@ -3840,7 +3707,6 @@ class BienAseguradoUpdateView(LoginRequiredMixin, UpdateView):
         messages.success(self.request, 'Bien asegurado actualizado exitosamente.')
 
         return super().form_valid(form)
-
 
 
 class BienAseguradoDetailView(LoginRequiredMixin, DetailView):
@@ -3870,9 +3736,7 @@ class BienAseguradoDetailView(LoginRequiredMixin, DetailView):
 # =============================================================================
 
 
-
 @login_required
-
 def reporte_siniestralidad(request):
 
     """Vista del reporte de siniestralidad"""
@@ -3925,8 +3789,6 @@ def reporte_siniestralidad(request):
 
 
 @login_required
-
-
 def reporte_gasto_ramos(request):
 
     """Vista del reporte de gastos por ramos"""
@@ -3970,9 +3832,7 @@ def reporte_gasto_ramos(request):
     return render(request, 'app/reportes/gasto_ramos.html', context)
 
 
-
 @login_required
-
 def reporte_dias_gestion(request):
 
     """Vista del reporte de días de gestión"""
@@ -4017,8 +3877,6 @@ def reporte_dias_gestion(request):
 
 
 @login_required
-
-
 def reporte_siniestros_dependencia(request):
 
     """Vista del reporte de siniestros por dependencia"""
@@ -4068,12 +3926,8 @@ def reporte_siniestros_dependencia(request):
 # =============================================================================
 
 
-
 @login_required
-
 @require_POST
-
-
 def siniestro_notificar_broker(request, pk):
 
     """Notifica el siniestro al broker"""
@@ -4093,12 +3947,8 @@ def siniestro_notificar_broker(request, pk):
     return redirect('siniestro_detalle', pk=pk)
 
 
-
 @login_required
-
 @require_POST
-
-
 def siniestro_marcar_checklist(request, siniestro_pk, item_pk):
 
     """Marca un item de checklist como completado"""
@@ -4120,9 +3970,7 @@ def siniestro_marcar_checklist(request, siniestro_pk, item_pk):
     return redirect('siniestro_detalle', pk=siniestro_pk)
 
 
-
 @login_required
-
 def siniestro_descargar_carta(request, pk):
 
     """Descarga la carta formal del siniestro"""
@@ -4133,8 +3981,6 @@ def siniestro_descargar_carta(request, pk):
 
 
 @login_required
-
-
 def siniestro_descargar_recibo(request, pk):
 
     """Descarga el recibo de indemnización"""
@@ -4144,12 +3990,8 @@ def siniestro_descargar_recibo(request, pk):
     return DocumentosService.descargar_recibo_indemnizacion(siniestro)
 
 
-
 @login_required
-
 @require_POST
-
-
 def adjunto_firmar(request, pk):
 
     """Aplica firma electrónica a un adjunto"""
@@ -4171,12 +4013,8 @@ def adjunto_firmar(request, pk):
     return redirect('siniestro_detalle', pk=adjunto.siniestro.pk)
 
 
-
 @login_required
-
 @require_POST
-
-
 def siniestro_subir_adjunto(request, pk):
 
     """Sube un adjunto al siniestro y opcionalmente marca el checklist"""
@@ -4250,12 +4088,8 @@ def siniestro_subir_adjunto(request, pk):
     return redirect('siniestro_detalle', pk=pk)
 
 
-
 @login_required
-
 @require_POST
-
-
 def siniestro_enviar_aseguradora(request, pk):
 
     """Envía el siniestro con todos sus documentos a la aseguradora"""
@@ -4400,10 +4234,7 @@ Gestión de Seguros
 
 
 @login_required
-
-
 @require_GET
-
 def api_subtipos_ramo(request):
 
     """API para obtener subgrupos de un grupo de ramo"""
@@ -4427,12 +4258,8 @@ def api_subtipos_ramo(request):
     return JsonResponse({'subtipos': resultado, 'subgrupos': resultado})
 
 
-
 @login_required
-
 @require_GET
-
-
 def api_corredores_por_compania(request):
 
     """API para obtener corredores de una compañía aseguradora"""
@@ -4452,12 +4279,8 @@ def api_corredores_por_compania(request):
     return JsonResponse({'corredores': list(corredores)})
 
 
-
 @login_required
-
 @require_GET
-
-
 def api_calcular_desglose_ramo(request):
 
     """API para calcular el desglose financiero de un ramo"""
@@ -4526,10 +4349,7 @@ def api_calcular_desglose_ramo(request):
 
 
 @login_required
-
-
 @require_GET
-
 def api_reporte_siniestralidad(request):
 
     """API para obtener datos de siniestralidad"""
@@ -4564,8 +4384,6 @@ def api_reporte_siniestralidad(request):
 
 
 @login_required
-
-
 def inicializar_ramos_predefinidos(request):
 
     """Inicializa los ramos predefinidos del sistema"""
@@ -4581,7 +4399,6 @@ def inicializar_ramos_predefinidos(request):
 # VISTAS DE FACTURA - CRUD Completo
 
 # ==========================================================================
-
 
 
 class FacturaCreateView(LoginRequiredMixin, CreateView):
@@ -4605,7 +4422,6 @@ class FacturaCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-
 class FacturaDetailView(LoginRequiredMixin, DetailView):
 
     """Vista de detalle de una factura"""
@@ -4625,7 +4441,6 @@ class FacturaDetailView(LoginRequiredMixin, DetailView):
         context['documentos'] = self.object.documentos.all()
 
         return context
-
 
 
 class FacturaUpdateView(LoginRequiredMixin, UpdateView):
@@ -4655,7 +4470,6 @@ class FacturaUpdateView(LoginRequiredMixin, UpdateView):
 # ==========================================================================
 
 
-
 class DocumentoCreateView(LoginRequiredMixin, CreateView):
 
     """Vista para crear un nuevo documento"""
@@ -4675,7 +4489,6 @@ class DocumentoCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Documento subido exitosamente.')
 
         return super().form_valid(form)
-
 
 
 class DocumentoUpdateView(LoginRequiredMixin, UpdateView):
@@ -4703,7 +4516,6 @@ class DocumentoUpdateView(LoginRequiredMixin, UpdateView):
 # VISTAS DE PAGO - CRUD Completo
 
 # ==========================================================================
-
 
 
 class PagoCreateView(LoginRequiredMixin, CreateView):
@@ -4739,7 +4551,6 @@ class PagoCreateView(LoginRequiredMixin, CreateView):
         return initial
 
 
-
 class PagoDetailView(LoginRequiredMixin, DetailView):
 
     """Vista de detalle de un pago"""
@@ -4749,7 +4560,6 @@ class PagoDetailView(LoginRequiredMixin, DetailView):
     template_name = 'app/pagos/detalle.html'
 
     context_object_name = 'pago'
-
 
 
 class PagoUpdateView(LoginRequiredMixin, UpdateView):
@@ -4781,9 +4591,7 @@ class PagoUpdateView(LoginRequiredMixin, UpdateView):
 from .models import SiniestroEmail
 
 
-
 @login_required
-
 def siniestros_email_pendientes(request):
 
     """
@@ -4878,8 +4686,6 @@ def siniestros_email_pendientes(request):
 
 
 @login_required
-
-
 def siniestro_email_procesar_auto(request, pk):
 
     """
@@ -5085,12 +4891,8 @@ def siniestro_email_procesar_auto(request, pk):
         return redirect('siniestros_email_pendientes')
 
 
-
 @login_required
-
 @require_POST
-
-
 def siniestro_email_completar(request, pk):
 
     """
@@ -5206,9 +5008,7 @@ def siniestro_email_completar(request, pk):
     return redirect('siniestros_email_pendientes')
 
 
-
 @login_required
-
 def siniestros_email_count(request):
 
     """API para obtener el conteo de siniestros email pendientes."""
@@ -5227,8 +5027,6 @@ from .forms import ConfiguracionSistemaForm, ConfiguracionBulkForm
 
 
 @login_required
-
-
 def configuracion_lista(request):
 
     """
@@ -5286,9 +5084,7 @@ def configuracion_lista(request):
     return render(request, 'app/configuracion/lista.html', context)
 
 
-
 @login_required
-
 def configuracion_editar(request, pk):
 
     """
@@ -5343,8 +5139,6 @@ def configuracion_editar(request, pk):
 
 
 @login_required
-
-
 def configuracion_categoria(request, categoria):
 
     """
@@ -5415,8 +5209,6 @@ def configuracion_categoria(request, categoria):
 
 
 @login_required
-
-
 def configuracion_restablecer(request):
 
     """
@@ -5462,9 +5254,7 @@ def configuracion_restablecer(request):
 from .models import BackupRegistro, ConfiguracionBackup
 
 
-
 @login_required
-
 def backups_lista(request):
 
     """
@@ -5529,8 +5319,6 @@ def backups_lista(request):
 
 
 @login_required
-
-
 def backup_crear(request):
 
     """
@@ -5666,9 +5454,7 @@ def backup_crear(request):
     return render(request, 'app/backups/crear.html', context)
 
 
-
 @login_required
-
 def backup_descargar(request, pk):
 
     """
@@ -5713,8 +5499,6 @@ def backup_descargar(request, pk):
 
 
 @login_required
-
-
 def backup_eliminar(request, pk):
 
     """
@@ -5764,9 +5548,7 @@ def backup_eliminar(request, pk):
     })
 
 
-
 @login_required
-
 def backup_restaurar(request, pk):
 
     """
@@ -5861,8 +5643,6 @@ def backup_restaurar(request, pk):
 
 
 @login_required
-
-
 def backup_configuracion(request):
 
     """

@@ -100,7 +100,6 @@ class Colors:
 # =============================================================================
 
 
-
 class PDFReportesService:
 
     """Generador de reportes PDF con diseño editorial profesional."""

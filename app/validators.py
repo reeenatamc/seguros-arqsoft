@@ -285,9 +285,7 @@ class FileValidator:
         )
 
 
-
 @deconstructible
-
 class ImageValidator(FileValidator):
 
     """
@@ -318,8 +316,6 @@ class ImageValidator(FileValidator):
 
 
 @deconstructible
-
-
 class PDFValidator(FileValidator):
 
     """
@@ -347,7 +343,6 @@ validate_document = FileValidator()
 validate_image = ImageValidator()
 
 validate_pdf = PDFValidator()
-
 
 
 def validate_file_extension(value):

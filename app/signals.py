@@ -37,9 +37,7 @@ def siniestro_pre_save(sender, instance: Siniestro, **kwargs):
             instance._previous_estado = None
 
 
-
 @receiver(post_save, sender=Siniestro)
-
 def siniestro_post_save(sender, instance: Siniestro, created: bool, **kwargs):
 
     """

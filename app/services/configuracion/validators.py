@@ -120,7 +120,6 @@ class ValidadorConfig(ABC):
 # ==============================================================================
 
 
-
 class PorcentajeValidator(ValidadorConfig):
 
     """
@@ -191,7 +190,6 @@ class PorcentajeValidator(ValidadorConfig):
             )
 
         return errores
-
 
 
 class RangoNumericoValidator(ValidadorConfig):
@@ -286,7 +284,6 @@ class RangoNumericoValidator(ValidadorConfig):
         return errores
 
 
-
 class JsonValidator(ValidadorConfig):
 
     """
@@ -353,7 +350,6 @@ class JsonValidator(ValidadorConfig):
         return errores
 
 
-
 class EmailValidator(ValidadorConfig):
 
     """Valida que un valor sea un email válido."""
@@ -380,7 +376,6 @@ class EmailValidator(ValidadorConfig):
             errores['valor'] = 'El valor debe ser un email válido.'
 
         return errores
-
 
 
 class UrlValidator(ValidadorConfig):
@@ -425,7 +420,6 @@ class UrlValidator(ValidadorConfig):
         return errores
 
 
-
 class ListaValoresValidator(ValidadorConfig):
 
     """Valida que un valor esté en una lista de valores permitidos."""
@@ -458,7 +452,6 @@ class ListaValoresValidator(ValidadorConfig):
             errores['valor'] = f'El valor debe ser uno de: {", ".join(self.valores_permitidos)}.'
 
         return errores
-
 
 
 class TablaTasasValidator(ValidadorConfig):
@@ -533,7 +526,6 @@ class TablaTasasValidator(ValidadorConfig):
 # REGISTRO DE VALIDADORES
 
 # ==============================================================================
-
 
 
 class RegistroValidadores:
@@ -778,7 +770,6 @@ registro_validadores.registrar(
 # FUNCIÓN DE CONVENIENCIA
 
 # ==============================================================================
-
 
 
 def validar_configuracion(clave: str, valor: str, tipo: str) -> Dict[str, str]:

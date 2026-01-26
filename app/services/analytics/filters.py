@@ -235,7 +235,6 @@ class DateRangePresets:
         return today - timedelta(days=29), today
 
 
-
 class DashboardFiltersService:
 
     """

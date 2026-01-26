@@ -361,7 +361,6 @@ class FacturaCalculationService:
         }
 
 
-
 class DetalleRamoCalculationService:
 
     """
@@ -568,7 +567,6 @@ class DetalleRamoCalculationService:
             'valor_por_pagar': valor_por_pagar,
 
         }
-
 
 
 class PolizaCalculationService:

@@ -40,7 +40,6 @@ def make_naive(dt):
     return dt
 
 
-
 class ExportacionService:
 
     HEADER_FILL = PatternFill(start_color='1a365d', end_color='1a365d', fill_type='solid')

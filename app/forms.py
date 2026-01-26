@@ -56,7 +56,6 @@ class DateInput(forms.DateInput):
         super().__init__(*args, **kwargs)
 
 
-
 class DateTimeInput(forms.DateTimeInput):
 
     """Widget de datetime-local para navegadores modernos"""
@@ -76,7 +75,6 @@ class DateTimeInput(forms.DateTimeInput):
 # FORMULARIOS DE ENTIDADES BASE (Compañías, Corredores, etc.)
 
 # ==============================================================================
-
 
 
 class CompaniaAseguradoraForm(forms.ModelForm):
@@ -160,7 +158,6 @@ class CompaniaAseguradoraForm(forms.ModelForm):
             }),
 
         }
-
 
 
 class CorredorSegurosForm(forms.ModelForm):
@@ -252,7 +249,6 @@ class CorredorSegurosForm(forms.ModelForm):
         self.fields['compania_aseguradora'].queryset = CompaniaAseguradora.objects.filter(activo=True)
 
 
-
 class TipoSiniestroForm(forms.ModelForm):
 
     """Formulario para crear/editar tipos de siniestro"""
@@ -288,7 +284,6 @@ class TipoSiniestroForm(forms.ModelForm):
             }),
 
         }
-
 
 
 class ResponsableCustodioForm(forms.ModelForm):
@@ -356,7 +351,6 @@ class ResponsableCustodioForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class TipoRamoForm(forms.ModelForm):
 
     """Formulario para crear/editar tipos de ramo (nivel superior)"""
@@ -412,7 +406,6 @@ class TipoRamoForm(forms.ModelForm):
             raise ValidationError('Ya existe un tipo de ramo con este código.')
 
         return codigo
-
 
 
 class GrupoRamoForm(forms.ModelForm):
@@ -498,7 +491,6 @@ class GrupoRamoForm(forms.ModelForm):
         return codigo
 
 
-
 class SubgrupoRamoForm(forms.ModelForm):
 
     """Formulario para crear/editar subgrupos de ramo (tercer nivel)"""
@@ -560,7 +552,6 @@ SubtipoRamoForm = SubgrupoRamoForm
 # FORMULARIOS DE PÓLIZA
 
 # ==============================================================================
-
 
 
 class PolizaForm(forms.ModelForm):
@@ -796,7 +787,6 @@ class PolizaForm(forms.ModelForm):
         return cleaned_data
 
 
-
 class DetallePolizaRamoForm(forms.ModelForm):
 
     """Formulario para detalle de póliza por ramo con cálculos en vivo"""
@@ -974,7 +964,6 @@ DetallePolizaRamoFormSet = inlineformset_factory(
 # FORMULARIOS DE SINIESTRO
 
 # ==============================================================================
-
 
 
 class SiniestroForm(forms.ModelForm):
@@ -1254,7 +1243,6 @@ class SiniestroForm(forms.ModelForm):
         return cleaned_data
 
 
-
 class SiniestroGestionForm(forms.ModelForm):
 
     """Formulario para gestión de estado de siniestro"""
@@ -1330,7 +1318,6 @@ class SiniestroGestionForm(forms.ModelForm):
         self.fields['fecha_firma_indemnizacion'].input_formats = datetime_formats
 
 
-
 class AdjuntoSiniestroForm(forms.ModelForm):
 
     """Formulario para adjuntos de siniestro"""
@@ -1398,7 +1385,6 @@ AdjuntoSiniestroFormSet = inlineformset_factory(
 )
 
 
-
 class ChecklistSiniestroForm(forms.ModelForm):
 
     """Formulario para items de checklist de siniestro"""
@@ -1428,7 +1414,6 @@ class ChecklistSiniestroForm(forms.ModelForm):
 # FORMULARIOS DE BIENES ASEGURADOS
 
 # ==============================================================================
-
 
 
 class GrupoBienesForm(forms.ModelForm):
@@ -1514,7 +1499,6 @@ class GrupoBienesForm(forms.ModelForm):
         self.fields['poliza'].queryset = Poliza.objects.filter(estado__in=['vigente', 'por_vencer'])
 
         self.fields['poliza'].required = False
-
 
 
 class BienAseguradoForm(forms.ModelForm):
@@ -1854,7 +1838,6 @@ class BienAseguradoForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class FacturaForm(forms.ModelForm):
 
     """Formulario para crear/editar facturas con cálculos en vivo"""
@@ -2004,7 +1987,6 @@ class FacturaForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class DocumentoForm(forms.ModelForm):
 
     """Formulario para crear/editar documentos"""
@@ -2074,7 +2056,6 @@ class DocumentoForm(forms.ModelForm):
 # FORMULARIOS DE PAGO
 
 # ==============================================================================
-
 
 
 class PagoForm(forms.ModelForm):
@@ -2176,7 +2157,6 @@ class PagoForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class NotaCreditoForm(forms.ModelForm):
 
     """Formulario para crear/editar notas de crédito con validación de saldo"""
@@ -2258,7 +2238,6 @@ class NotaCreditoForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class ChecklistSiniestroConfigForm(forms.ModelForm):
 
     """Formulario para configurar items de checklist por tipo de siniestro"""
@@ -2316,7 +2295,6 @@ class ChecklistSiniestroConfigForm(forms.ModelForm):
 # ==============================================================================
 
 
-
 class FiltroPolizasForm(forms.Form):
 
     """Formulario de filtros para lista de pólizas"""
@@ -2372,7 +2350,6 @@ class FiltroPolizasForm(forms.Form):
     )
 
 
-
 class FiltroSiniestrosForm(forms.Form):
 
     """Formulario de filtros para lista de siniestros"""
@@ -2414,7 +2391,6 @@ class FiltroSiniestrosForm(forms.Form):
         widget=DateInput(attrs={'class': 'form-control'}),
 
     )
-
 
 
 class FiltroReportesForm(forms.Form):
@@ -2470,7 +2446,6 @@ class FiltroReportesForm(forms.Form):
 # FORMULARIOS DE CONFIGURACIÓN DEL SISTEMA
 
 # ==============================================================================
-
 
 
 class ConfiguracionSistemaForm(forms.ModelForm):
@@ -2610,7 +2585,6 @@ class ConfiguracionSistemaForm(forms.ModelForm):
                 raise ValidationError(f'JSON inválido: {str(e)}')
 
         return valor
-
 
 
 class ConfiguracionBulkForm(forms.Form):

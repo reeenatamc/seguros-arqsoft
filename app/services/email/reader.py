@@ -88,7 +88,6 @@ class IMAPConnectionError(Exception):
     pass
 
 
-
 class IMAPAuthenticationError(Exception):
 
     """Error de autenticación con el servidor IMAP."""
@@ -96,13 +95,11 @@ class IMAPAuthenticationError(Exception):
     pass
 
 
-
 class EmailParsingError(Exception):
 
     """Error al parsear el contenido del correo."""
 
     pass
-
 
 
 class InvalidReportFormatError(Exception):
@@ -118,9 +115,7 @@ class InvalidReportFormatError(Exception):
 # ==============================================================================
 
 
-
 @dataclass
-
 class DatosEquipo:
 
     """Datos del equipo reportado en el siniestro."""
@@ -137,8 +132,6 @@ class DatosEquipo:
 
 
 @dataclass
-
-
 class ReporteSiniestro:
 
     """Estructura de datos de un reporte de siniestro extraído del correo."""
@@ -208,7 +201,6 @@ class ReporteSiniestro:
 # CLASE PRINCIPAL
 
 # ==============================================================================
-
 
 
 class EmailReaderService:
@@ -1004,7 +996,6 @@ class EmailReaderService:
 # ==============================================================================
 
 
-
 def leer_correos_siniestros(
 
     limit: int = 10,
@@ -1076,7 +1067,6 @@ def leer_correos_siniestros(
         logger.error(f"Error inesperado: {e}")
 
         raise
-
 
 
 def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: bool = True):
@@ -1164,7 +1154,6 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
             logger.warning(f"No se pudo crear siniestro automáticamente: {mensaje}")
 
     return siniestro_email, siniestro, mensaje
-
 
 
 def procesar_y_guardar_correos(

@@ -142,7 +142,6 @@ class TipoAlerta(str, Enum):
     ALERTA_GENERAL = 'alerta_general'
 
 
-
 class CanalNotificacion(str, Enum):
 
     """Canales de notificación disponibles."""
@@ -158,9 +157,7 @@ class CanalNotificacion(str, Enum):
     WEBHOOK = 'webhook'
 
 
-
 @dataclass
-
 class Alerta:
 
     """
@@ -205,8 +202,6 @@ class Alerta:
 
 
 @dataclass
-
-
 class ResultadoEnvio:
 
     """Resultado del envío por un canal específico."""
@@ -228,7 +223,6 @@ class ResultadoEnvio:
 # INTERFAZ BASE - NOTIFICADOR
 
 # ==============================================================================
-
 
 
 class Notificador(ABC):
@@ -304,7 +298,6 @@ class Notificador(ABC):
 # IMPLEMENTACIÓN - EMAIL NOTIFIER
 
 # ==============================================================================
-
 
 
 class EmailNotifier(Notificador):
@@ -485,7 +478,6 @@ class EmailNotifier(Notificador):
 # ==============================================================================
 
 
-
 class SMSNotifier(Notificador):
 
     """
@@ -600,7 +592,6 @@ class SMSNotifier(Notificador):
 # ==============================================================================
 
 
-
 class WhatsAppNotifier(Notificador):
 
     """
@@ -685,7 +676,6 @@ class WhatsAppNotifier(Notificador):
 # IMPLEMENTACIÓN - WEBHOOK NOTIFIER
 
 # ==============================================================================
-
 
 
 class WebhookNotifier(Notificador):
@@ -816,7 +806,6 @@ class WebhookNotifier(Notificador):
 # DISPATCHER - ORQUESTADOR DE NOTIFICACIONES
 
 # ==============================================================================
-
 
 
 class NotificacionDispatcher:
@@ -981,7 +970,6 @@ class NotificacionDispatcher:
 # ==============================================================================
 
 
-
 def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 
     """
@@ -1053,7 +1041,6 @@ def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 _dispatcher_global: Optional[NotificacionDispatcher] = None
 
 
-
 def get_dispatcher() -> NotificacionDispatcher:
 
     """Obtiene el dispatcher global (singleton lazy)."""
@@ -1065,7 +1052,6 @@ def get_dispatcher() -> NotificacionDispatcher:
         _dispatcher_global = crear_dispatcher_desde_config()
 
     return _dispatcher_global
-
 
 
 def reset_dispatcher() -> None:

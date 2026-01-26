@@ -47,9 +47,7 @@ class ResultadoValidacion:
         return self
 
 
-
 @dataclass
-
 class ResultadoOperacion:
 
     """Resultado de una operación de servicio."""

@@ -33,9 +33,7 @@ def generar_alertas_automaticas(self):
         raise self.retry(exc=e, countdown=60)
 
 
-
 @shared_task(bind=True, max_retries=3)
-
 def enviar_alertas_email(self):
 
     try:
@@ -56,8 +54,6 @@ def enviar_alertas_email(self):
 
 
 @shared_task(bind=True, max_retries=3)
-
-
 def actualizar_estados_polizas(self):
 
     """
@@ -135,9 +131,7 @@ def actualizar_estados_polizas(self):
         raise self.retry(exc=e, countdown=60)
 
 
-
 @shared_task(bind=True, max_retries=3)
-
 def actualizar_estados_facturas(self):
 
     from .models import Factura
@@ -224,8 +218,6 @@ def actualizar_estados_facturas(self):
 
 
 @shared_task(bind=True, max_retries=3)
-
-
 def generar_reporte_siniestros_mensual(self):
 
     try:
@@ -245,9 +237,7 @@ def generar_reporte_siniestros_mensual(self):
         raise self.retry(exc=e, countdown=60)
 
 
-
 @shared_task(bind=True, max_retries=3)
-
 def limpiar_alertas_antiguas(self, dias=90):
 
     from .models import Alerta
@@ -280,8 +270,6 @@ def limpiar_alertas_antiguas(self, dias=90):
 
 
 @shared_task(bind=True)
-
-
 def actualizar_descuentos_pronto_pago(self):
 
     from .models import Factura
@@ -327,9 +315,7 @@ def actualizar_descuentos_pronto_pago(self):
 # ==================== TAREAS DE BACKUP AUTOMÁTICO ====================
 
 
-
 @shared_task(bind=True, max_retries=2)
-
 def backup_automatico(self):
 
     """
@@ -500,8 +486,6 @@ def backup_automatico(self):
 
 
 @shared_task
-
-
 def enviar_notificacion_backup(backup_id, email, status):
 
     """
@@ -583,9 +567,7 @@ Por favor, revise la configuración y los logs del sistema.
         logger.error(f'Error enviando notificación de backup: {str(e)}')
 
 
-
 @shared_task
-
 def limpiar_backups_antiguos():
 
     """
@@ -616,8 +598,6 @@ def limpiar_backups_antiguos():
 
 
 @shared_task
-
-
 def verificar_integridad_backups():
 
     """
