@@ -6,18 +6,11 @@ Filtros personalizados para templates de Django.
 
 from django import template
 
-
-
 register = template.Library()
 
 
-
-
-
 @register.filter
-
 def abs_value(value):
-
     """Retorna el valor absoluto de un número."""
 
     try:
@@ -29,13 +22,8 @@ def abs_value(value):
         return value
 
 
-
-
-
 @register.filter
-
 def multiply(value, arg):
-
     """Multiplica un valor por el argumento."""
 
     try:
@@ -47,13 +35,8 @@ def multiply(value, arg):
         return value
 
 
-
-
-
 @register.filter
-
 def divide(value, arg):
-
     """Divide un valor por el argumento."""
 
     try:
@@ -65,13 +48,8 @@ def divide(value, arg):
         return value
 
 
-
-
-
 @register.filter
-
 def percentage(value, total):
-
     """Calcula el porcentaje de un valor respecto al total."""
 
     try:
@@ -87,13 +65,8 @@ def percentage(value, total):
         return 0
 
 
-
-
-
 @register.filter
-
 def currency(value):
-
     """Formatea un valor como moneda."""
 
     try:
@@ -105,13 +78,8 @@ def currency(value):
         return value
 
 
-
-
-
 @register.filter
-
 def subtract(value, arg):
-
     """Resta el argumento del valor."""
 
     try:
@@ -123,14 +91,10 @@ def subtract(value, arg):
         return value
 
 
-
-
-
-@register.filter(name='add_class')
-
+@register.filter(name="add_class")
 def add_class(field, css):
-
     """Agrega clases CSS a un widget de formulario en el template."""
 
-    return field.as_widget(attrs={**field.field.widget.attrs, 'class': f"{field.field.widget.attrs.get('class', '')} {css}"})
-
+    return field.as_widget(
+        attrs={**field.field.widget.attrs, "class": f"{field.field.widget.attrs.get('class', '')} {css}"}
+    )
