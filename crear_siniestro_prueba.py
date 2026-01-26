@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 django.setup()
 
-from app.models import (
+from app.models import (  # noqa: E402
 
     Siniestro, Poliza, TipoSiniestro,
 
@@ -26,7 +26,7 @@ from app.models import (
 
 )
 
-from django.utils import timezone
+from django.utils import timezone  # noqa: E402
 
 
 def main():
@@ -180,6 +180,7 @@ def main():
                 print(f'  Creado: {config.nombre}')
 
         print(f'\nAccede al siniestro en: http://localhost:8000/siniestros/{siniestro.pk}/')
+
 
 if __name__ == '__main__':
 

@@ -18,7 +18,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'seguros.settings')
 
 django.setup()
 
-from app.models import TipoSiniestro, ChecklistSiniestroConfig
+from app.models import TipoSiniestro, ChecklistSiniestroConfig  # noqa: E402
 
 # Primero asegurarnos de que existen los tipos de siniestro
 
@@ -276,7 +276,7 @@ total_tipos = TipoSiniestro.objects.filter(activo=True).count()
 
 total_items = ChecklistSiniestroConfig.objects.filter(activo=True).count()
 
-print(f"\nResumen:")
+print("\nResumen:")
 
 print(f"  - Tipos de siniestro activos: {total_tipos}")
 

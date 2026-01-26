@@ -30,7 +30,8 @@ exclude =
     .eggs,
     .mypy_cache,
     .pytest_cache,
-    node_modules
+    node_modules,
+    app/management/commands/poblar_datos_prueba.py
 
 # Códigos de error a ignorar
 ignore =

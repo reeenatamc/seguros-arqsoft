@@ -665,6 +665,7 @@ class RegistroValidadores:
 
 # Crear registro global
 
+
 registro_validadores = RegistroValidadores()
 
 # Registrar validadores por defecto

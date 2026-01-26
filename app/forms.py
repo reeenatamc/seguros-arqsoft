@@ -543,6 +543,7 @@ class SubgrupoRamoForm(forms.ModelForm):
 
 # Alias para compatibilidad con código existente (deprecado)
 
+
 RamoForm = GrupoRamoForm
 
 SubtipoRamoForm = SubgrupoRamoForm
@@ -940,6 +941,7 @@ class DetallePolizaRamoForm(forms.ModelForm):
         return subgrupo
 
 # Formset para detalles de ramo en póliza
+
 
 DetallePolizaRamoFormSet = inlineformset_factory(
 
@@ -1365,6 +1367,7 @@ class AdjuntoSiniestroForm(forms.ModelForm):
         }
 
 # Formset para adjuntos de siniestro
+
 
 AdjuntoSiniestroFormSet = inlineformset_factory(
 

@@ -239,7 +239,7 @@ class Command(BaseCommand):
 
         total_items = ChecklistSiniestroConfig.objects.filter(activo=True).count()
 
-        self.stdout.write(f"\nResumen:")
+        self.stdout.write("\nResumen:")
 
         self.stdout.write(f"  - Tipos de siniestro activos: {total_tipos}")
 

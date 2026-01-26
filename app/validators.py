@@ -338,6 +338,7 @@ class PDFValidator(FileValidator):
 
 # Instancias pre-configuradas para uso común
 
+
 validate_document = FileValidator()
 
 validate_image = ImageValidator()

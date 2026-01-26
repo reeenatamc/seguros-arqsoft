@@ -26,9 +26,11 @@ import random
 
 import calendar
 
+
+
 from app.models import (
 
-    ConfiguracionSistema, CompaniaAseguradora, CorredorSeguros,
+    ConfiguracionSistema, CompaniaAseguradora, CorredorSeguros, 
 
     TipoPoliza, ResponsableCustodio, Poliza, Factura, Pago, TipoSiniestro, Siniestro, Alerta,
 
@@ -37,9 +39,14 @@ from app.models import (
 )
 
 
+
+
+
 class Command(BaseCommand):
 
     help = 'Poblar la base de datos con datos de prueba'
+
+
 
     def add_arguments(self, parser):
 
@@ -63,21 +70,31 @@ class Command(BaseCommand):
 
         )
 
+
+
     def handle(self, *args, **options):
 
         self.extendido = options.get('extendido', False)
 
         modo = 'EXTENDIDO' if self.extendido else 'BÁSICO'
 
+        
+
         self.stdout.write(self.style.NOTICE(f'🚀 Iniciando población de datos de prueba (Modo {modo})...'))
+
+        
 
         if options['limpiar']:
 
             self.limpiar_datos()
 
+        
+
         # Crear usuario admin si no existe
 
         admin_user = self.crear_usuario_admin()
+
+        
 
         # 1. Configuración del sistema
 
@@ -87,6 +104,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS('     ✓ Configuraciones creadas'))
 
+        
+
         # 2. Compañías aseguradoras
 
         self.stdout.write('  🏢 Creando compañías aseguradoras...')
@@ -94,6 +113,8 @@ class Command(BaseCommand):
         companias = self.crear_companias()
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(companias)} compañías creadas'))
+
+        
 
         # 3. Corredores de seguros
 
@@ -103,6 +124,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(corredores)} corredores creados'))
 
+        
+
         # 4. Tipos de póliza
 
         self.stdout.write('  📋 Creando tipos de póliza...')
@@ -110,6 +133,8 @@ class Command(BaseCommand):
         tipos_poliza = self.crear_tipos_poliza()
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(tipos_poliza)} tipos de póliza creados'))
+
+        
 
         # 5. Tipos de siniestro (ampliado)
 
@@ -119,6 +144,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(tipos_siniestro)} tipos de siniestro creados'))
 
+        
+
         # 6. Responsables/Custodios
 
         self.stdout.write('  👤 Creando responsables/custodios...')
@@ -126,6 +153,8 @@ class Command(BaseCommand):
         responsables = self.crear_responsables()
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(responsables)} responsables creados'))
+
+        
 
         # 7. Pólizas
 
@@ -135,6 +164,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(polizas)} pólizas creadas'))
 
+        
+
         # 8. Facturas (distribuidas en el tiempo)
 
         self.stdout.write('  💰 Creando facturas...')
@@ -142,6 +173,8 @@ class Command(BaseCommand):
         facturas = self.crear_facturas(polizas, admin_user)
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(facturas)} facturas creadas'))
+
+        
 
         # 9. Pagos
 
@@ -151,6 +184,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(pagos)} pagos creados'))
 
+        
+
         # 10. Siniestros (variedad de tipos y estados)
 
         self.stdout.write('  🚗 Creando siniestros...')
@@ -158,6 +193,8 @@ class Command(BaseCommand):
         siniestros = self.crear_siniestros(polizas, tipos_siniestro, responsables, admin_user)
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(siniestros)} siniestros creados'))
+
+        
 
         # 11. Alertas
 
@@ -167,6 +204,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(alertas)} alertas creadas'))
 
+        
+
         # 12. Bienes Asegurados
 
         self.stdout.write('  📦 Creando bienes asegurados...')
@@ -174,6 +213,8 @@ class Command(BaseCommand):
         bienes = self.create_insured_assets(polizas, responsables, admin_user)
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(bienes)} bienes asegurados creados'))
+
+        
 
         # 13. Cotizaciones
 
@@ -183,6 +224,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(cotizaciones)} cotizaciones creadas'))
 
+        
+
         # 14. Renovaciones
 
         self.stdout.write('  🔄 Creando renovaciones de pólizas...')
@@ -190,6 +233,8 @@ class Command(BaseCommand):
         renovaciones = self.create_renewals(polizas, admin_user)
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(renovaciones)} renovaciones creadas'))
+
+        
 
         # 15. Aprobaciones de Pago
 
@@ -199,6 +244,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(aprobaciones)} aprobaciones creadas'))
 
+        
+
         # 16. Eventos del Calendario
 
         self.stdout.write('  📅 Creando eventos de calendario...')
@@ -207,6 +254,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'     ✓ {len(eventos)} eventos creados'))
 
+        
+
         # 17. Actualizar estados
 
         self.stdout.write('  🔄 Actualizando estados...')
@@ -214,6 +263,8 @@ class Command(BaseCommand):
         self.actualizar_estados(polizas, facturas)
 
         self.stdout.write(self.style.SUCCESS('     ✓ Estados actualizados'))
+
+        
 
         self.stdout.write('')
 
@@ -249,6 +300,8 @@ class Command(BaseCommand):
 
         self.stdout.write('')
 
+
+
     def limpiar_datos(self):
 
         self.stdout.write(self.style.WARNING('  🗑️ Limpiando datos existentes...'))
@@ -272,6 +325,8 @@ class Command(BaseCommand):
         CompaniaAseguradora.objects.all().delete()
 
         self.stdout.write(self.style.SUCCESS('     ✓ Datos limpiados'))
+
+
 
     def crear_usuario_admin(self):
 
@@ -303,6 +358,8 @@ class Command(BaseCommand):
 
         return user
 
+
+
     def crear_companias(self):
 
         companias_data = [
@@ -318,6 +375,8 @@ class Command(BaseCommand):
             {'nombre': 'Aseguradora del Sur', 'ruc': '1791408780001'},
 
         ]
+
+        
 
         companias = []
 
@@ -349,6 +408,8 @@ class Command(BaseCommand):
 
         return companias
 
+
+
     def crear_corredores(self):
 
         corredores_data = [
@@ -360,6 +421,8 @@ class Command(BaseCommand):
             {'nombre': 'Nova Corredores', 'ruc': '1793456789001'},
 
         ]
+
+        
 
         corredores = []
 
@@ -389,6 +452,8 @@ class Command(BaseCommand):
 
         return corredores
 
+
+
     def crear_tipos_poliza(self):
 
         tipos_data = [
@@ -407,6 +472,8 @@ class Command(BaseCommand):
 
         ]
 
+        
+
         tipos = []
 
         for data in tipos_data:
@@ -422,6 +489,8 @@ class Command(BaseCommand):
             tipos.append(tipo)
 
         return tipos
+
+
 
     def crear_tipos_siniestro(self):
 
@@ -463,6 +532,8 @@ class Command(BaseCommand):
 
         ]
 
+        
+
         tipos = []
 
         for data in tipos_data:
@@ -485,6 +556,8 @@ class Command(BaseCommand):
 
         return tipos
 
+
+
     def crear_polizas(self, companias, corredores, tipos, usuario):
 
         hoy = timezone.now().date()
@@ -493,6 +566,8 @@ class Command(BaseCommand):
 
         polizas = []
 
+        
+
         # Usar timestamp para generar números únicos y evitar colisiones
 
         import time
@@ -500,6 +575,8 @@ class Command(BaseCommand):
         base_id = int(time.time()) % 100000  # Últimos 5 dígitos del timestamp
 
         contador = base_id
+
+        
 
         # Determinar cantidad según modo
 
@@ -527,6 +604,8 @@ class Command(BaseCommand):
 
             anios_historicos = 0
 
+        
+
         # Pólizas vigentes (estado actual: vigente)
 
         for i in range(num_vigentes):
@@ -534,6 +613,8 @@ class Command(BaseCommand):
             dias_inicio = random.randint(-180, -30)
 
             dias_fin = random.randint(60, 365)
+
+            
 
             poliza = Poliza.objects.create(
 
@@ -563,11 +644,15 @@ class Command(BaseCommand):
 
             contador += 1
 
+        
+
         # Pólizas por vencer (próximos 30 días)
 
         for i in range(num_por_vencer):
 
             dias_fin = random.randint(1, 30)
+
+            
 
             poliza = Poliza.objects.create(
 
@@ -597,11 +682,15 @@ class Command(BaseCommand):
 
             contador += 1
 
+        
+
         # Pólizas vencidas (recientemente)
 
         for i in range(num_vencidas):
 
             dias_fin = random.randint(-90, -1)
+
+            
 
             poliza = Poliza.objects.create(
 
@@ -631,6 +720,8 @@ class Command(BaseCommand):
 
             contador += 1
 
+        
+
         # Pólizas históricas (años anteriores) - solo en modo extendido
 
         for anio_offset in range(1, anios_historicos + 1):
@@ -649,9 +740,13 @@ class Command(BaseCommand):
 
                 fecha_fin = fecha_inicio + timedelta(days=365)
 
+                
+
                 # Algunos con estado cancelado
 
                 estado = 'cancelada' if random.random() < 0.1 else 'vencida'
+
+                
 
                 poliza = Poliza.objects.create(
 
@@ -683,7 +778,11 @@ class Command(BaseCommand):
 
                 contador += 1
 
+        
+
         return polizas
+
+
 
     def crear_facturas(self, polizas, usuario):
 
@@ -693,6 +792,8 @@ class Command(BaseCommand):
 
         facturas = []
 
+        
+
         # Usar timestamp para generar números únicos
 
         import time
@@ -701,6 +802,8 @@ class Command(BaseCommand):
 
         contador = base_id + 50000  # Offset para diferenciar de pólizas
 
+        
+
         # Generar facturas para la mayoría de las pólizas
 
         for poliza in polizas:
@@ -708,6 +811,8 @@ class Command(BaseCommand):
             # Calcular cuántas facturas generar según la duración de la póliza
 
             duracion_dias = (poliza.fecha_fin - poliza.fecha_inicio).days
+
+            
 
             # Determinar número de facturas según duración
 
@@ -719,6 +824,8 @@ class Command(BaseCommand):
 
                 num_facturas = 1
 
+            
+
             for j in range(num_facturas):
 
                 # Distribuir fechas de emisión a lo largo de la vigencia de la póliza
@@ -729,7 +836,11 @@ class Command(BaseCommand):
 
                 dias_desde_inicio = offset_base + random.randint(0, max(1, rango_emision - 30))
 
+                
+
                 fecha_emision = poliza.fecha_inicio + timedelta(days=dias_desde_inicio)
+
+                
 
                 # No crear facturas con fecha futura
 
@@ -737,9 +848,13 @@ class Command(BaseCommand):
 
                     continue
 
+                
+
                 fecha_vencimiento = fecha_emision + timedelta(days=30)
 
                 anio_factura = fecha_emision.year
+
+                
 
                 # Variar los estados de las facturas
 
@@ -755,7 +870,11 @@ class Command(BaseCommand):
 
                     estado_base = random.choice(['pendiente', 'pagada', 'parcialmente_pagada'])
 
+                
+
                 subtotal = Decimal(random.randint(500, 8000))
+
+            
 
             factura = Factura.objects.create(
 
@@ -779,6 +898,8 @@ class Command(BaseCommand):
 
                 contador += 1
 
+        
+
         # Facturas adicionales distribuidas mensualmente (modo extendido)
 
         if self.extendido:
@@ -795,6 +916,8 @@ class Command(BaseCommand):
 
                         continue
 
+                    
+
                     # Crear 3-8 facturas por mes
 
                     num_facturas_mes = random.randint(3, 8)
@@ -805,6 +928,8 @@ class Command(BaseCommand):
 
                         fecha_emision = date(anio, mes, dia)
 
+                        
+
                         # Seleccionar una póliza válida para esa fecha
 
                         polizas_validas = [p for p in polizas if p.fecha_inicio <= fecha_emision <= p.fecha_fin]
@@ -813,11 +938,17 @@ class Command(BaseCommand):
 
                             continue
 
+                        
+
                         poliza = random.choice(polizas_validas)
 
                         fecha_vencimiento = fecha_emision + timedelta(days=30)
 
+                        
+
                         subtotal = Decimal(random.randint(800, 12000))
+
+                        
 
                         factura = Factura.objects.create(
 
@@ -841,7 +972,11 @@ class Command(BaseCommand):
 
                         contador += 1
 
+        
+
         return facturas
+
+
 
     def crear_pagos(self, facturas, usuario):
 
@@ -853,6 +988,8 @@ class Command(BaseCommand):
 
         estados_pago = ['aprobado', 'aprobado', 'aprobado', 'pendiente', 'rechazado']
 
+        
+
         for factura in facturas:
 
             # Probabilidad de tener pago según antigüedad
@@ -861,9 +998,13 @@ class Command(BaseCommand):
 
             prob_pago = min(0.9, 0.3 + (dias_desde_emision / 100))
 
+            
+
             if random.random() > prob_pago:
 
                 continue  # Sin pago para esta factura
+
+            
 
             # Determinar tipo de pago
 
@@ -875,6 +1016,8 @@ class Command(BaseCommand):
 
             )[0]
 
+            
+
             if tipo_pago == 'completo':
 
                 # Pago completo
@@ -884,6 +1027,8 @@ class Command(BaseCommand):
                 if fecha_pago > hoy:
 
                     fecha_pago = hoy - timedelta(days=random.randint(1, 5))
+
+                
 
             pago = Pago.objects.create(
 
@@ -905,6 +1050,8 @@ class Command(BaseCommand):
 
             pagos.append(pago)
 
+        
+
             elif tipo_pago == 'parcial':
 
                 # Pago parcial (30-70% del monto)
@@ -913,11 +1060,15 @@ class Command(BaseCommand):
 
                 monto_parcial = (factura.monto_total * porcentaje).quantize(Decimal('0.01'))
 
+                
+
                 fecha_pago = factura.fecha_emision + timedelta(days=random.randint(5, 20))
 
                 if fecha_pago > hoy:
 
                     fecha_pago = hoy - timedelta(days=random.randint(1, 5))
+
+                
 
             pago = Pago.objects.create(
 
@@ -939,6 +1090,8 @@ class Command(BaseCommand):
 
                 pagos.append(pago)
 
+                
+
             else:
 
                 # Múltiples pagos
@@ -947,15 +1100,21 @@ class Command(BaseCommand):
 
                 monto_por_pago = (factura.monto_total / num_pagos).quantize(Decimal('0.01'))
 
+                
+
                 for k in range(num_pagos):
 
                     dias_offset = (k + 1) * random.randint(7, 15)
 
                     fecha_pago = factura.fecha_emision + timedelta(days=dias_offset)
 
+                    
+
                     if fecha_pago > hoy:
 
                         break  # No crear pagos futuros
+
+                    
 
                     pago = Pago.objects.create(
 
@@ -977,7 +1136,11 @@ class Command(BaseCommand):
 
             pagos.append(pago)
 
+        
+
         return pagos
+
+
 
     def crear_responsables(self):
 
@@ -985,7 +1148,7 @@ class Command(BaseCommand):
 
         departamentos = [
 
-            'Informática', 'Administración', 'Recursos Humanos',
+            'Informática', 'Administración', 'Recursos Humanos', 
 
             'Contabilidad', 'Mantenimiento', 'Seguridad'
 
@@ -1011,6 +1174,8 @@ class Command(BaseCommand):
 
         ]
 
+        
+
         responsables = []
 
         for i, nombre in enumerate(nombres):
@@ -1033,7 +1198,11 @@ class Command(BaseCommand):
 
             responsables.append(responsable)
 
+        
+
         return responsables
+
+
 
     def crear_siniestros(self, polizas, tipos_siniestro, responsables, usuario):
 
@@ -1043,19 +1212,21 @@ class Command(BaseCommand):
 
         siniestros = []
 
+        
+
         # Todos los estados posibles de siniestros
 
         estados = [
 
-            'registrado',
+            'registrado', 
 
-            'documentacion_pendiente',
+            'documentacion_pendiente', 
 
-            'enviado_aseguradora',
+            'enviado_aseguradora', 
 
-            'en_evaluacion',
+            'en_evaluacion', 
 
-            'aprobado',
+            'aprobado', 
 
             'rechazado',
 
@@ -1063,9 +1234,13 @@ class Command(BaseCommand):
 
         ]
 
+        
+
         # Pesos para distribución realista de estados
 
         pesos_estados = [0.1, 0.15, 0.1, 0.15, 0.15, 0.05, 0.3]
+
+        
 
         # Lista ampliada de bienes afectados
 
@@ -1117,6 +1292,8 @@ class Command(BaseCommand):
 
         ]
 
+        
+
         ubicaciones = [
 
             'Edificio A, Piso 1', 'Edificio A, Piso 2', 'Edificio A, Piso 3',
@@ -1132,6 +1309,8 @@ class Command(BaseCommand):
             'Recepción Principal', 'Área de Mantenimiento',
 
         ]
+
+        
 
         causas = [
 
@@ -1157,6 +1336,8 @@ class Command(BaseCommand):
 
         ]
 
+        
+
         # Usar timestamp para generar números únicos
 
         import time
@@ -1164,6 +1345,8 @@ class Command(BaseCommand):
         base_id = int(time.time()) % 100000
 
         contador = base_id + 70000  # Offset para diferenciar de pólizas y facturas
+
+        
 
         # Determinar cantidad de siniestros según modo
 
@@ -1177,11 +1360,15 @@ class Command(BaseCommand):
 
                 num_siniestros_tipo = random.randint(3, 8)
 
+                
+
                 for _ in range(num_siniestros_tipo):
 
                     # Seleccionar póliza válida
 
                     poliza = random.choice(polizas)
+
+                    
 
                     # Calcular fecha del siniestro dentro de la vigencia
 
@@ -1191,9 +1378,13 @@ class Command(BaseCommand):
 
                         continue
 
+                    
+
                     dias_offset = random.randint(1, max(1, dias_vigencia - 1))
 
                     fecha_siniestro_date = poliza.fecha_inicio + timedelta(days=dias_offset)
+
+                    
 
                     # No crear siniestros futuros
 
@@ -1201,15 +1392,21 @@ class Command(BaseCommand):
 
                         fecha_siniestro_date = hoy.date() - timedelta(days=random.randint(1, 30))
 
+                    
+
                     fecha_siniestro = timezone.make_aware(
 
                         timezone.datetime.combine(fecha_siniestro_date, timezone.datetime.min.time())
 
                     ) + timedelta(hours=random.randint(8, 18), minutes=random.randint(0, 59))
 
+                    
+
                     bien = random.choice(bienes)
 
                     estado = random.choices(estados, weights=pesos_estados)[0]
+
+                    
 
                     siniestro = self._crear_siniestro(
 
@@ -1222,6 +1419,8 @@ class Command(BaseCommand):
                     siniestros.append(siniestro)
 
                     contador += 1
+
+            
 
             # Agregar siniestros adicionales para tener buena distribución mensual
 
@@ -1237,15 +1436,21 @@ class Command(BaseCommand):
 
                         continue
 
+                    
+
                     # 3-10 siniestros por mes
 
                     num_siniestros_mes = random.randint(3, 10)
+
+                    
 
                     for _ in range(num_siniestros_mes):
 
                         dia = random.randint(1, 28)
 
                         fecha_siniestro_date = date(anio, mes, dia)
+
+                        
 
                         # Buscar póliza válida
 
@@ -1255,7 +1460,11 @@ class Command(BaseCommand):
 
                             continue
 
+                        
+
                         poliza = random.choice(polizas_validas)
+
+                        
 
                         fecha_siniestro = timezone.make_aware(
 
@@ -1263,11 +1472,15 @@ class Command(BaseCommand):
 
                         ) + timedelta(hours=random.randint(8, 18), minutes=random.randint(0, 59))
 
+                        
+
                         bien = random.choice(bienes)
 
                         tipo_siniestro = random.choice(tipos_siniestro)
 
                         estado = random.choices(estados, weights=pesos_estados)[0]
+
+                        
 
                         siniestro = self._crear_siniestro(
 
@@ -1293,6 +1506,8 @@ class Command(BaseCommand):
 
             fecha_siniestro = hoy - timedelta(days=dias_atras)
 
+            
+
             if fecha_siniestro.date() < poliza.fecha_inicio:
 
                 fecha_siniestro = timezone.make_aware(
@@ -1301,9 +1516,13 @@ class Command(BaseCommand):
 
                 )
 
+            
+
                 estado = random.choices(estados, weights=pesos_estados)[0]
 
                 tipo_siniestro = random.choice(tipos_siniestro)
+
+                
 
                 siniestro = self._crear_siniestro(
 
@@ -1317,9 +1536,13 @@ class Command(BaseCommand):
 
                 contador += 1
 
+        
+
         return siniestros
 
-    def _crear_siniestro(self, poliza, tipo_siniestro, fecha_siniestro, bien, estado,
+    
+
+    def _crear_siniestro(self, poliza, tipo_siniestro, fecha_siniestro, bien, estado, 
 
                          responsables, ubicaciones, causas, contador, usuario):
 
@@ -1327,7 +1550,11 @@ class Command(BaseCommand):
 
         anio = fecha_siniestro.year if hasattr(fecha_siniestro, 'year') else fecha_siniestro.date().year
 
+        
+
         responsable = random.choice(responsables) if responsables else None
+
+            
 
             siniestro = Siniestro.objects.create(
 
@@ -1363,15 +1590,21 @@ class Command(BaseCommand):
 
             )
 
+            
+
             # Agregar datos adicionales según el estado
 
         fecha_base = fecha_siniestro.date() if hasattr(fecha_siniestro, 'date') else fecha_siniestro
+
+        
 
         if estado in ['enviado_aseguradora', 'en_evaluacion', 'aprobado', 'rechazado', 'cerrado']:
 
             siniestro.fecha_envio_aseguradora = fecha_base + timedelta(days=random.randint(3, 10))
 
                 siniestro.save()
+
+            
 
             if estado in ['aprobado', 'cerrado']:
 
@@ -1380,6 +1613,8 @@ class Command(BaseCommand):
             siniestro.monto_indemnizado = siniestro.monto_estimado * Decimal(str(random.uniform(0.6, 1.0)))
 
             siniestro.save()
+
+        
 
         if estado == 'rechazado':
 
@@ -1401,13 +1636,19 @@ class Command(BaseCommand):
 
                 siniestro.save()
 
+            
+
             if estado == 'cerrado':
 
             siniestro.fecha_liquidacion = siniestro.fecha_respuesta_aseguradora + timedelta(days=random.randint(3, 15))
 
                 siniestro.save()
 
+            
+
         return siniestro
+
+
 
     def crear_alertas(self, polizas, facturas, siniestros):
 
@@ -1415,7 +1656,7 @@ class Command(BaseCommand):
 
         alertas = []
 
-        # Tipos válidos según el modelo: vencimiento_poliza, pago_pendiente, documentacion_pendiente,
+        # Tipos válidos según el modelo: vencimiento_poliza, pago_pendiente, documentacion_pendiente, 
 
         # respuesta_aseguradora, pronto_pago
 
@@ -1425,9 +1666,13 @@ class Command(BaseCommand):
 
         estados_alerta = ['pendiente', 'enviada', 'leida', 'atendida']
 
+        
+
         hoy = timezone.now().date()
 
         ahora = timezone.now()
+
+        
 
         # Alertas de pólizas por vencer
 
@@ -1461,6 +1706,8 @@ class Command(BaseCommand):
 
                     alertas.append(alerta)
 
+        
+
         # Alertas de facturas vencidas (pago pendiente)
 
         for factura in facturas:
@@ -1492,6 +1739,8 @@ class Command(BaseCommand):
                 if created:
 
                     alertas.append(alerta)
+
+        
 
         # Alertas de siniestros pendientes
 
@@ -1525,6 +1774,8 @@ class Command(BaseCommand):
 
                         alertas.append(alerta)
 
+            
+
             elif siniestro.estado == 'enviado_aseguradora':
 
                 dias_esperando = (hoy - siniestro.fecha_envio_aseguradora).days if siniestro.fecha_envio_aseguradora else 0
@@ -1553,6 +1804,8 @@ class Command(BaseCommand):
 
                         alertas.append(alerta)
 
+        
+
         # Algunas alertas históricas atendidas (modo extendido)
 
         if self.extendido:
@@ -1566,6 +1819,8 @@ class Command(BaseCommand):
                 fecha_envio = fecha_creacion + timedelta(hours=random.randint(1, 24))
 
                 fecha_lectura = fecha_envio + timedelta(days=random.randint(1, 3))
+
+                
 
                 alerta = Alerta.objects.create(
 
@@ -1593,7 +1848,11 @@ class Command(BaseCommand):
 
                 alertas.append(alerta)
 
+        
+
         return alertas
+
+
 
     def actualizar_estados(self, polizas, facturas):
 
@@ -1603,11 +1862,17 @@ class Command(BaseCommand):
 
             poliza.save()
 
+        
+
         for factura in facturas:
 
             factura.actualizar_estado()
 
+
+
     # ==================== NUEVOS MÓDULOS ====================
+
+    
 
     def create_insured_assets(self, polizas, responsables, usuario):
 
@@ -1617,11 +1882,15 @@ class Command(BaseCommand):
 
         hoy = timezone.now().date()
 
+        
+
         # Usar timestamp para IDs únicos
 
         import time
 
         base_id = int(time.time()) % 100000
+
+        
 
         # Categorías de bienes
 
@@ -1644,6 +1913,8 @@ class Command(BaseCommand):
             'Equipos de Laboratorio',
 
         ]
+
+        
 
         # Bienes de ejemplo
 
@@ -1685,6 +1956,8 @@ class Command(BaseCommand):
 
         ]
 
+        
+
         locations = [
 
             ('Edificio Principal', 'Planta Baja', 'Recepción'),
@@ -1705,7 +1978,11 @@ class Command(BaseCommand):
 
         ]
 
+        
+
         num_assets = 40 if self.extendido else 15
+
+        
 
         # Obtener subgrupos para asignar a los bienes
 
@@ -1717,6 +1994,8 @@ class Command(BaseCommand):
 
             return assets
 
+        
+
         for i in range(num_assets):
 
             sample = random.choice(sample_assets)
@@ -1724,6 +2003,8 @@ class Command(BaseCommand):
             location = random.choice(locations)
 
             poliza = random.choice(polizas) if random.random() > 0.15 else None
+
+            
 
             # Valor con depreciación
 
@@ -1735,13 +2016,19 @@ class Command(BaseCommand):
 
             current_value = max(purchase_value * (1 - depreciation), purchase_value * Decimal('0.2'))
 
+            
+
             purchase_date = hoy - timedelta(days=int(years_old * 365))
+
+            
 
             # Mapeo de estados y condiciones a español
 
             estado_map = {'active': 'activo', 'inactive': 'inactivo', 'disposed': 'dado_de_baja'}
 
             condicion_map = {'excellent': 'excelente', 'good': 'bueno', 'fair': 'regular', 'poor': 'malo'}
+
+            
 
             estado_en = random.choices(
 
@@ -1759,6 +2046,8 @@ class Command(BaseCommand):
 
             )[0]
 
+            
+
             # Si no hay póliza, usar la primera disponible (BienAsegurado requiere póliza)
 
             if not poliza:
@@ -1768,6 +2057,8 @@ class Command(BaseCommand):
             if not poliza:
 
                 continue  # Saltar si no hay póliza
+
+            
 
             asset = BienAsegurado.objects.create(
 
@@ -1821,7 +2112,11 @@ class Command(BaseCommand):
 
             assets.append(asset)
 
+        
+
         return assets
+
+
 
     def create_quotes(self, companias, corredores, tipos_poliza, usuario):
 
@@ -1831,9 +2126,13 @@ class Command(BaseCommand):
 
         hoy = timezone.now().date()
 
+        
+
         import time
 
         base_id = int(time.time()) % 100000
+
+        
 
         titles = [
 
@@ -1855,13 +2154,19 @@ class Command(BaseCommand):
 
         ]
 
+        
+
         num_quotes = 15 if self.extendido else 5
+
+        
 
         for i in range(num_quotes):
 
             dias_atras = random.randint(0, 60) if random.random() > 0.3 else -random.randint(1, 30)
 
             request_date = hoy - timedelta(days=dias_atras)
+
+            
 
             status = random.choices(
 
@@ -1870,6 +2175,8 @@ class Command(BaseCommand):
                 weights=[0.15, 0.20, 0.15, 0.15, 0.10, 0.10, 0.15]
 
             )[0]
+
+            
 
             quote = Quote.objects.create(
 
@@ -1907,6 +2214,8 @@ class Command(BaseCommand):
 
             )
 
+            
+
             # Crear opciones de cotización (2-4 por cotización)
 
             num_options = random.randint(2, 4)
@@ -1914,6 +2223,8 @@ class Command(BaseCommand):
             for j in range(num_options):
 
                 base_premium = float(quote.sum_insured) * random.uniform(0.02, 0.08)
+
+                
 
                 QuoteOption.objects.create(
 
@@ -1941,9 +2252,15 @@ class Command(BaseCommand):
 
                 )
 
+            
+
             quotes.append(quote)
 
+        
+
         return quotes
+
+
 
     def create_renewals(self, polizas, usuario):
 
@@ -1953,25 +2270,37 @@ class Command(BaseCommand):
 
         hoy = timezone.now().date()
 
+        
+
         import time
 
         base_id = int(time.time()) % 100000
+
+        
 
         # Seleccionar pólizas que podrían estar por renovar
 
         polizas_para_renovar = [p for p in polizas if p.dias_para_vencer <= 60]
 
+        
+
         if not polizas_para_renovar:
 
             polizas_para_renovar = random.sample(polizas, min(10, len(polizas)))
 
+        
+
         num_renewals = min(len(polizas_para_renovar), 12 if self.extendido else 5)
+
+        
 
         for i, poliza in enumerate(polizas_para_renovar[:num_renewals]):
 
             notification_date = poliza.fecha_fin - timedelta(days=random.randint(45, 60))
 
             due_date = poliza.fecha_fin - timedelta(days=random.randint(7, 15))
+
+            
 
             # Determinar estado basado en fechas
 
@@ -1987,6 +2316,8 @@ class Command(BaseCommand):
 
                 status = random.choice(['pending', 'in_progress'])
 
+            
+
             # Prima propuesta con variación
 
             original_premium = random.uniform(1000, 10000)
@@ -1994,6 +2325,8 @@ class Command(BaseCommand):
             change_pct = random.uniform(-0.1, 0.25)
 
             proposed_premium = original_premium * (1 + change_pct)
+
+            
 
             renewal = PolicyRenewal.objects.create(
 
@@ -2023,7 +2356,11 @@ class Command(BaseCommand):
 
             renewals.append(renewal)
 
+        
+
         return renewals
+
+
 
     def create_payment_approvals(self, pagos):
 
@@ -2031,19 +2368,29 @@ class Command(BaseCommand):
 
         approvals = []
 
+        
+
         # Seleccionar pagos que requieren aprobación (montos altos)
 
         pagos_para_aprobar = [p for p in pagos if p.monto >= Decimal('1000')]
+
+        
 
         if not pagos_para_aprobar:
 
             pagos_para_aprobar = random.sample(pagos, min(10, len(pagos)))
 
+        
+
         num_approvals = min(len(pagos_para_aprobar), 15 if self.extendido else 5)
+
+        
 
         for pago in pagos_para_aprobar[:num_approvals]:
 
             required_level = PaymentApproval.get_required_level(pago.monto)
+
+            
 
             status = random.choices(
 
@@ -2052,6 +2399,8 @@ class Command(BaseCommand):
                 weights=[0.40, 0.45, 0.15]
 
             )[0]
+
+            
 
             approval = PaymentApproval.objects.create(
 
@@ -2077,7 +2426,11 @@ class Command(BaseCommand):
 
             approvals.append(approval)
 
+        
+
         return approvals
+
+
 
     def create_calendar_events(self, polizas, facturas, usuario):
 
@@ -2086,6 +2439,8 @@ class Command(BaseCommand):
         events = []
 
         hoy = timezone.now().date()
+
+        
 
         # Eventos de vencimiento de pólizas
 
@@ -2098,6 +2453,8 @@ class Command(BaseCommand):
                     'high' if poliza.dias_para_vencer <= 15 else 'medium'
 
                 )
+
+                
 
                 event, created = CalendarEvent.objects.get_or_create(
 
@@ -2127,6 +2484,8 @@ class Command(BaseCommand):
 
                     events.append(event)
 
+        
+
         # Eventos de vencimiento de facturas
 
         for factura in facturas:
@@ -2142,6 +2501,8 @@ class Command(BaseCommand):
                         'high' if dias_para_vencer <= 7 else 'medium'
 
                     )
+
+                    
 
                     event, created = CalendarEvent.objects.get_or_create(
 
@@ -2171,6 +2532,8 @@ class Command(BaseCommand):
 
                         events.append(event)
 
+        
+
         # Eventos manuales adicionales
 
         if self.extendido:
@@ -2191,11 +2554,15 @@ class Command(BaseCommand):
 
             ]
 
+            
+
             for i in range(10):
 
                 dias = random.randint(-10, 45)
 
                 fecha = hoy + timedelta(days=dias)
+
+                
 
                 event = CalendarEvent.objects.create(
 
@@ -2225,4 +2592,7 @@ class Command(BaseCommand):
 
                 events.append(event)
 
+        
+
         return events
+

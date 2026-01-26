@@ -530,7 +530,7 @@ El backup se encuentra en: {backup.ruta}
 
         else:
 
-            subject = f'❌ Error en Backup - Sistema de Seguros'
+            subject = '❌ Error en Backup - Sistema de Seguros'
 
             message = f'''
 

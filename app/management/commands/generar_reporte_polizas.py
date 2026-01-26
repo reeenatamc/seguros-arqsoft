@@ -67,7 +67,7 @@ class Command(BaseCommand):
 
         estado = options['estado']
 
-        self.stdout.write(self.style.SUCCESS(f'Generando reporte de pólizas...'))
+        self.stdout.write(self.style.SUCCESS('Generando reporte de pólizas...'))
 
         # Obtener pólizas según filtro
 

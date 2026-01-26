@@ -1038,6 +1038,7 @@ def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 
 # ==============================================================================
 
+
 _dispatcher_global: Optional[NotificacionDispatcher] = None
 
 

@@ -73,13 +73,13 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS('=' * 60))
 
-        self.stdout.write(self.style.SUCCESS(f'✅ Datos creados exitosamente!'))
+        self.stdout.write(self.style.SUCCESS('✅ Datos creados exitosamente!'))
 
         self.stdout.write(self.style.SUCCESS('=' * 60))
 
         self.stdout.write(f'   Siniestros creados: {len(siniestros)}')
 
-        self.stdout.write(f'   URL del reporte: /reportes/dias-gestion/')
+        self.stdout.write('   URL del reporte: /reportes/dias-gestion/')
 
         self.stdout.write('')
 

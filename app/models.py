@@ -420,6 +420,7 @@ class BienAseguradoManager(models.Manager):
 
 # ==================== CONSTANTES Y VALIDADORES ====================
 
+
 validador_ruc = RegexValidator(
 
     regex=r'^\d{13}$',
@@ -3776,6 +3777,7 @@ class SubgrupoRamo(models.Model):
         return f"{self.grupo_ramo.tipo_ramo.nombre} > {self.grupo_ramo.nombre} > {self.nombre}"
 
 # Alias para compatibilidad con código existente (deprecado)
+
 
 Ramo = GrupoRamo
 

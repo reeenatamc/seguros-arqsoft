@@ -510,7 +510,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"Pago creado: {pago.referencia}"))
 
-        self.stdout.write(self.style.SUCCESS(f"Aprobación de pago creada"))
+        self.stdout.write(self.style.SUCCESS("Aprobación de pago creada"))
 
         self.stdout.write(self.style.SUCCESS(f"Bien asegurado creado: {bien.asset_code}"))
 

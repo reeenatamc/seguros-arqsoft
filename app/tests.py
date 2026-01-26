@@ -232,7 +232,6 @@ class SecurityTests(TestCase):
         # No debería iniciar sesión
 
         self.assertNotEqual(response.status_code, 200) or \
-
             self.assertFalse(response.wsgi_request.user.is_authenticated)
 
     def test_xss_protection(self):
@@ -435,7 +434,6 @@ def test_authenticated_access(authenticated_client):
     ("user3", "", False),
 
 ])
-
 
 @pytest.mark.django_db
 def test_user_validation(username, email, valid):

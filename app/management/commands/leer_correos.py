@@ -283,7 +283,7 @@ class Command(BaseCommand):
 
                                 self.stdout.write(self.style.WARNING(
 
-                                    f'    ⚠️  Ya existía en el sistema'
+                                    '    ⚠️  Ya existía en el sistema'
 
                                 ))
 
@@ -429,7 +429,7 @@ class Command(BaseCommand):
 
         self.stdout.write(f'┌─ [{index}] {reporte.subject[:50]}{"..." if len(reporte.subject) > 50 else ""}')
 
-        self.stdout.write(f'│')
+        self.stdout.write('│')
 
         self.stdout.write(f'│  📋 Responsable: {reporte.responsable}')
 
@@ -439,9 +439,9 @@ class Command(BaseCommand):
 
         self.stdout.write(f'│  🔍 Causa: {reporte.causa}')
 
-        self.stdout.write(f'│')
+        self.stdout.write('│')
 
-        self.stdout.write(f'│  📦 EQUIPO:')
+        self.stdout.write('│  📦 EQUIPO:')
 
         self.stdout.write(f'│     Tipo: {reporte.equipo.periferico}')
 
@@ -455,7 +455,7 @@ class Command(BaseCommand):
 
             self.stdout.write(f'│     Activo: {reporte.equipo.activo}')
 
-        self.stdout.write(f'│')
+        self.stdout.write('│')
 
         if reporte.attachments:
 
@@ -467,7 +467,7 @@ class Command(BaseCommand):
 
         if verbose:
 
-            self.stdout.write(f'│')
+            self.stdout.write('│')
 
             self.stdout.write(f'│  🔑 Email ID: {reporte.email_id}')
 

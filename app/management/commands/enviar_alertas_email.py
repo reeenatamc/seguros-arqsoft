@@ -115,7 +115,7 @@ class Command(BaseCommand):
 
         # Resumen
 
-        self.stdout.write(self.style.SUCCESS(f'\n✓ Proceso completado:'))
+        self.stdout.write(self.style.SUCCESS('\n✓ Proceso completado:'))
 
         self.stdout.write(f'  - Emails enviados: {emails_enviados}')
 
