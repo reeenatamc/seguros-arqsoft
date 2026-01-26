@@ -1,25 +1,14 @@
 from decimal import Decimal
 
-
-
-from django.db.models.signals import pre_save, post_save
-
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
-
-
-from .models import Siniestro, ConfiguracionSistema
-
+from .models import ConfiguracionSistema, Siniestro
 from .services.alertas import NotificacionesService
 
 
-
-
-
 @receiver(pre_save, sender=Siniestro)
-
 def siniestro_pre_save(sender, instance: Siniestro, **kwargs):
-
     """
 
     Guarda el estado anterior del siniestro en la instancia para poder
@@ -36,7 +25,7 @@ def siniestro_pre_save(sender, instance: Siniestro, **kwargs):
 
         try:
 
-            prev = sender.objects.only('estado').get(pk=instance.pk)
+            prev = sender.objects.only("estado").get(pk=instance.pk)
 
             instance._previous_estado = prev.estado
 
@@ -45,13 +34,8 @@ def siniestro_pre_save(sender, instance: Siniestro, **kwargs):
             instance._previous_estado = None
 
 
-
-
-
 @receiver(post_save, sender=Siniestro)
-
 def siniestro_post_save(sender, instance: Siniestro, created: bool, **kwargs):
-
     """
 
     Automatiza notificaciones de flujo para siniestros:
@@ -71,11 +55,7 @@ def siniestro_post_save(sender, instance: Siniestro, created: bool, **kwargs):
             # Notificar al broker
 
             NotificacionesService.notificar_siniestro_a_broker(
-
-                siniestro=instance,
-
-                usuario=getattr(instance, 'creado_por', None)
-
+                siniestro=instance, usuario=getattr(instance, "creado_por", None)
             )
 
         except Exception:
@@ -84,63 +64,46 @@ def siniestro_post_save(sender, instance: Siniestro, created: bool, **kwargs):
 
             pass
 
-
-
         # Notificar al usuario reportante (si tiene email)
 
-        reportante = getattr(instance, 'creado_por', None)
+        reportante = getattr(instance, "creado_por", None)
 
         if reportante and reportante.email:
 
             try:
 
                 NotificacionesService.notificar_siniestro_a_usuario(
-
                     siniestro=instance,
-
                     usuario=reportante,
-
                 )
 
             except Exception:
 
                 pass
 
-
-
         return
-
-
 
     # 2) En actualizaciones: detectar paso a 'liquidado' o 'cerrado'
 
-    previous_estado = getattr(instance, '_previous_estado', None)
+    previous_estado = getattr(instance, "_previous_estado", None)
 
     nuevo_estado = instance.estado
 
-
-
-    if previous_estado in ('liquidado', 'cerrado'):
+    if previous_estado in ("liquidado", "cerrado"):
 
         # Ya estaba cerrado/liquidado antes; no repetir notificación
 
         return
 
-
-
-    if nuevo_estado in ('liquidado', 'cerrado'):
+    if nuevo_estado in ("liquidado", "cerrado"):
 
         try:
 
             NotificacionesService.notificar_cierre_siniestro(
-
                 siniestro=instance,
-
-                usuario=getattr(instance, 'creado_por', None),
-
+                usuario=getattr(instance, "creado_por", None),
             )
 
         except Exception:
 
             pass
-

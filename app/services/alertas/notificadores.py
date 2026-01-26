@@ -2,13 +2,9 @@
 
 Sistema de Notificaciones Extensible (Patrón Strategy/Plugin).
 
-
-
 Este módulo implementa un sistema de notificaciones que permite agregar
 
 nuevos canales (Email, SMS, WhatsApp, Push) sin modificar el código existente.
-
-
 
 ARQUITECTURA:
 
@@ -20,8 +16,6 @@ ARQUITECTURA:
 
 - Registro de notificadores: Permite agregar nuevos canales dinámicamente
 
-
-
 USO:
 
     from app.services.notificadores import (
@@ -29,8 +23,6 @@ USO:
         NotificacionDispatcher, EmailNotifier, Alerta
 
     )
-
-    
 
     # Crear dispatcher con canales
 
@@ -41,8 +33,6 @@ USO:
         # SMSNotifier(api_key='...'),  # Agregar cuando esté listo
 
     ])
-
-    
 
     # Crear alerta
 
@@ -60,19 +50,13 @@ USO:
 
     )
 
-    
-
     # Enviar por todos los canales
 
     resultados = dispatcher.enviar(alerta)
 
-
-
 EXTENSIBILIDAD:
 
     Para agregar un nuevo canal (ej: WhatsApp):
-
-    
 
     1. Crear clase que herede de Notificador:
 
@@ -84,41 +68,23 @@ EXTENSIBILIDAD:
 
                ...
 
-    
-
     2. Registrarlo en el dispatcher:
 
        dispatcher.registrar_notificador(WhatsAppNotifier(api_key='...'))
 
 """
 
-
-
 from abc import ABC, abstractmethod
-
-from dataclasses import dataclass, field
-
+from dataclasses import dataclass, field  # noqa: F401
 from datetime import datetime
-
 from decimal import Decimal
-
 from enum import Enum
-
-from typing import Any, Dict, List, Optional, Callable
-
-
+from typing import Any, Callable, Dict, List, Optional
 
 from django.conf import settings
-
-from django.core.mail import send_mail, EmailMultiAlternatives
-
+from django.core.mail import EmailMultiAlternatives, send_mail
 from django.template.loader import render_to_string
-
 from django.utils import timezone
-
-
-
-
 
 # ==============================================================================
 
@@ -127,81 +93,62 @@ from django.utils import timezone
 # ==============================================================================
 
 
-
 class TipoAlerta(str, Enum):
-
     """Tipos de alertas soportadas."""
 
     # Siniestros
 
-    SINIESTRO_NUEVO = 'siniestro_nuevo'
+    SINIESTRO_NUEVO = "siniestro_nuevo"
 
-    SINIESTRO_BROKER = 'siniestro_broker'
+    SINIESTRO_BROKER = "siniestro_broker"
 
-    SINIESTRO_USUARIO = 'siniestro_usuario'
+    SINIESTRO_USUARIO = "siniestro_usuario"
 
-    SINIESTRO_RESPONSABLE = 'siniestro_responsable'
+    SINIESTRO_RESPONSABLE = "siniestro_responsable"
 
-    SINIESTRO_CIERRE = 'siniestro_cierre'
+    SINIESTRO_CIERRE = "siniestro_cierre"
 
-    SINIESTRO_DOCUMENTACION = 'siniestro_documentacion'
-
-    
+    SINIESTRO_DOCUMENTACION = "siniestro_documentacion"
 
     # Alertas
 
-    ALERTA_RESPUESTA = 'alerta_respuesta'
+    ALERTA_RESPUESTA = "alerta_respuesta"
 
-    ALERTA_DEPOSITO = 'alerta_deposito'
-
-    
+    ALERTA_DEPOSITO = "alerta_deposito"
 
     # Pólizas
 
-    POLIZA_VENCIMIENTO = 'poliza_vencimiento'
+    POLIZA_VENCIMIENTO = "poliza_vencimiento"
 
-    POLIZA_RENOVACION = 'poliza_renovacion'
-
-    
+    POLIZA_RENOVACION = "poliza_renovacion"
 
     # Facturas
 
-    FACTURA_VENCIMIENTO = 'factura_vencimiento'
+    FACTURA_VENCIMIENTO = "factura_vencimiento"
 
-    FACTURA_PAGO = 'factura_pago'
-
-    
+    FACTURA_PAGO = "factura_pago"
 
     # General
 
-    ALERTA_GENERAL = 'alerta_general'
-
-
-
+    ALERTA_GENERAL = "alerta_general"
 
 
 class CanalNotificacion(str, Enum):
-
     """Canales de notificación disponibles."""
 
-    EMAIL = 'email'
+    EMAIL = "email"
 
-    SMS = 'sms'
+    SMS = "sms"
 
-    WHATSAPP = 'whatsapp'
+    WHATSAPP = "whatsapp"
 
-    PUSH = 'push'
+    PUSH = "push"
 
-    WEBHOOK = 'webhook'
-
-
-
+    WEBHOOK = "webhook"
 
 
 @dataclass
-
 class Alerta:
-
     """
 
     Representa una alerta/notificación a enviar.
@@ -218,21 +165,15 @@ class Alerta:
 
     destinatarios: List[str]  # emails, teléfonos, etc.
 
-    
-
     # Datos adicionales para templates
 
     datos: Dict[str, Any] = field(default_factory=dict)
 
-    
-
     # Opciones de envío
 
-    prioridad: str = 'normal'  # 'alta', 'normal', 'baja'
+    prioridad: str = "normal"  # 'alta', 'normal', 'baja'
 
     cc: List[str] = field(default_factory=list)
-
-    
 
     # Referencias a entidades (para tracking)
 
@@ -242,8 +183,6 @@ class Alerta:
 
     factura_id: Optional[int] = None
 
-    
-
     # Metadata
 
     fecha_creacion: datetime = field(default_factory=timezone.now)
@@ -251,13 +190,8 @@ class Alerta:
     usuario_id: Optional[int] = None
 
 
-
-
-
 @dataclass
-
 class ResultadoEnvio:
-
     """Resultado del envío por un canal específico."""
 
     canal: CanalNotificacion
@@ -273,9 +207,6 @@ class ResultadoEnvio:
     fecha_envio: datetime = field(default_factory=timezone.now)
 
 
-
-
-
 # ==============================================================================
 
 # INTERFAZ BASE - NOTIFICADOR
@@ -283,9 +214,7 @@ class ResultadoEnvio:
 # ==============================================================================
 
 
-
 class Notificador(ABC):
-
     """
 
     Interfaz base para todos los notificadores.
@@ -294,45 +223,28 @@ class Notificador(ABC):
 
     """
 
-    
-
     @property
-
     @abstractmethod
-
     def canal(self) -> CanalNotificacion:
-
         """Retorna el canal de notificación."""
 
         pass
 
-    
-
     @property
-
     def nombre(self) -> str:
-
         """Nombre legible del notificador."""
 
         return self.canal.value.capitalize()
 
-    
-
     @abstractmethod
-
     def enviar(self, alerta: Alerta) -> ResultadoEnvio:
-
         """
 
         Envía la alerta por este canal.
 
-        
-
         Args:
 
             alerta: Alerta a enviar
-
-            
 
         Returns:
 
@@ -342,10 +254,7 @@ class Notificador(ABC):
 
         pass
 
-    
-
     def soporta_tipo(self, tipo: TipoAlerta) -> bool:
-
         """
 
         Indica si este canal soporta un tipo de alerta.
@@ -356,10 +265,7 @@ class Notificador(ABC):
 
         return True
 
-    
-
     def validar_destinatario(self, destinatario: str) -> bool:
-
         """
 
         Valida si el destinatario es válido para este canal.
@@ -371,9 +277,6 @@ class Notificador(ABC):
         return bool(destinatario)
 
 
-
-
-
 # ==============================================================================
 
 # IMPLEMENTACIÓN - EMAIL NOTIFIER
@@ -381,113 +284,67 @@ class Notificador(ABC):
 # ==============================================================================
 
 
-
 class EmailNotifier(Notificador):
-
     """
 
     Notificador por Email usando Django's email backend.
 
     """
 
-    
-
     def __init__(
-
         self,
-
         from_email: Optional[str] = None,
-
-        template_html: str = 'emails/base_notificacion.html',
-
+        template_html: str = "emails/base_notificacion.html",
         fail_silently: bool = False,
-
     ):
 
-        self._from_email = from_email or getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com')
+        self._from_email = from_email or getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@example.com")
 
         self._template_html = template_html
 
         self._fail_silently = fail_silently
 
-    
-
     @property
-
     def canal(self) -> CanalNotificacion:
 
         return CanalNotificacion.EMAIL
 
-    
-
     def validar_destinatario(self, destinatario: str) -> bool:
-
         """Valida formato de email básico."""
 
-        return '@' in destinatario and '.' in destinatario
-
-    
+        return "@" in destinatario and "." in destinatario
 
     def enviar(self, alerta: Alerta) -> ResultadoEnvio:
-
         """Envía la alerta por email."""
 
         try:
 
             # Filtrar destinatarios válidos
 
-            destinatarios_validos = [
-
-                d for d in alerta.destinatarios 
-
-                if self.validar_destinatario(d)
-
-            ]
-
-            
+            destinatarios_validos = [d for d in alerta.destinatarios if self.validar_destinatario(d)]
 
             if not destinatarios_validos:
 
-                return ResultadoEnvio(
-
-                    canal=self.canal,
-
-                    exitoso=False,
-
-                    error="No hay destinatarios válidos para email"
-
-                )
-
-            
+                return ResultadoEnvio(canal=self.canal, exitoso=False, error="No hay destinatarios válidos para email")
 
             # Preparar contenido HTML
 
             contenido_html = self._renderizar_html(alerta)
 
-            
-
             # Preparar CC
 
             cc_validos = [c for c in alerta.cc if self.validar_destinatario(c)]
-
-            
 
             # Enviar
 
             if contenido_html:
 
                 email = EmailMultiAlternatives(
-
                     subject=alerta.titulo,
-
                     body=alerta.mensaje,
-
                     from_email=self._from_email,
-
                     to=destinatarios_validos,
-
                     cc=cc_validos if cc_validos else None,
-
                 )
 
                 email.attach_alternative(contenido_html, "text/html")
@@ -497,49 +354,22 @@ class EmailNotifier(Notificador):
             else:
 
                 send_mail(
-
                     subject=alerta.titulo,
-
                     message=alerta.mensaje,
-
                     from_email=self._from_email,
-
                     recipient_list=destinatarios_validos,
-
                     fail_silently=self._fail_silently,
-
                 )
 
-            
-
             return ResultadoEnvio(
-
-                canal=self.canal,
-
-                exitoso=True,
-
-                mensaje=f"Email enviado a {len(destinatarios_validos)} destinatario(s)"
-
+                canal=self.canal, exitoso=True, mensaje=f"Email enviado a {len(destinatarios_validos)} destinatario(s)"
             )
-
-            
 
         except Exception as e:
 
-            return ResultadoEnvio(
-
-                canal=self.canal,
-
-                exitoso=False,
-
-                error=str(e)
-
-            )
-
-    
+            return ResultadoEnvio(canal=self.canal, exitoso=False, error=str(e))
 
     def _renderizar_html(self, alerta: Alerta) -> Optional[str]:
-
         """Renderiza el contenido HTML usando el template."""
 
         try:
@@ -554,32 +384,18 @@ class EmailNotifier(Notificador):
 
             return None
 
-    
-
     def _construir_contexto(self, alerta: Alerta) -> Dict[str, Any]:
-
         """Construye el contexto para el template de email."""
 
         return {
-
-            'titulo': alerta.titulo,
-
-            'intro': [alerta.mensaje],
-
-            'bloques': alerta.datos.get('bloques', []),
-
-            'cta_text': alerta.datos.get('cta_text'),
-
-            'cta_url': alerta.datos.get('cta_url'),
-
-            'nota': alerta.datos.get('nota'),
-
+            "titulo": alerta.titulo,
+            "intro": [alerta.mensaje],
+            "bloques": alerta.datos.get("bloques", []),
+            "cta_text": alerta.datos.get("cta_text"),
+            "cta_url": alerta.datos.get("cta_url"),
+            "nota": alerta.datos.get("nota"),
             **alerta.datos,
-
         }
-
-
-
 
 
 # ==============================================================================
@@ -589,9 +405,7 @@ class EmailNotifier(Notificador):
 # ==============================================================================
 
 
-
 class SMSNotifier(Notificador):
-
     """
 
     Notificador por SMS.
@@ -600,18 +414,11 @@ class SMSNotifier(Notificador):
 
     """
 
-    
-
     def __init__(
-
         self,
-
         api_key: Optional[str] = None,
-
         api_secret: Optional[str] = None,
-
         from_number: Optional[str] = None,
-
     ):
 
         self._api_key = api_key
@@ -622,65 +429,38 @@ class SMSNotifier(Notificador):
 
         self._enabled = bool(api_key and api_secret)
 
-    
-
     @property
-
     def canal(self) -> CanalNotificacion:
 
         return CanalNotificacion.SMS
 
-    
-
     def validar_destinatario(self, destinatario: str) -> bool:
-
         """Valida formato de teléfono básico."""
 
         # Simplificado: verificar que tenga solo dígitos y longitud razonable
 
-        cleaned = ''.join(c for c in destinatario if c.isdigit())
+        cleaned = "".join(c for c in destinatario if c.isdigit())
 
         return 8 <= len(cleaned) <= 15
 
-    
-
     def soporta_tipo(self, tipo: TipoAlerta) -> bool:
-
         """SMS solo para alertas de alta prioridad."""
 
         tipos_sms = {
-
             TipoAlerta.ALERTA_RESPUESTA,
-
             TipoAlerta.ALERTA_DEPOSITO,
-
             TipoAlerta.POLIZA_VENCIMIENTO,
-
             TipoAlerta.FACTURA_VENCIMIENTO,
-
         }
 
         return tipo in tipos_sms
 
-    
-
     def enviar(self, alerta: Alerta) -> ResultadoEnvio:
-
         """Envía la alerta por SMS."""
 
         if not self._enabled:
 
-            return ResultadoEnvio(
-
-                canal=self.canal,
-
-                exitoso=False,
-
-                error="SMS no configurado (falta API key)"
-
-            )
-
-        
+            return ResultadoEnvio(canal=self.canal, exitoso=False, error="SMS no configurado (falta API key)")
 
         # TODO: Implementar integración real con proveedor SMS
 
@@ -700,20 +480,7 @@ class SMSNotifier(Notificador):
 
         # )
 
-        
-
-        return ResultadoEnvio(
-
-            canal=self.canal,
-
-            exitoso=False,
-
-            error="SMS no implementado - placeholder"
-
-        )
-
-
-
+        return ResultadoEnvio(canal=self.canal, exitoso=False, error="SMS no implementado - placeholder")
 
 
 # ==============================================================================
@@ -723,9 +490,7 @@ class SMSNotifier(Notificador):
 # ==============================================================================
 
 
-
 class WhatsAppNotifier(Notificador):
-
     """
 
     Notificador por WhatsApp Business API.
@@ -734,16 +499,10 @@ class WhatsAppNotifier(Notificador):
 
     """
 
-    
-
     def __init__(
-
         self,
-
         api_token: Optional[str] = None,
-
         phone_number_id: Optional[str] = None,
-
     ):
 
         self._api_token = api_token
@@ -752,43 +511,24 @@ class WhatsAppNotifier(Notificador):
 
         self._enabled = bool(api_token and phone_number_id)
 
-    
-
     @property
-
     def canal(self) -> CanalNotificacion:
 
         return CanalNotificacion.WHATSAPP
 
-    
-
     def validar_destinatario(self, destinatario: str) -> bool:
-
         """Valida formato de teléfono para WhatsApp."""
 
-        cleaned = ''.join(c for c in destinatario if c.isdigit())
+        cleaned = "".join(c for c in destinatario if c.isdigit())
 
         return 10 <= len(cleaned) <= 15
 
-    
-
     def enviar(self, alerta: Alerta) -> ResultadoEnvio:
-
         """Envía la alerta por WhatsApp."""
 
         if not self._enabled:
 
-            return ResultadoEnvio(
-
-                canal=self.canal,
-
-                exitoso=False,
-
-                error="WhatsApp no configurado"
-
-            )
-
-        
+            return ResultadoEnvio(canal=self.canal, exitoso=False, error="WhatsApp no configurado")
 
         # TODO: Implementar integración con WhatsApp Business API
 
@@ -804,20 +544,7 @@ class WhatsAppNotifier(Notificador):
 
         # )
 
-        
-
-        return ResultadoEnvio(
-
-            canal=self.canal,
-
-            exitoso=False,
-
-            error="WhatsApp no implementado - placeholder"
-
-        )
-
-
-
+        return ResultadoEnvio(canal=self.canal, exitoso=False, error="WhatsApp no implementado - placeholder")
 
 
 # ==============================================================================
@@ -827,9 +554,7 @@ class WhatsAppNotifier(Notificador):
 # ==============================================================================
 
 
-
 class WebhookNotifier(Notificador):
-
     """
 
     Notificador por Webhook (para integraciones externas).
@@ -838,138 +563,73 @@ class WebhookNotifier(Notificador):
 
     """
 
-    
-
     def __init__(
-
         self,
-
         webhook_url: str,
-
         headers: Optional[Dict[str, str]] = None,
-
         timeout: int = 10,
-
     ):
 
         self._webhook_url = webhook_url
 
-        self._headers = headers or {'Content-Type': 'application/json'}
+        self._headers = headers or {"Content-Type": "application/json"}
 
         self._timeout = timeout
 
-    
-
     @property
-
     def canal(self) -> CanalNotificacion:
 
         return CanalNotificacion.WEBHOOK
 
-    
-
     def validar_destinatario(self, destinatario: str) -> bool:
-
         """Para webhooks, el destinatario es el URL configurado."""
 
         return True  # El webhook ya está configurado
 
-    
-
     def enviar(self, alerta: Alerta) -> ResultadoEnvio:
-
         """Envía la alerta al webhook."""
 
         try:
 
             import requests
 
-            
-
             payload = {
-
-                'tipo': alerta.tipo.value,
-
-                'titulo': alerta.titulo,
-
-                'mensaje': alerta.mensaje,
-
-                'prioridad': alerta.prioridad,
-
-                'datos': alerta.datos,
-
-                'fecha': alerta.fecha_creacion.isoformat(),
-
+                "tipo": alerta.tipo.value,
+                "titulo": alerta.titulo,
+                "mensaje": alerta.mensaje,
+                "prioridad": alerta.prioridad,
+                "datos": alerta.datos,
+                "fecha": alerta.fecha_creacion.isoformat(),
             }
 
-            
-
             response = requests.post(
-
                 self._webhook_url,
-
                 json=payload,
-
                 headers=self._headers,
-
                 timeout=self._timeout,
-
             )
-
-            
 
             if response.status_code in (200, 201, 202, 204):
 
                 return ResultadoEnvio(
-
-                    canal=self.canal,
-
-                    exitoso=True,
-
-                    mensaje=f"Webhook respondió con {response.status_code}"
-
+                    canal=self.canal, exitoso=True, mensaje=f"Webhook respondió con {response.status_code}"
                 )
 
             else:
 
                 return ResultadoEnvio(
-
                     canal=self.canal,
-
                     exitoso=False,
-
-                    error=f"Webhook respondió con {response.status_code}: {response.text[:100]}"
-
+                    error=f"Webhook respondió con {response.status_code}: {response.text[:100]}",
                 )
-
-                
 
         except ImportError:
 
-            return ResultadoEnvio(
-
-                canal=self.canal,
-
-                exitoso=False,
-
-                error="Módulo 'requests' no disponible"
-
-            )
+            return ResultadoEnvio(canal=self.canal, exitoso=False, error="Módulo 'requests' no disponible")
 
         except Exception as e:
 
-            return ResultadoEnvio(
-
-                canal=self.canal,
-
-                exitoso=False,
-
-                error=str(e)
-
-            )
-
-
-
+            return ResultadoEnvio(canal=self.canal, exitoso=False, error=str(e))
 
 
 # ==============================================================================
@@ -979,9 +639,7 @@ class WebhookNotifier(Notificador):
 # ==============================================================================
 
 
-
 class NotificacionDispatcher:
-
     """
 
     Orquesta el envío de notificaciones por múltiples canales.
@@ -990,16 +648,11 @@ class NotificacionDispatcher:
 
     """
 
-    
-
     def __init__(self, notificadores: Optional[List[Notificador]] = None):
 
         self._notificadores: List[Notificador] = notificadores or []
 
-    
-
-    def registrar_notificador(self, notificador: Notificador) -> 'NotificacionDispatcher':
-
+    def registrar_notificador(self, notificador: Notificador) -> "NotificacionDispatcher":
         """
 
         Registra un nuevo notificador.
@@ -1012,59 +665,35 @@ class NotificacionDispatcher:
 
         return self
 
-    
-
     def remover_notificador(self, canal: CanalNotificacion) -> bool:
-
         """Remueve un notificador por su canal."""
 
         original_len = len(self._notificadores)
 
-        self._notificadores = [
-
-            n for n in self._notificadores 
-
-            if n.canal != canal
-
-        ]
+        self._notificadores = [n for n in self._notificadores if n.canal != canal]
 
         return len(self._notificadores) < original_len
 
-    
-
     @property
-
     def canales_activos(self) -> List[CanalNotificacion]:
-
         """Lista de canales activos."""
 
         return [n.canal for n in self._notificadores]
 
-    
-
     def enviar(
-
         self,
-
         alerta: Alerta,
-
         canales: Optional[List[CanalNotificacion]] = None,
-
     ) -> List[ResultadoEnvio]:
-
         """
 
         Envía una alerta por todos los canales configurados (o los especificados).
-
-        
 
         Args:
 
             alerta: Alerta a enviar
 
             canales: Lista opcional de canales específicos a usar
-
-            
 
         Returns:
 
@@ -1074,8 +703,6 @@ class NotificacionDispatcher:
 
         resultados = []
 
-        
-
         for notificador in self._notificadores:
 
             # Filtrar por canales si se especificaron
@@ -1084,15 +711,11 @@ class NotificacionDispatcher:
 
                 continue
 
-            
-
             # Verificar si el notificador soporta este tipo de alerta
 
             if not notificador.soporta_tipo(alerta.tipo):
 
                 continue
-
-            
 
             # Enviar
 
@@ -1100,22 +723,13 @@ class NotificacionDispatcher:
 
             resultados.append(resultado)
 
-        
-
         return resultados
 
-    
-
     def enviar_con_persistencia(
-
         self,
-
         alerta: Alerta,
-
         canales: Optional[List[CanalNotificacion]] = None,
-
     ) -> List[ResultadoEnvio]:
-
         """
 
         Envía una alerta y persiste el resultado en la base de datos.
@@ -1124,11 +738,7 @@ class NotificacionDispatcher:
 
         from app.models import NotificacionEmail
 
-        
-
         resultados = self.enviar(alerta, canales)
-
-        
 
         # Persistir cada resultado
 
@@ -1137,37 +747,20 @@ class NotificacionDispatcher:
             if resultado.canal == CanalNotificacion.EMAIL:
 
                 NotificacionEmail.objects.create(
-
                     tipo=alerta.tipo.value,
-
-                    destinatario=', '.join(alerta.destinatarios),
-
-                    cc=', '.join(alerta.cc),
-
+                    destinatario=", ".join(alerta.destinatarios),
+                    cc=", ".join(alerta.cc),
                     asunto=alerta.titulo,
-
                     contenido=alerta.mensaje,
-
                     siniestro_id=alerta.siniestro_id,
-
                     poliza_id=alerta.poliza_id,
-
                     factura_id=alerta.factura_id,
-
-                    estado='enviado' if resultado.exitoso else 'fallido',
-
+                    estado="enviado" if resultado.exitoso else "fallido",
                     fecha_envio=resultado.fecha_envio if resultado.exitoso else None,
-
                     mensaje_error=resultado.error,
-
                 )
 
-        
-
         return resultados
-
-
-
 
 
 # ==============================================================================
@@ -1177,9 +770,7 @@ class NotificacionDispatcher:
 # ==============================================================================
 
 
-
 def crear_dispatcher_desde_config() -> NotificacionDispatcher:
-
     """
 
     Crea un NotificacionDispatcher configurado desde ConfiguracionSistema.
@@ -1190,70 +781,52 @@ def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 
     from app.models import ConfiguracionSistema
 
-    
-
     dispatcher = NotificacionDispatcher()
-
-    
 
     # Email siempre habilitado
 
     dispatcher.registrar_notificador(EmailNotifier())
 
-    
-
     # SMS (si está configurado)
 
-    sms_api_key = ConfiguracionSistema.get_config('SMS_API_KEY', None)
+    sms_api_key = ConfiguracionSistema.get_config("SMS_API_KEY", None)
 
-    sms_api_secret = ConfiguracionSistema.get_config('SMS_API_SECRET', None)
+    sms_api_secret = ConfiguracionSistema.get_config("SMS_API_SECRET", None)
 
     if sms_api_key and sms_api_secret:
 
-        dispatcher.registrar_notificador(SMSNotifier(
-
-            api_key=sms_api_key,
-
-            api_secret=sms_api_secret,
-
-            from_number=ConfiguracionSistema.get_config('SMS_FROM_NUMBER', None),
-
-        ))
-
-    
+        dispatcher.registrar_notificador(
+            SMSNotifier(
+                api_key=sms_api_key,
+                api_secret=sms_api_secret,
+                from_number=ConfiguracionSistema.get_config("SMS_FROM_NUMBER", None),
+            )
+        )
 
     # WhatsApp (si está configurado)
 
-    wa_token = ConfiguracionSistema.get_config('WHATSAPP_API_TOKEN', None)
+    wa_token = ConfiguracionSistema.get_config("WHATSAPP_API_TOKEN", None)
 
-    wa_phone_id = ConfiguracionSistema.get_config('WHATSAPP_PHONE_NUMBER_ID', None)
+    wa_phone_id = ConfiguracionSistema.get_config("WHATSAPP_PHONE_NUMBER_ID", None)
 
     if wa_token and wa_phone_id:
 
-        dispatcher.registrar_notificador(WhatsAppNotifier(
-
-            api_token=wa_token,
-
-            phone_number_id=wa_phone_id,
-
-        ))
-
-    
+        dispatcher.registrar_notificador(
+            WhatsAppNotifier(
+                api_token=wa_token,
+                phone_number_id=wa_phone_id,
+            )
+        )
 
     # Webhook (si está configurado)
 
-    webhook_url = ConfiguracionSistema.get_config('NOTIFICACIONES_WEBHOOK_URL', None)
+    webhook_url = ConfiguracionSistema.get_config("NOTIFICACIONES_WEBHOOK_URL", None)
 
     if webhook_url:
 
         dispatcher.registrar_notificador(WebhookNotifier(webhook_url=webhook_url))
 
-    
-
     return dispatcher
-
-
-
 
 
 # ==============================================================================
@@ -1263,15 +836,10 @@ def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 # ==============================================================================
 
 
-
 _dispatcher_global: Optional[NotificacionDispatcher] = None
 
 
-
-
-
 def get_dispatcher() -> NotificacionDispatcher:
-
     """Obtiene el dispatcher global (singleton lazy)."""
 
     global _dispatcher_global
@@ -1283,14 +851,9 @@ def get_dispatcher() -> NotificacionDispatcher:
     return _dispatcher_global
 
 
-
-
-
 def reset_dispatcher() -> None:
-
     """Resetea el dispatcher global (útil para tests)."""
 
     global _dispatcher_global
 
     _dispatcher_global = None
-
