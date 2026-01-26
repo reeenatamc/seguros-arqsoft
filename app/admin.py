@@ -1,34 +1,48 @@
+"""
+Módulo de Configuración del Panel de Administración Django.
+
+Este módulo configura el panel de administración utilizando django-unfold para
+una interfaz moderna y django-import-export para operaciones bulk de datos.
+Implementa auditoría de cambios con simple-history.
+
+Características Implementadas:
+    1. **Unfold Admin**: Interface moderna con iconos Material Design
+    2. **Import/Export**: Recursos para importar/exportar CSV/Excel
+    3. **Simple History**: Auditoría de cambios con diff de campos
+    4. **Custom Displays**: Badges coloridos para estados, formateo de moneda
+    5. **Tabular Inlines**: Documentos, facturas, pagos dentro de pólizas
+
+Clases Base:
+    - HistoryModelAdmin: Combina Unfold + History + Import/Export
+    - ImportExportModelAdmin: Unfold + Import/Export sin historial
+
+Recursos de Import/Export:
+    - CompaniaAseguradoraResource, PolizaResource, FacturaResource, etc.
+    - Widgets ForeignKey para relaciones (por nombre, no ID)
+    - DateWidget para formateo de fechas
+
+Autor: Equipo de Desarrollo UTPL
+Versión: 1.0.0
+Última Actualización: Enero 2026
+"""
 from django.contrib import admin
-
 from django.utils.html import format_html
-
 from django.urls import reverse
-
 from django.utils import timezone
-
 from unfold.admin import ModelAdmin, TabularInline
-
 from unfold.decorators import display
-
 from simple_history.admin import SimpleHistoryAdmin
-
 from import_export import resources, fields
-
 from import_export.admin import ImportExportMixin
-
 from import_export.widgets import ForeignKeyWidget, DateWidget, DateTimeWidget
-
 from .models import (
-
-    ConfiguracionSistema, CompaniaAseguradora, CorredorSeguros, TipoPoliza, 
-
+    ConfiguracionSistema, CompaniaAseguradora, CorredorSeguros, TipoPoliza,
     ResponsableCustodio, Poliza, Factura, Pago, TipoSiniestro, Siniestro, Documento, Alerta,
-
     Quote, QuoteOption, PolicyRenewal, PaymentApproval, CalendarEvent,
-
     BackupRegistro, ConfiguracionBackup
-
 )
+
+
 
 
 
