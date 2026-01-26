@@ -1,0 +1,55 @@
+version: '3.8'
+
+# Configuración de desarrollo con live reload
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: seguros-web-dev
+    volumes:
+      - .:/app  # Mount código para live reload
+      - ./media:/app/media
+      - ./logs:/app/logs
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=dev-secret-key-not-for-production
+      - ALLOWED_HOSTS=*
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/seguros
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    networks:
+      - seguros-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: seguros-db-dev
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: seguros
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"  # Cambiado a 5433 para evitar conflicto con Sirius
+    networks:
+      - seguros-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: seguros-redis-dev
+    ports:
+      - "6380:6379"  # Puerto externo 6380 para evitar conflicto con Sirius
+    networks:
+      - seguros-network
+
+volumes:
+  postgres_data_dev:
+
+networks:
+  seguros-network:
+    driver: bridge
