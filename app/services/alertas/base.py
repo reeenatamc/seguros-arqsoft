@@ -6,7 +6,6 @@ Contiene la lógica compartida de persistencia y envío.
 
 """
 
-
 from django.core.mail import send_mail, EmailMultiAlternatives
 
 from django.template.loader import render_to_string
@@ -14,7 +13,6 @@ from django.template.loader import render_to_string
 from django.conf import settings
 
 from typing import Optional, List, Dict, Any
-
 
 class BaseNotifier:
 

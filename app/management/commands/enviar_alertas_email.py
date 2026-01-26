@@ -8,7 +8,6 @@ from django.utils import timezone
 
 from app.models import Alerta
 
-
 class Command(BaseCommand):
 
     help = 'Envía alertas pendientes por correo electrónico'
@@ -131,9 +130,7 @@ class Command(BaseCommand):
 
 {'=' * len(alerta.titulo)}
 
-
 {alerta.mensaje}
-
 
 ---
 
@@ -142,7 +139,6 @@ Tipo de Alerta: {alerta.get_tipo_alerta_display()}
 Fecha de Creación: {alerta.fecha_creacion.strftime('%d/%m/%Y %H:%M')}
 
 """
-
 
         # Agregar información contextual según el tipo de alerta
 
@@ -160,7 +156,6 @@ Póliza Relacionada:
 
 """
 
-
         if alerta.factura:
 
             mensaje += f"""
@@ -176,7 +171,6 @@ Factura Relacionada:
   - Fecha de Vencimiento: {alerta.factura.fecha_vencimiento}
 
 """
-
 
         if alerta.siniestro:
 
@@ -196,7 +190,6 @@ Siniestro Relacionado:
 
 """
 
-
         mensaje += f"""
 
 ---
@@ -205,10 +198,8 @@ Este es un mensaje automático del Sistema de Gestión de Seguros - UTPL.
 
 Por favor, no responda a este correo.
 
-
 Para más información, acceda al sistema: {settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'http://localhost:8000'}
 
 """
-
 
         return mensaje

@@ -6,7 +6,6 @@ Proporciona estadísticas comparativas entre períodos, tendencias y KPIs dinám
 
 """
 
-
 from django.db.models import Sum, Count, Avg, Q, F, Value, Case, When
 
 from django.db.models.functions import TruncMonth, TruncYear, TruncWeek, TruncDay, Coalesce
@@ -20,7 +19,6 @@ from decimal import Decimal
 from typing import Dict, List, Any, Optional, Tuple
 
 import json
-
 
 class DashboardAnalyticsService:
 

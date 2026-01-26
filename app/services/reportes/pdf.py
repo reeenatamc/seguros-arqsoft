@@ -12,11 +12,9 @@ from datetime import datetime
 
 from decimal import Decimal
 
-
 from django.http import HttpResponse
 
 from django.utils import timezone
-
 
 from reportlab.lib import colors
 
@@ -43,7 +41,6 @@ from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.charts.barcharts import VerticalBarChart, HorizontalBarChart
 
 from reportlab.graphics.charts.legends import Legend
-
 
 # =============================================================================
 

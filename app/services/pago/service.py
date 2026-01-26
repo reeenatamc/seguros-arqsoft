@@ -6,19 +6,15 @@ Responsabilidad única: Gestión del ciclo de vida de pagos.
 
 """
 
-
 from decimal import Decimal
 
 from datetime import date
 
 from typing import Optional
 
-
 from django.db import transaction
 
-
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
-
 
 class PagoService(BaseService):
 
@@ -93,7 +89,6 @@ class PagoService(BaseService):
 
     @classmethod
     @transaction.atomic
-
     def crear_pago(
 
         cls,
@@ -166,7 +161,6 @@ class PagoService(BaseService):
 
     @classmethod
     @transaction.atomic
-
     def aprobar_pago(cls, pago) -> ResultadoOperacion:
 
         """Aprueba un pago y actualiza la factura."""
@@ -240,7 +234,6 @@ class PagoService(BaseService):
 
     @classmethod
     @transaction.atomic
-
     def eliminar_pago(cls, pago) -> ResultadoOperacion:
 
         """Elimina un pago y recalcula la factura."""

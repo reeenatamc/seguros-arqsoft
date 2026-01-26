@@ -2,7 +2,6 @@
 
 Comando Django para leer correos de siniestros desde la bandeja IMAP.
 
-
 Uso:
 
     python manage.py leer_correos
@@ -16,7 +15,6 @@ Uso:
     python manage.py leer_correos --dry-run
 
     python manage.py leer_correos --no-auto-create
-
 
 Opciones:
 
@@ -34,11 +32,9 @@ Opciones:
 
 """
 
-
 from django.core.management.base import BaseCommand, CommandError
 
 from django.conf import settings
-
 
 from app.services.email_reader import (
 
@@ -53,7 +49,6 @@ from app.services.email_reader import (
     guardar_reporte_en_bd,
 
 )
-
 
 class Command(BaseCommand):
 

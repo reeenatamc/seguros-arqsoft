@@ -6,19 +6,15 @@ Responsabilidad única: Gestión del ciclo de vida de pólizas.
 
 """
 
-
 from datetime import date
 
 from typing import Optional, Any
-
 
 from django.db import transaction
 
 from django.db.models import Q
 
-
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
-
 
 class PolizaService(BaseService):
 
@@ -214,7 +210,6 @@ class PolizaService(BaseService):
 
     @classmethod
     @transaction.atomic
-
     def crear_poliza(
 
         cls,
@@ -289,7 +284,6 @@ class PolizaService(BaseService):
 
     @classmethod
     @transaction.atomic
-
     def actualizar_poliza(cls, poliza, **campos) -> ResultadoOperacion:
 
         """Actualiza una póliza existente con validaciones."""

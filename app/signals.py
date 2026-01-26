@@ -1,15 +1,12 @@
 from decimal import Decimal
 
-
 from django.db.models.signals import pre_save, post_save
 
 from django.dispatch import receiver
 
-
 from .models import Siniestro, ConfiguracionSistema
 
 from .services.alertas import NotificacionesService
-
 
 @receiver(pre_save, sender=Siniestro)
 def siniestro_pre_save(sender, instance: Siniestro, **kwargs):
@@ -37,7 +34,6 @@ def siniestro_pre_save(sender, instance: Siniestro, **kwargs):
         except sender.DoesNotExist:
 
             instance._previous_estado = None
-
 
 @receiver(post_save, sender=Siniestro)
 def siniestro_post_save(sender, instance: Siniestro, created: bool, **kwargs):
@@ -74,7 +70,6 @@ def siniestro_post_save(sender, instance: Siniestro, created: bool, **kwargs):
 
             pass
 
-
         # Notificar al usuario reportante (si tiene email)
 
         reportante = getattr(instance, 'creado_por', None)
@@ -95,9 +90,7 @@ def siniestro_post_save(sender, instance: Siniestro, created: bool, **kwargs):
 
                 pass
 
-
         return
-
 
     # 2) En actualizaciones: detectar paso a 'liquidado' o 'cerrado'
 
@@ -105,13 +98,11 @@ def siniestro_post_save(sender, instance: Siniestro, created: bool, **kwargs):
 
     nuevo_estado = instance.estado
 
-
     if previous_estado in ('liquidado', 'cerrado'):
 
         # Ya estaba cerrado/liquidado antes; no repetir notificación
 
         return
-
 
     if nuevo_estado in ('liquidado', 'cerrado'):
 

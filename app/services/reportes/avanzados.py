@@ -6,20 +6,17 @@ Gestiona la generación de reportes especializados para análisis de seguros.
 
 """
 
-
 from decimal import Decimal
 
 from datetime import datetime, timedelta
 
 from collections import defaultdict
 
-
 from django.db.models import Sum, Count, Avg, F, Q, Case, When, Value, DecimalField
 
 from django.db.models.functions import TruncMonth, Coalesce
 
 from django.utils import timezone
-
 
 from app.models import (
 
@@ -28,7 +25,6 @@ from app.models import (
     CompaniaAseguradora, ResponsableCustodio, Ramo, DetallePolizaRamo
 
 )
-
 
 class ReportesAvanzadosService:
 

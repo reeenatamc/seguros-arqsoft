@@ -6,9 +6,7 @@ Filtros personalizados para templates de Django.
 
 from django import template
 
-
 register = template.Library()
-
 
 @register.filter
 def abs_value(value):
@@ -23,7 +21,6 @@ def abs_value(value):
 
         return value
 
-
 @register.filter
 def multiply(value, arg):
 
@@ -37,7 +34,6 @@ def multiply(value, arg):
 
         return value
 
-
 @register.filter
 def divide(value, arg):
 
@@ -50,7 +46,6 @@ def divide(value, arg):
     except (TypeError, ValueError):
 
         return value
-
 
 @register.filter
 def percentage(value, total):
@@ -69,7 +64,6 @@ def percentage(value, total):
 
         return 0
 
-
 @register.filter
 def currency(value):
 
@@ -83,7 +77,6 @@ def currency(value):
 
         return value
 
-
 @register.filter
 def subtract(value, arg):
 
@@ -96,7 +89,6 @@ def subtract(value, arg):
     except (TypeError, ValueError):
 
         return value
-
 
 @register.filter(name='add_class')
 def add_class(field, css):

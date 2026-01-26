@@ -4,7 +4,6 @@ Sistema de Alertas y Notificaciones.
 
 """
 
-
 from .broker import BrokerNotifier
 
 from .user import UserNotifier
@@ -46,7 +45,6 @@ from .notificadores import (
     crear_dispatcher_desde_config,
 
 )
-
 
 __all__ = [
 

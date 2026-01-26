@@ -2,11 +2,9 @@
 
 Sistema de Notificaciones Extensible (Patrón Strategy/Plugin).
 
-
 Este módulo implementa un sistema de notificaciones que permite agregar
 
 nuevos canales (Email, SMS, WhatsApp, Push) sin modificar el código existente.
-
 
 ARQUITECTURA:
 
@@ -18,7 +16,6 @@ ARQUITECTURA:
 
 - Registro de notificadores: Permite agregar nuevos canales dinámicamente
 
-
 USO:
 
     from app.services.notificadores import (
@@ -26,7 +23,6 @@ USO:
         NotificacionDispatcher, EmailNotifier, Alerta
 
     )
-
 
     # Crear dispatcher con canales
 
@@ -37,7 +33,6 @@ USO:
         # SMSNotifier(api_key='...'),  # Agregar cuando esté listo
 
     ])
-
 
     # Crear alerta
 
@@ -55,16 +50,13 @@ USO:
 
     )
 
-
     # Enviar por todos los canales
 
     resultados = dispatcher.enviar(alerta)
 
-
 EXTENSIBILIDAD:
 
     Para agregar un nuevo canal (ej: WhatsApp):
-
 
     1. Crear clase que herede de Notificador:
 
@@ -82,7 +74,6 @@ EXTENSIBILIDAD:
 
 """
 
-
 from abc import ABC, abstractmethod
 
 from dataclasses import dataclass, field
@@ -95,7 +86,6 @@ from enum import Enum
 
 from typing import Any, Dict, List, Optional, Callable
 
-
 from django.conf import settings
 
 from django.core.mail import send_mail, EmailMultiAlternatives
@@ -104,13 +94,11 @@ from django.template.loader import render_to_string
 
 from django.utils import timezone
 
-
 # ==============================================================================
 
 # DATA CLASSES
 
 # ==============================================================================
-
 
 class TipoAlerta(str, Enum):
 
@@ -232,7 +220,6 @@ class ResultadoEnvio:
 
 # ==============================================================================
 
-
 class Notificador(ABC):
 
     """
@@ -245,7 +232,6 @@ class Notificador(ABC):
 
     @property
     @abstractmethod
-
     def canal(self) -> CanalNotificacion:
 
         """Retorna el canal de notificación."""
@@ -307,7 +293,6 @@ class Notificador(ABC):
 # IMPLEMENTACIÓN - EMAIL NOTIFIER
 
 # ==============================================================================
-
 
 class EmailNotifier(Notificador):
 
@@ -486,7 +471,6 @@ class EmailNotifier(Notificador):
 
 # ==============================================================================
 
-
 class SMSNotifier(Notificador):
 
     """
@@ -600,7 +584,6 @@ class SMSNotifier(Notificador):
 
 # ==============================================================================
 
-
 class WhatsAppNotifier(Notificador):
 
     """
@@ -685,7 +668,6 @@ class WhatsAppNotifier(Notificador):
 # IMPLEMENTACIÓN - WEBHOOK NOTIFIER
 
 # ==============================================================================
-
 
 class WebhookNotifier(Notificador):
 
@@ -815,7 +797,6 @@ class WebhookNotifier(Notificador):
 # DISPATCHER - ORQUESTADOR DE NOTIFICACIONES
 
 # ==============================================================================
-
 
 class NotificacionDispatcher:
 
@@ -978,7 +959,6 @@ class NotificacionDispatcher:
 
 # ==============================================================================
 
-
 def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 
     """
@@ -991,14 +971,11 @@ def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 
     from app.models import ConfiguracionSistema
 
-
     dispatcher = NotificacionDispatcher()
-
 
     # Email siempre habilitado
 
     dispatcher.registrar_notificador(EmailNotifier())
-
 
     # SMS (si está configurado)
 
@@ -1018,7 +995,6 @@ def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 
         ))
 
-
     # WhatsApp (si está configurado)
 
     wa_token = ConfiguracionSistema.get_config('WHATSAPP_API_TOKEN', None)
@@ -1035,7 +1011,6 @@ def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 
         ))
 
-
     # Webhook (si está configurado)
 
     webhook_url = ConfiguracionSistema.get_config('NOTIFICACIONES_WEBHOOK_URL', None)
@@ -1044,9 +1019,7 @@ def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 
         dispatcher.registrar_notificador(WebhookNotifier(webhook_url=webhook_url))
 
-
     return dispatcher
-
 
 # ==============================================================================
 
@@ -1054,9 +1027,7 @@ def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 
 # ==============================================================================
 
-
 _dispatcher_global: Optional[NotificacionDispatcher] = None
-
 
 def get_dispatcher() -> NotificacionDispatcher:
 
@@ -1069,7 +1040,6 @@ def get_dispatcher() -> NotificacionDispatcher:
         _dispatcher_global = crear_dispatcher_desde_config()
 
     return _dispatcher_global
-
 
 def reset_dispatcher() -> None:
 

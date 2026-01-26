@@ -30,13 +30,11 @@ from .models import (
 
 )
 
-
 # =============================================================================
 
 # RECURSOS DE IMPORTACIÓN/EXPORTACIÓN
 
 # =============================================================================
-
 
 class CompaniaAseguradoraResource(resources.ModelResource):
 
@@ -1606,7 +1604,6 @@ class AlertaAdmin(ModelAdmin):
 
 # =============================================================================
 
-
 class QuoteOptionInline(TabularInline):
 
     """Inline para las opciones de cotización"""
@@ -1625,9 +1622,7 @@ class QuoteOptionInline(TabularInline):
 
 # =============================================================================
 
-
 from app.models import BienAsegurado
-
 
 @admin.register(BienAsegurado)
 class BienAseguradoAdmin(HistoryModelAdmin):
@@ -3104,7 +3099,6 @@ class CalendarEventAdmin(ModelAdmin):
 # ADMINISTRACIÓN DE RESPALDOS
 
 # ==============================================================================
-
 
 @admin.register(BackupRegistro)
 class BackupRegistroAdmin(admin.ModelAdmin):

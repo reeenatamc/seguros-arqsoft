@@ -1,8 +1,6 @@
 from django.core.management.base import BaseCommand
 
-
 from app.models import Ramo, SubtipoRamo
-
 
 class Command(BaseCommand):
 

@@ -10,7 +10,6 @@ del pipeline CI/CD y la aplicación.
 
 """
 
-
 import pytest
 
 from django.test import TestCase, Client
@@ -19,13 +18,11 @@ from django.contrib.auth.models import User
 
 from django.urls import reverse
 
-
 # ============================================
 
 # Tests de Configuración Básica
 
 # ============================================
-
 
 class ConfigurationTests(TestCase):
 
@@ -60,7 +57,6 @@ class ConfigurationTests(TestCase):
 # Tests de Modelos
 
 # ============================================
-
 
 @pytest.mark.django_db
 class UserModelTests(TestCase):
@@ -102,7 +98,6 @@ class UserModelTests(TestCase):
 # Tests de Vistas
 
 # ============================================
-
 
 @pytest.mark.django_db
 class ViewTests(TestCase):
@@ -159,10 +154,8 @@ class ViewTests(TestCase):
 
 # ============================================
 
-
 @pytest.mark.integration
 @pytest.mark.django_db
-
 class IntegrationTests(TestCase):
 
     """Tests de integración del sistema"""
@@ -211,7 +204,6 @@ class IntegrationTests(TestCase):
 
 # ============================================
 
-
 class SecurityTests(TestCase):
 
     """Tests de seguridad básicos"""
@@ -258,7 +250,6 @@ class SecurityTests(TestCase):
 
 # ============================================
 
-
 @pytest.mark.slow
 class PerformanceTests(TestCase):
 
@@ -304,7 +295,6 @@ class PerformanceTests(TestCase):
 # Tests de Utilidades
 
 # ============================================
-
 
 class UtilityTests(TestCase):
 
@@ -358,7 +348,6 @@ class UtilityTests(TestCase):
 
 # ============================================
 
-
 @pytest.fixture
 def user_factory():
 
@@ -382,7 +371,6 @@ def user_factory():
 
     return create_user
 
-
 @pytest.fixture
 def authenticated_client(user_factory):
 
@@ -396,13 +384,11 @@ def authenticated_client(user_factory):
 
     return client
 
-
 # ============================================
 
 # Tests con Pytest Fixtures
 
 # ============================================
-
 
 @pytest.mark.django_db
 def test_user_creation_with_factory(user_factory):
@@ -413,7 +399,6 @@ def test_user_creation_with_factory(user_factory):
 
     assert user.username == 'factoryuser'
 
-
 @pytest.mark.django_db
 def test_authenticated_access(authenticated_client):
 
@@ -423,13 +408,11 @@ def test_authenticated_access(authenticated_client):
 
     assert response.status_code in [200, 302]
 
-
 # ============================================
 
 # Tests Parametrizados
 
 # ============================================
-
 
 @pytest.mark.parametrize("username,email,valid", [
     ("user1", "user1@example.com", True),

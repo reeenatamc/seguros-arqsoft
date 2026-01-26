@@ -28,7 +28,6 @@ from app.models import Siniestro, TipoSiniestro, Poliza
 
 import os
 
-
 class Command(BaseCommand):
 
     help = 'Genera reportes de siniestros con análisis estadístico'

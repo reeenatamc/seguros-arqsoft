@@ -2,7 +2,6 @@ from django.core.management.base import BaseCommand
 
 from app.models import ConfiguracionSistema
 
-
 class Command(BaseCommand):
 
     help = 'Inicializa las configuraciones por defecto del sistema'

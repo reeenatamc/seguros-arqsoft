@@ -2,18 +2,15 @@
 
 Data Transfer Objects (DTOs) para vistas de solo lectura.
 
-
 PROBLEMA (ISP):
 
     Cuando pasas un modelo completo (Poliza, Siniestro) a un template,
 
     estás exponiendo decenas de métodos y propiedades que no se usan.
 
-
     # En views.py
 
     context = {'poliza': poliza}  # ← 50+ métodos/propiedades disponibles
-
 
     # En el template solo usas 3:
 
@@ -23,18 +20,15 @@ PROBLEMA (ISP):
 
     {{ poliza.estado }}
 
-
 SOLUCIÓN:
 
     Usar DTOs (dataclasses ligeras) que solo contienen lo necesario.
-
 
     # En views.py
 
     from app.dtos import PolizaResumen
 
     context = {'poliza': PolizaResumen.from_model(poliza)}  # ← solo 3 campos
-
 
 BENEFICIOS:
 
@@ -48,7 +42,6 @@ BENEFICIOS:
 
     - Serialización JSON más limpia para APIs
 
-
 USO:
 
     from app.dtos import (
@@ -61,23 +54,19 @@ USO:
 
     )
 
-
     # Desde un modelo
 
     dto = PolizaResumen.from_model(poliza)
 
-
     # Desde un queryset (optimizado)
 
     dtos = PolizaResumen.from_queryset(Poliza.objects.filter(estado='vigente'))
-
 
     # En API responses
 
     return JsonResponse(dto.to_dict())
 
 """
-
 
 from dataclasses import dataclass, field, asdict
 
@@ -87,13 +76,11 @@ from decimal import Decimal
 
 from typing import Optional, List, Dict, Any
 
-
 # ==============================================================================
 
 # BASE DTO
 
 # ==============================================================================
-
 
 @dataclass
 class BaseDTO:
@@ -135,7 +122,6 @@ class BaseDTO:
 # POLIZA DTOs
 
 # ==============================================================================
-
 
 @dataclass
 class PolizaResumen(BaseDTO):
@@ -349,7 +335,6 @@ class PolizaCard(BaseDTO):
 # SINIESTRO DTOs
 
 # ==============================================================================
-
 
 @dataclass
 class SiniestroResumen(BaseDTO):
@@ -618,7 +603,6 @@ class SiniestroDetalle(BaseDTO):
 
 # ==============================================================================
 
-
 @dataclass
 class FacturaResumen(BaseDTO):
 
@@ -757,7 +741,6 @@ class FacturaLista(BaseDTO):
 
 # ==============================================================================
 
-
 @dataclass
 class BienAseguradoResumen(BaseDTO):
 
@@ -887,7 +870,6 @@ class BienAseguradoLista(BaseDTO):
 # DASHBOARD DTOs
 
 # ==============================================================================
-
 
 @dataclass
 class DashboardStats(BaseDTO):
@@ -1026,7 +1008,6 @@ class DashboardStats(BaseDTO):
 # REPORTE DTOs
 
 # ==============================================================================
-
 
 @dataclass
 class ReporteSiniestroContadora(BaseDTO):

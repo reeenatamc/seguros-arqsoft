@@ -8,7 +8,6 @@ pólizas, facturas y alertas del sistema.
 
 """
 
-
 from django.core.mail import send_mail, EmailMultiAlternatives
 
 from django.template.loader import render_to_string
@@ -19,7 +18,6 @@ from django.conf import settings
 
 from datetime import timedelta
 
-
 from app.models import (
 
     Siniestro, Poliza, Factura, NotificacionEmail,
@@ -27,7 +25,6 @@ from app.models import (
     ConfiguracionSistema
 
 )
-
 
 class NotificacionesService:
 

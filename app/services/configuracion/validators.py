@@ -2,11 +2,9 @@
 
 Validadores de Configuración Extensibles.
 
-
 Este módulo implementa un sistema de validación para ConfiguracionSistema
 
 que permite agregar nuevos validadores sin modificar el modelo.
-
 
 ARQUITECTURA:
 
@@ -16,7 +14,6 @@ ARQUITECTURA:
 
 - Validadores concretos: PorcentajeValidator, RangoNumericoValidator, etc.
 
-
 USO:
 
     from app.services.config_validators import (
@@ -24,7 +21,6 @@ USO:
         registro_validadores, PorcentajeValidator, validar_configuracion
 
     )
-
 
     # Registrar un nuevo validador
 
@@ -36,16 +32,13 @@ USO:
 
     )
 
-
     # Validar una configuración
 
     errores = validar_configuracion('PORCENTAJE_SUPERINTENDENCIA', '0.035', 'decimal')
 
-
 EXTENSIBILIDAD:
 
     Para agregar una nueva validación:
-
 
     1. Crear validador (puede ser función o clase):
 
@@ -57,13 +50,11 @@ EXTENSIBILIDAD:
 
            return {}
 
-
     2. Registrarlo:
 
        registro_validadores.registrar('MI_CONFIG', validar_mi_config)
 
 """
-
 
 from abc import ABC, abstractmethod
 
@@ -77,13 +68,11 @@ import json
 
 import re
 
-
 # ==============================================================================
 
 # INTERFAZ BASE - VALIDADOR
 
 # ==============================================================================
-
 
 class ValidadorConfig(ABC):
 
@@ -128,7 +117,6 @@ class ValidadorConfig(ABC):
 # VALIDADORES CONCRETOS
 
 # ==============================================================================
-
 
 class PorcentajeValidator(ValidadorConfig):
 
@@ -531,7 +519,6 @@ class TablaTasasValidator(ValidadorConfig):
 
 # ==============================================================================
 
-
 class RegistroValidadores:
 
     """
@@ -667,11 +654,9 @@ class RegistroValidadores:
 
 # ==============================================================================
 
-
 # Crear registro global
 
 registro_validadores = RegistroValidadores()
-
 
 # Registrar validadores por defecto
 
@@ -683,7 +668,6 @@ registro_validadores.registrar_multiples(
 
 )
 
-
 registro_validadores.registrar(
 
     'PORCENTAJE_IVA',
@@ -691,7 +675,6 @@ registro_validadores.registrar(
     PorcentajeValidator(min_valor=0.0, max_valor=0.25)  # 0% a 25%
 
 )
-
 
 registro_validadores.registrar(
 
@@ -701,7 +684,6 @@ registro_validadores.registrar(
 
 )
 
-
 registro_validadores.registrar(
 
     'DIAS_LIMITE_DESCUENTO_PRONTO_PAGO',
@@ -709,7 +691,6 @@ registro_validadores.registrar(
     RangoNumericoValidator(min_valor=1, max_valor=90, tipo_requerido='entero')
 
 )
-
 
 registro_validadores.registrar(
 
@@ -719,7 +700,6 @@ registro_validadores.registrar(
 
 )
 
-
 registro_validadores.registrar(
 
     'DIAS_ALERTA_DOCUMENTACION_SINIESTRO',
@@ -727,7 +707,6 @@ registro_validadores.registrar(
     RangoNumericoValidator(min_valor=1, max_valor=180, tipo_requerido='entero')
 
 )
-
 
 registro_validadores.registrar(
 
@@ -737,7 +716,6 @@ registro_validadores.registrar(
 
 )
 
-
 registro_validadores.registrar(
 
     'HORAS_LIMITE_DEPOSITO_INDEMNIZACION',
@@ -745,7 +723,6 @@ registro_validadores.registrar(
     RangoNumericoValidator(min_valor=1, max_valor=720, tipo_requerido='entero')
 
 )
-
 
 registro_validadores.registrar(
 
@@ -755,7 +732,6 @@ registro_validadores.registrar(
 
 )
 
-
 registro_validadores.registrar(
 
     'SITE_URL',
@@ -763,7 +739,6 @@ registro_validadores.registrar(
     UrlValidator()
 
 )
-
 
 registro_validadores.registrar(
 
@@ -773,7 +748,6 @@ registro_validadores.registrar(
 
 )
 
-
 registro_validadores.registrar(
 
     'TABLA_TASAS_EMISION',
@@ -782,20 +756,17 @@ registro_validadores.registrar(
 
 )
 
-
 # ==============================================================================
 
 # FUNCIÓN DE CONVENIENCIA
 
 # ==============================================================================
 
-
 def validar_configuracion(clave: str, valor: str, tipo: str) -> Dict[str, str]:
 
     """
 
     Función de conveniencia para validar una configuración.
-
 
     Args:
 
@@ -804,7 +775,6 @@ def validar_configuracion(clave: str, valor: str, tipo: str) -> Dict[str, str]:
         valor: Valor a validar
 
         tipo: Tipo declarado de la configuración
-
 
     Returns:
 

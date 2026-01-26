@@ -16,17 +16,13 @@ from datetime import timedelta, datetime
 
 import re
 
-
 from simple_history.models import HistoricalRecords
 
-
 from .validators import validate_document
-
 
 # ==================== MANAGERS PERSONALIZADOS (DRY) ====================
 
 # Centralizan reglas de negocio para evitar duplicación de lógica de filtrado
-
 
 class PolizaManager(models.Manager):
 
@@ -420,7 +416,6 @@ class BienAseguradoManager(models.Manager):
 
 # ==================== CONSTANTES Y VALIDADORES ====================
 
-
 validador_ruc = RegexValidator(
 
     regex=r'^\d{13}$',
@@ -431,9 +426,7 @@ validador_ruc = RegexValidator(
 
 )
 
-
 # ==================== MODELOS ====================
-
 
 class ConfiguracionSistema(models.Model):
 
@@ -2246,7 +2239,6 @@ class Documento(models.Model):
 
 # ==================== MODELOS DE CHECKLIST Y ADJUNTOS DE SINIESTRO ====================
 
-
 class ChecklistSiniestroConfig(models.Model):
 
     """
@@ -2624,7 +2616,6 @@ class Alerta(models.Model):
 
 # ==================== MODELO NOTIFICACIÓN EMAIL ====================
 
-
 class NotificacionEmail(models.Model):
 
     """
@@ -2783,7 +2774,6 @@ class NotificacionEmail(models.Model):
 
 # ==================== MODELO NOTA DE CRÉDITO ====================
 
-
 class NotaCredito(models.Model):
 
     """
@@ -2875,7 +2865,6 @@ class NotaCredito(models.Model):
         return f"NC-{self.numero} - ${self.monto}"
 
 # ==================== NUEVOS MODELOS (Código en inglés, interfaz en español) ====================
-
 
 class Quote(models.Model):
 
@@ -3565,7 +3554,6 @@ class PaymentApproval(models.Model):
 
 # ==================== MODELOS DE CATÁLOGO DE RAMOS (JERARQUÍA) ====================
 
-
 class TipoRamo(models.Model):
 
     """
@@ -3765,9 +3753,7 @@ Ramo = GrupoRamo
 
 SubtipoRamo = SubgrupoRamo
 
-
 # ==================== MODELO BIEN ASEGURADO ====================
-
 
 class BienAsegurado(models.Model):
 
@@ -4309,7 +4295,6 @@ class DetallePolizaRamo(models.Model):
 
 # ==================== MODELO GRUPO DE BIENES ====================
 
-
 class GrupoBienes(models.Model):
 
     """
@@ -4605,7 +4590,6 @@ class CalendarEvent(models.Model):
         return event
 
 # ==================== MODELO SINIESTRO EMAIL ====================
-
 
 class SiniestroEmail(models.Model):
 
@@ -4996,7 +4980,6 @@ class SiniestroEmail(models.Model):
             return None, self.mensaje_procesamiento
 
 # ==================== SISTEMA DE RESPALDOS ====================
-
 
 class BackupRegistro(models.Model):
 

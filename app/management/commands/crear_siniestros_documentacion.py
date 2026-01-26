@@ -6,7 +6,6 @@ from decimal import Decimal
 
 from datetime import timedelta
 
-
 from app.models import (
 
     Siniestro,
@@ -22,7 +21,6 @@ from app.models import (
     ChecklistSiniestro,
 
 )
-
 
 class Command(BaseCommand):
 

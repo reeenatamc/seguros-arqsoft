@@ -1,6 +1,5 @@
 from .models import Alerta
 
-
 def alertas_context(request):
 
     if request.user.is_authenticated:
@@ -11,7 +10,6 @@ def alertas_context(request):
 
         ).count()
 
-
         alertas_recientes = Alerta.objects.filter(
 
             estado__in=['pendiente', 'enviada']
@@ -21,7 +19,6 @@ def alertas_context(request):
             'poliza', 'factura', 'siniestro'
 
         ).order_by('-fecha_creacion')[:5]
-
 
         return {
 

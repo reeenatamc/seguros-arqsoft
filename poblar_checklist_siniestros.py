@@ -14,14 +14,11 @@ import os
 
 import django
 
-
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'seguros.settings')
 
 django.setup()
 
-
 from app.models import TipoSiniestro, ChecklistSiniestroConfig
-
 
 # Primero asegurarnos de que existen los tipos de siniestro
 
@@ -45,13 +42,11 @@ tipos_siniestro = [
 
 ]
 
-
 print("=" * 60)
 
 print("POBLANDO TIPOS DE SINIESTRO Y CHECKLIST")
 
 print("=" * 60)
-
 
 for nombre, _ in tipos_siniestro:
 
@@ -70,7 +65,6 @@ for nombre, _ in tipos_siniestro:
     else:
 
         print(f"  Tipo de siniestro ya existe: {tipo}")
-
 
 # Documentos estándar para TODOS los tipos de siniestro
 
@@ -162,7 +156,6 @@ documentos_comunes = [
 
 ]
 
-
 # Documentos específicos por tipo
 
 documentos_especificos = {
@@ -201,23 +194,19 @@ documentos_especificos = {
 
 }
 
-
 print("\n" + "-" * 60)
 
 print("CREANDO ITEMS DE CHECKLIST POR TIPO DE SINIESTRO")
 
 print("-" * 60)
 
-
 for tipo in TipoSiniestro.objects.filter(activo=True):
 
     print(f"\n📋 {tipo.get_nombre_display()}:")
 
-
     # Obtener documentos para este tipo
 
     docs_a_crear = documentos_comunes.copy()
-
 
     # Si hay documentos específicos, modificar la lista
 
@@ -240,7 +229,6 @@ for tipo in TipoSiniestro.objects.filter(activo=True):
             else:
 
                 docs_a_crear.append(doc_esp)
-
 
     # Crear los items de checklist
 
@@ -276,13 +264,11 @@ for tipo in TipoSiniestro.objects.filter(activo=True):
 
             print(f"   ✓ Ya existe: {doc['nombre']}")
 
-
 print("\n" + "=" * 60)
 
 print("✅ CHECKLIST CONFIGURADO EXITOSAMENTE")
 
 print("=" * 60)
-
 
 # Mostrar resumen
 

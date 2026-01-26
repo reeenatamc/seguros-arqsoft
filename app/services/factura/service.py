@@ -6,21 +6,17 @@ Responsabilidad única: Gestión del ciclo de vida de facturas.
 
 """
 
-
 from decimal import Decimal
 
 from datetime import date
 
 from typing import Optional
 
-
 from django.db import transaction
 
 from django.db.models import Sum
 
-
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
-
 
 class FacturaService(BaseService):
 
@@ -216,7 +212,6 @@ class FacturaService(BaseService):
 
     @classmethod
     @transaction.atomic
-
     def crear_factura(
 
         cls,
@@ -279,7 +274,6 @@ class FacturaService(BaseService):
 
     @classmethod
     @transaction.atomic
-
     def actualizar_factura(cls, factura, **campos) -> ResultadoOperacion:
 
         """Actualiza una factura existente recalculando valores."""

@@ -28,7 +28,6 @@ from collections import defaultdict
 
 import json
 
-
 from app.models import (
 
     Poliza, Factura, Pago, Siniestro, TipoPoliza, TipoSiniestro,
@@ -36,7 +35,6 @@ from app.models import (
     PolicyRenewal, CompaniaAseguradora
 
 )
-
 
 class AdvancedAnalyticsService:
 

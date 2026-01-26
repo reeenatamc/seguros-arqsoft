@@ -12,7 +12,6 @@ from django.utils.deconstruct import deconstructible
 
 from django.template.defaultfilters import filesizeformat
 
-
 # Importar magic opcionalmente (solo si está disponible)
 
 try:
@@ -24,7 +23,6 @@ try:
 except ImportError:
 
     MAGIC_AVAILABLE = False
-
 
 # Tipos MIME permitidos para documentos
 
@@ -74,11 +72,9 @@ ALLOWED_MIME_TYPES = {
 
 }
 
-
 # Extensiones permitidas
 
 ALLOWED_EXTENSIONS = [ext for exts in ALLOWED_MIME_TYPES.values() for ext in exts]
-
 
 # Extensiones peligrosas que nunca se deben permitir
 
@@ -106,11 +102,9 @@ DANGEROUS_EXTENSIONS = [
 
 ]
 
-
 # Tamaño máximo por defecto: 10MB
 
 DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB en bytes
-
 
 @deconstructible
 class FileValidator:
@@ -347,7 +341,6 @@ validate_image = ImageValidator()
 
 validate_pdf = PDFValidator()
 
-
 def validate_file_extension(value):
 
     """
@@ -360,7 +353,6 @@ def validate_file_extension(value):
 
     ext = os.path.splitext(value.name)[1].lower()
 
-
     if ext in DANGEROUS_EXTENSIONS:
 
         raise ValidationError(
@@ -368,7 +360,6 @@ def validate_file_extension(value):
             f'El tipo de archivo "{ext}" no está permitido.'
 
         )
-
 
     if ext not in ALLOWED_EXTENSIONS:
 

@@ -4,11 +4,9 @@ Clases base y tipos compartidos para los servicios de dominio.
 
 """
 
-
 from dataclasses import dataclass
 
 from typing import Dict, Any, Optional
-
 
 @dataclass
 class ResultadoValidacion:

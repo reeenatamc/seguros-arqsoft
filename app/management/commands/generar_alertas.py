@@ -8,7 +8,6 @@ from datetime import timedelta
 
 from app.models import Poliza, Factura, Siniestro, Alerta
 
-
 class Command(BaseCommand):
 
     help = 'Genera alertas automáticas para pólizas, facturas y siniestros'

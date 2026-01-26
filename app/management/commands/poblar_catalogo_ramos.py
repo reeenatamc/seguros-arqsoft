@@ -6,14 +6,11 @@ Crea la estructura jerárquica: TipoRamo > GrupoRamo > SubgrupoRamo
 
 """
 
-
 from django.core.management.base import BaseCommand
 
 from django.db import transaction
 
-
 from app.models import TipoRamo, GrupoRamo, SubgrupoRamo
-
 
 class Command(BaseCommand):
 

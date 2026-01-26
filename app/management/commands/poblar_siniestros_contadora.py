@@ -4,7 +4,6 @@ Comando para poblar siniestros con datos completos para el reporte de contadurí
 
 Incluye todas las fechas de gestión y montos financieros.
 
-
 Uso: python manage.py poblar_siniestros_contadora
 
 """
@@ -21,7 +20,6 @@ from decimal import Decimal
 
 import random
 
-
 from app.models import (
 
     Poliza, Siniestro, TipoSiniestro, ResponsableCustodio,
@@ -29,7 +27,6 @@ from app.models import (
     CompaniaAseguradora, CorredorSeguros, TipoPoliza
 
 )
-
 
 class Command(BaseCommand):
 

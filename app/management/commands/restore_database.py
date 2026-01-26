@@ -2,7 +2,6 @@
 
 Comando para restaurar la base de datos desde un backup.
 
-
 Uso:
 
     python manage.py restore_database backup_20240115_120000.json
@@ -15,7 +14,6 @@ Uso:
 
 """
 
-
 import os
 
 import gzip
@@ -26,7 +24,6 @@ from datetime import datetime
 
 from pathlib import Path
 
-
 from django.core.management.base import BaseCommand, CommandError
 
 from django.conf import settings
@@ -34,7 +31,6 @@ from django.conf import settings
 from django.core.management import call_command
 
 from django.db import connection
-
 
 class Command(BaseCommand):
 

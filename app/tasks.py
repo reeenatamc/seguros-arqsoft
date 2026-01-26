@@ -10,9 +10,7 @@ from datetime import timedelta
 
 import logging
 
-
 logger = logging.getLogger(__name__)
-
 
 @shared_task(bind=True, max_retries=3)
 def generar_alertas_automaticas(self):
@@ -33,7 +31,6 @@ def generar_alertas_automaticas(self):
 
         raise self.retry(exc=e, countdown=60)
 
-
 @shared_task(bind=True, max_retries=3)
 def enviar_alertas_email(self):
 
@@ -53,7 +50,6 @@ def enviar_alertas_email(self):
 
         raise self.retry(exc=e, countdown=60)
 
-
 @shared_task(bind=True, max_retries=3)
 def actualizar_estados_polizas(self):
 
@@ -67,18 +63,15 @@ def actualizar_estados_polizas(self):
 
     from .models import Poliza, ConfiguracionSistema
 
-
     try:
 
         logger.info('Iniciando actualización de estados de pólizas')
-
 
         hoy = timezone.now().date()
 
         dias_alerta = ConfiguracionSistema.get_config('DIAS_ALERTA_VENCIMIENTO_POLIZA', 30)
 
         fecha_alerta = hoy + timedelta(days=dias_alerta)
-
 
         # Marcar vencidas: las que están activas pero ya pasó su fecha_fin
 
@@ -87,7 +80,6 @@ def actualizar_estados_polizas(self):
             fecha_fin__lt=hoy
 
         ).update(estado='vencida')
-
 
         # Marcar por_vencer: vigentes que vencen pronto
 
@@ -101,7 +93,6 @@ def actualizar_estados_polizas(self):
 
         ).update(estado='por_vencer')
 
-
         # Restaurar vigentes: las que ya no están por vencer (fecha_fin lejana)
 
         vigentes = Poliza.objects.filter(
@@ -114,11 +105,9 @@ def actualizar_estados_polizas(self):
 
         ).exclude(estado='cancelada').update(estado='vigente')
 
-
         mensaje = f'Actualizadas: {vencidas} vencidas, {por_vencer} por vencer, {vigentes} vigentes'
 
         logger.info(mensaje)
-
 
         return {
 
@@ -138,7 +127,6 @@ def actualizar_estados_polizas(self):
 
         raise self.retry(exc=e, countdown=60)
 
-
 @shared_task(bind=True, max_retries=3)
 def actualizar_estados_facturas(self):
 
@@ -148,13 +136,11 @@ def actualizar_estados_facturas(self):
 
     from decimal import Decimal
 
-
     try:
 
         logger.info('Iniciando actualización de estados de facturas')
 
         hoy = timezone.now().date()
-
 
         vencidas = Factura.objects.filter(
 
@@ -164,20 +150,17 @@ def actualizar_estados_facturas(self):
 
         ).update(estado='vencida')
 
-
         facturas_pendientes = Factura.objects.filter(
 
             estado__in=['pendiente', 'parcial', 'vencida']
 
         ).prefetch_related('pagos')
 
-
         facturas_pagadas = []
 
         facturas_parciales = []
 
         facturas_pendientes_ids = []
-
 
         for factura in facturas_pendientes:
 
@@ -186,7 +169,6 @@ def actualizar_estados_facturas(self):
                 total=Sum('monto')
 
             )['total'] or Decimal('0.00')
-
 
             if total_pagado >= factura.monto_total:
 
@@ -200,18 +182,15 @@ def actualizar_estados_facturas(self):
 
                 facturas_pendientes_ids.append(factura.pk)
 
-
         pagadas_count = Factura.objects.filter(pk__in=facturas_pagadas).update(estado='pagada')
 
         parciales_count = Factura.objects.filter(pk__in=facturas_parciales).update(estado='parcial')
 
         pendientes_count = Factura.objects.filter(pk__in=facturas_pendientes_ids).update(estado='pendiente')
 
-
         mensaje = f'Actualizadas: {vencidas} vencidas, {pagadas_count} pagadas, {parciales_count} parciales'
 
         logger.info(mensaje)
-
 
         return {
 
@@ -233,7 +212,6 @@ def actualizar_estados_facturas(self):
 
         raise self.retry(exc=e, countdown=60)
 
-
 @shared_task(bind=True, max_retries=3)
 def generar_reporte_siniestros_mensual(self):
 
@@ -253,17 +231,14 @@ def generar_reporte_siniestros_mensual(self):
 
         raise self.retry(exc=e, countdown=60)
 
-
 @shared_task(bind=True, max_retries=3)
 def limpiar_alertas_antiguas(self, dias=90):
 
     from .models import Alerta
 
-
     try:
 
         logger.info(f'Iniciando limpieza de alertas antiguas (más de {dias} días)')
-
 
         fecha_limite = timezone.now() - timedelta(days=dias)
 
@@ -275,11 +250,9 @@ def limpiar_alertas_antiguas(self, dias=90):
 
         ).delete()[0]
 
-
         mensaje = f'Se eliminaron {cantidad} alertas antiguas'
 
         logger.info(mensaje)
-
 
         return {'status': 'success', 'eliminadas': cantidad}
 
@@ -289,7 +262,6 @@ def limpiar_alertas_antiguas(self, dias=90):
 
         raise self.retry(exc=e, countdown=60)
 
-
 @shared_task(bind=True)
 def actualizar_descuentos_pronto_pago(self):
 
@@ -297,23 +269,19 @@ def actualizar_descuentos_pronto_pago(self):
 
     from decimal import Decimal
 
-
     try:
 
         logger.info('Actualizando descuentos por pronto pago')
 
-
         facturas = Factura.objects.filter(estado='pendiente')
 
         actualizadas = 0
-
 
         for factura in facturas:
 
             descuento_anterior = factura.descuento_pronto_pago
 
             factura.calcular_descuento_pronto_pago()
-
 
             if descuento_anterior != factura.descuento_pronto_pago:
 
@@ -329,7 +297,6 @@ def actualizar_descuentos_pronto_pago(self):
 
                 actualizadas += 1
 
-
         return {'status': 'success', 'actualizadas': actualizadas}
 
     except Exception as e:
@@ -338,9 +305,7 @@ def actualizar_descuentos_pronto_pago(self):
 
         raise
 
-
 # ==================== TAREAS DE BACKUP AUTOMÁTICO ====================
-
 
 @shared_task(bind=True, max_retries=2)
 def backup_automatico(self):
@@ -361,13 +326,11 @@ def backup_automatico(self):
 
     import time
 
-
     try:
 
         # Obtener configuración
 
         config = ConfiguracionBackup.get_config()
-
 
         if not config.activo:
 
@@ -375,11 +338,9 @@ def backup_automatico(self):
 
             return {'status': 'skipped', 'reason': 'Backup automático desactivado'}
 
-
         logger.info('Iniciando backup automático programado')
 
         inicio = time.time()
-
 
         # Crear registro de backup
 
@@ -401,7 +362,6 @@ def backup_automatico(self):
 
         )
 
-
         try:
 
             # Ejecutar comando de backup
@@ -418,13 +378,11 @@ def backup_automatico(self):
 
             )
 
-
             # Actualizar registro
 
             duracion = int(time.time() - inicio)
 
             backup_path = Path(resultado) if resultado else None
-
 
             backup_registro.estado = 'completado'
 
@@ -440,18 +398,15 @@ def backup_automatico(self):
 
             backup_registro.save()
 
-
             # Actualizar última fecha de backup
 
             config.ultimo_backup = timezone.now()
 
             config.save()
 
-
             # Limpiar backups antiguos
 
             eliminados = BackupRegistro.limpiar_antiguos(dias_retener=config.dias_retener)
-
 
             logger.info(
 
@@ -462,7 +417,6 @@ def backup_automatico(self):
                 f'{eliminados} backups antiguos eliminados.'
 
             )
-
 
             # Enviar notificación si está configurado
 
@@ -477,7 +431,6 @@ def backup_automatico(self):
                     'success'
 
                 )
-
 
             return {
 
@@ -495,7 +448,6 @@ def backup_automatico(self):
 
             }
 
-
         except Exception as e:
 
             backup_registro.estado = 'fallido'
@@ -503,7 +455,6 @@ def backup_automatico(self):
             backup_registro.error_mensaje = str(e)
 
             backup_registro.save()
-
 
             if config.notificar_email:
 
@@ -517,16 +468,13 @@ def backup_automatico(self):
 
                 )
 
-
             raise
-
 
     except Exception as e:
 
         logger.error(f'Error en backup automático: {str(e)}')
 
         raise self.retry(exc=e, countdown=300)
-
 
 @shared_task
 def enviar_notificacion_backup(backup_id, email, status):
@@ -543,11 +491,9 @@ def enviar_notificacion_backup(backup_id, email, status):
 
     from django.conf import settings
 
-
     try:
 
         backup = BackupRegistro.objects.get(pk=backup_id)
-
 
         if status == 'success':
 
@@ -556,7 +502,6 @@ def enviar_notificacion_backup(backup_id, email, status):
             message = f'''
 
 Backup del sistema completado exitosamente.
-
 
 Detalles:
 
@@ -570,7 +515,6 @@ Detalles:
 
 - Fecha: {backup.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S')}
 
-
 El backup se encuentra en: {backup.ruta}
 
 '''
@@ -583,16 +527,13 @@ El backup se encuentra en: {backup.ruta}
 
 Error durante el backup automático del sistema.
 
-
 Error: {backup.error_mensaje}
 
 Fecha: {backup.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S')}
 
-
 Por favor, revise la configuración y los logs del sistema.
 
 '''
-
 
         send_mail(
 
@@ -608,7 +549,6 @@ Por favor, revise la configuración y los logs del sistema.
 
         )
 
-
     except BackupRegistro.DoesNotExist:
 
         logger.warning(f'Backup {backup_id} no encontrado para notificación')
@@ -616,7 +556,6 @@ Por favor, revise la configuración y los logs del sistema.
     except Exception as e:
 
         logger.error(f'Error enviando notificación de backup: {str(e)}')
-
 
 @shared_task
 def limpiar_backups_antiguos():
@@ -631,26 +570,21 @@ def limpiar_backups_antiguos():
 
     from .models import BackupRegistro, ConfiguracionBackup
 
-
     try:
 
         config = ConfiguracionBackup.get_config()
 
         eliminados = BackupRegistro.limpiar_antiguos(dias_retener=config.dias_retener)
 
-
         logger.info(f'Limpieza de backups: {eliminados} archivos eliminados')
 
-
         return {'status': 'success', 'eliminados': eliminados}
-
 
     except Exception as e:
 
         logger.error(f'Error en limpieza de backups: {str(e)}')
 
         return {'status': 'error', 'error': str(e)}
-
 
 @shared_task
 def verificar_integridad_backups():
@@ -667,7 +601,6 @@ def verificar_integridad_backups():
 
     from pathlib import Path
 
-
     try:
 
         backups = BackupRegistro.objects.filter(estado='completado')
@@ -675,7 +608,6 @@ def verificar_integridad_backups():
         verificados = 0
 
         problemas = 0
-
 
         for backup in backups:
 
@@ -693,13 +625,11 @@ def verificar_integridad_backups():
 
                 verificados += 1
 
-
         logger.info(
 
             f'Verificación de backups: {verificados} OK, {problemas} con problemas'
 
         )
-
 
         return {
 
@@ -710,7 +640,6 @@ def verificar_integridad_backups():
             'problemas': problemas
 
         }
-
 
     except Exception as e:
 

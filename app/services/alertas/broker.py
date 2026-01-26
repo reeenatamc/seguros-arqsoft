@@ -6,16 +6,13 @@ Responsabilidad única: notificar al corredor de seguros.
 
 """
 
-
 from datetime import timedelta
 
 from django.utils import timezone
 
 from typing import Optional
 
-
 from .base import BaseNotifier
-
 
 class BrokerNotifier(BaseNotifier):
 

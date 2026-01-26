@@ -6,7 +6,6 @@ Formularios Django para gestión de pólizas, siniestros, ramos y bienes asegura
 
 """
 
-
 from django import forms
 
 from django.forms import inlineformset_factory
@@ -14,7 +13,6 @@ from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError
 
 from decimal import Decimal
-
 
 from .models import (
 
@@ -36,13 +34,11 @@ from .models import (
 
 )
 
-
 # ==============================================================================
 
 # WIDGETS PERSONALIZADOS
 
 # ==============================================================================
-
 
 class DateInput(forms.DateInput):
 
@@ -77,7 +73,6 @@ class DateTimeInput(forms.DateTimeInput):
 # FORMULARIOS DE ENTIDADES BASE (Compañías, Corredores, etc.)
 
 # ==============================================================================
-
 
 class CompaniaAseguradoraForm(forms.ModelForm):
 
@@ -349,7 +344,6 @@ class ResponsableCustodioForm(forms.ModelForm):
 
 # ==============================================================================
 
-
 class TipoRamoForm(forms.ModelForm):
 
     """Formulario para crear/editar tipos de ramo (nivel superior)"""
@@ -544,13 +538,11 @@ RamoForm = GrupoRamoForm
 
 SubtipoRamoForm = SubgrupoRamoForm
 
-
 # ==============================================================================
 
 # FORMULARIOS DE PÓLIZA
 
 # ==============================================================================
-
 
 class PolizaForm(forms.ModelForm):
 
@@ -956,13 +948,11 @@ DetallePolizaRamoFormSet = inlineformset_factory(
 
 )
 
-
 # ==============================================================================
 
 # FORMULARIOS DE SINIESTRO
 
 # ==============================================================================
-
 
 class SiniestroForm(forms.ModelForm):
 
@@ -1380,7 +1370,6 @@ AdjuntoSiniestroFormSet = inlineformset_factory(
 
 )
 
-
 class ChecklistSiniestroForm(forms.ModelForm):
 
     """Formulario para items de checklist de siniestro"""
@@ -1410,7 +1399,6 @@ class ChecklistSiniestroForm(forms.ModelForm):
 # FORMULARIOS DE BIENES ASEGURADOS
 
 # ==============================================================================
-
 
 class GrupoBienesForm(forms.ModelForm):
 
@@ -1832,7 +1820,6 @@ class BienAseguradoForm(forms.ModelForm):
 
 # ==============================================================================
 
-
 class FacturaForm(forms.ModelForm):
 
     """Formulario para crear/editar facturas con cálculos en vivo"""
@@ -1981,7 +1968,6 @@ class FacturaForm(forms.ModelForm):
 
 # ==============================================================================
 
-
 class DocumentoForm(forms.ModelForm):
 
     """Formulario para crear/editar documentos"""
@@ -2051,7 +2037,6 @@ class DocumentoForm(forms.ModelForm):
 # FORMULARIOS DE PAGO
 
 # ==============================================================================
-
 
 class PagoForm(forms.ModelForm):
 
@@ -2151,7 +2136,6 @@ class PagoForm(forms.ModelForm):
 
 # ==============================================================================
 
-
 class NotaCreditoForm(forms.ModelForm):
 
     """Formulario para crear/editar notas de crédito con validación de saldo"""
@@ -2232,7 +2216,6 @@ class NotaCreditoForm(forms.ModelForm):
 
 # ==============================================================================
 
-
 class ChecklistSiniestroConfigForm(forms.ModelForm):
 
     """Formulario para configurar items de checklist por tipo de siniestro"""
@@ -2288,7 +2271,6 @@ class ChecklistSiniestroConfigForm(forms.ModelForm):
 # FORMULARIOS DE FILTROS Y BÚSQUEDA
 
 # ==============================================================================
-
 
 class FiltroPolizasForm(forms.Form):
 
@@ -2439,7 +2421,6 @@ class FiltroReportesForm(forms.Form):
 # FORMULARIOS DE CONFIGURACIÓN DEL SISTEMA
 
 # ==============================================================================
-
 
 class ConfiguracionSistemaForm(forms.ModelForm):
 

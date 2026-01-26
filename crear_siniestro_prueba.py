@@ -2,13 +2,11 @@
 
 """Script para crear un siniestro de prueba con checklist."""
 
-
 import os
 
 import sys
 
 import django
-
 
 # Setup Django
 
@@ -17,7 +15,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'seguros.settings')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 django.setup()
-
 
 from app.models import (
 
@@ -31,7 +28,6 @@ from app.models import (
 
 from django.utils import timezone
 
-
 def main():
 
     # Obtener una póliza existente
@@ -40,13 +36,11 @@ def main():
 
     print(f'Póliza: {poliza}')
 
-
     if not poliza:
 
         print('No hay pólizas. Crea una póliza primero.')
 
         return
-
 
     # Obtener tipo de siniestro
 
@@ -57,7 +51,6 @@ def main():
         print('No hay tipo de siniestro "daño". Ejecuta poblar_checklist_siniestros.py primero.')
 
         return
-
 
     # Obtener o crear responsable
 
@@ -78,7 +71,6 @@ def main():
         }
 
     )
-
 
     # Crear un siniestro
 
@@ -120,11 +112,9 @@ def main():
 
     )
 
-
     if created:
 
         print(f'Siniestro creado: {siniestro}')
-
 
         # Crear items de checklist basados en la configuración
 
@@ -135,7 +125,6 @@ def main():
             activo=True
 
         ).order_by('orden')
-
 
         for config in configs:
 
@@ -153,7 +142,6 @@ def main():
 
             print(f'  {obligatorio} {status}: {config.nombre}')
 
-
         print(f'\nTotal items checklist: {siniestro.checklist_items.count()}')
 
         print(f'\nAccede al siniestro en: http://localhost:8000/siniestros/{siniestro.pk}/')
@@ -165,7 +153,6 @@ def main():
         items = siniestro.checklist_items.count()
 
         print(f'Items de checklist: {items}')
-
 
         if items == 0:
 
@@ -179,7 +166,6 @@ def main():
 
             ).order_by('orden')
 
-
             for config in configs:
 
                 ChecklistSiniestro.objects.get_or_create(
@@ -192,9 +178,7 @@ def main():
 
                 print(f'  Creado: {config.nombre}')
 
-
         print(f'\nAccede al siniestro en: http://localhost:8000/siniestros/{siniestro.pk}/')
-
 
 if __name__ == '__main__':
 

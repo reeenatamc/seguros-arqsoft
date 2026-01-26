@@ -6,7 +6,6 @@ Proporciona un punto de entrada único manteniendo compatibilidad con código ex
 
 """
 
-
 from .broker import BrokerNotifier
 
 from .user import UserNotifier
@@ -16,7 +15,6 @@ from .responsable import ResponsableNotifier
 from .poliza import PolizaNotifier
 
 from .alertas import AlertasService
-
 
 class NotificacionesFacade:
 

@@ -6,13 +6,11 @@ Responsabilidad única: Gestión del ciclo de vida de siniestros.
 
 """
 
-
 from decimal import Decimal
 
 from datetime import datetime
 
 from typing import Optional, Dict, Any
-
 
 from django.db import transaction
 
@@ -20,9 +18,7 @@ from django.db.models import Max
 
 from django.utils import timezone
 
-
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
-
 
 class SiniestroService(BaseService):
 
@@ -222,7 +218,6 @@ class SiniestroService(BaseService):
 
     @classmethod
     @transaction.atomic
-
     def crear_siniestro(
 
         cls,
@@ -279,7 +274,6 @@ class SiniestroService(BaseService):
 
     @classmethod
     @transaction.atomic
-
     def actualizar_siniestro(cls, siniestro, **campos) -> ResultadoOperacion:
 
         """Actualiza un siniestro existente con sincronización y validaciones."""
@@ -322,7 +316,6 @@ class SiniestroService(BaseService):
 
     @classmethod
     @transaction.atomic
-
     def crear_desde_email(
 
         cls,

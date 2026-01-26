@@ -4,7 +4,6 @@ Comando para crear respaldos de la base de datos.
 
 Soporta SQLite, PostgreSQL y MySQL.
 
-
 Uso:
 
     python manage.py backup_database
@@ -17,7 +16,6 @@ Uso:
 
 """
 
-
 import os
 
 import gzip
@@ -28,13 +26,11 @@ from datetime import datetime
 
 from pathlib import Path
 
-
 from django.core.management.base import BaseCommand, CommandError
 
 from django.conf import settings
 
 from django.core.management import call_command
-
 
 class Command(BaseCommand):
 

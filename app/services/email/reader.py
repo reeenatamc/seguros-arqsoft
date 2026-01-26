@@ -2,11 +2,9 @@
 
 Servicio para lectura de correos IMAP - Reportes de Siniestros
 
-
 Este módulo se conecta a una bandeja de entrada vía IMAP y extrae correos
 
 que cumplan con la política de formato establecida para reportes de siniestros.
-
 
 Política de formato:
 
@@ -14,11 +12,9 @@ Política de formato:
 
 - Cuerpo: Debe contener campos estructurados entre delimitadores
 
-
 Ejemplo de correo válido:
 
     Asunto: [SINIESTRO] Portátil no enciende
-
 
     Cuerpo:
 
@@ -32,7 +28,6 @@ Ejemplo de correo válido:
 
     CAUSA: Mala manipulación
 
-
     --- DATOS DEL EQUIPO ---
 
     PERIFERICO: Portátil
@@ -43,11 +38,9 @@ Ejemplo de correo válido:
 
     SERIE: PF22YXND
 
-
     --- FIN REPORTE ---
 
 """
-
 
 import imaplib
 
@@ -65,9 +58,7 @@ import re
 
 import logging
 
-
 from django.conf import settings
-
 
 # Intentar importar mailparser, si no está disponible usar parsing básico
 
@@ -81,16 +72,13 @@ except ImportError:
 
     MAILPARSER_AVAILABLE = False
 
-
 logger = logging.getLogger('app')
-
 
 # ==============================================================================
 
 # EXCEPCIONES PERSONALIZADAS
 
 # ==============================================================================
-
 
 class IMAPConnectionError(Exception):
 
@@ -121,7 +109,6 @@ class InvalidReportFormatError(Exception):
 # ESTRUCTURAS DE DATOS
 
 # ==============================================================================
-
 
 @dataclass
 class DatosEquipo:
@@ -208,7 +195,6 @@ class ReporteSiniestro:
 # CLASE PRINCIPAL
 
 # ==============================================================================
-
 
 class EmailReaderService:
 
@@ -1002,7 +988,6 @@ class EmailReaderService:
 
 # ==============================================================================
 
-
 def leer_correos_siniestros(
 
     limit: int = 10,
@@ -1017,7 +1002,6 @@ def leer_correos_siniestros(
 
     Función de conveniencia para leer correos de siniestros.
 
-
     Args:
 
         limit: Máximo de correos a procesar
@@ -1026,11 +1010,9 @@ def leer_correos_siniestros(
 
         mark_as_read: Marcar como leídos después de procesar
 
-
     Returns:
 
         Lista de diccionarios con los datos de cada siniestro
-
 
     Example:
 
@@ -1060,7 +1042,6 @@ def leer_correos_siniestros(
 
             return [r.to_dict() for r in reportes]
 
-
     except IMAPConnectionError as e:
 
         logger.error(f"Error de conexión IMAP: {e}")
@@ -1079,20 +1060,17 @@ def leer_correos_siniestros(
 
         raise
 
-
 def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: bool = True):
 
     """
 
     Guarda un reporte de siniestro en la base de datos.
 
-
     Args:
 
         reporte: ReporteSiniestro extraído del correo
 
         intentar_crear_siniestro: Si True, intenta crear el siniestro automáticamente
-
 
     Returns:
 
@@ -1101,7 +1079,6 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
     """
 
     from app.models import SiniestroEmail
-
 
     # Verificar si ya existe un registro con este email_id
 
@@ -1112,7 +1089,6 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
         logger.info(f"Correo ya procesado anteriormente: {reporte.email_id}")
 
         return existente, existente.siniestro_creado, "Correo ya procesado anteriormente"
-
 
     # Crear registro de SiniestroEmail
 
@@ -1148,16 +1124,13 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
 
     )
 
-
     logger.info(f"Registro SiniestroEmail creado: {siniestro_email.id}")
-
 
     # Intentar crear siniestro automáticamente
 
     siniestro = None
 
     mensaje = "Guardado como pendiente de revisión"
-
 
     if intentar_crear_siniestro:
 
@@ -1171,9 +1144,7 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
 
             logger.warning(f"No se pudo crear siniestro automáticamente: {mensaje}")
 
-
     return siniestro_email, siniestro, mensaje
-
 
 def procesar_y_guardar_correos(
 
@@ -1191,7 +1162,6 @@ def procesar_y_guardar_correos(
 
     Lee correos de siniestros y los guarda en la base de datos.
 
-
     Args:
 
         limit: Máximo de correos a procesar
@@ -1201,7 +1171,6 @@ def procesar_y_guardar_correos(
         mark_as_read: Marcar como leídos después de procesar
 
         crear_siniestros: Intentar crear siniestros automáticamente
-
 
     Returns:
 
@@ -1225,7 +1194,6 @@ def procesar_y_guardar_correos(
 
     }
 
-
     try:
 
         with EmailReaderService() as service:
@@ -1240,7 +1208,6 @@ def procesar_y_guardar_correos(
 
             )
 
-
             for reporte in reportes:
 
                 try:
@@ -1253,9 +1220,7 @@ def procesar_y_guardar_correos(
 
                     )
 
-
                     resultados['total_procesados'] += 1
-
 
                     if siniestro:
 
@@ -1265,11 +1230,9 @@ def procesar_y_guardar_correos(
 
                         resultados['pendientes_revision'] += 1
 
-
                     if "ya procesado" in mensaje.lower():
 
                         resultados['ya_existentes'] += 1
-
 
                     resultados['detalles'].append({
 
@@ -1286,7 +1249,6 @@ def procesar_y_guardar_correos(
                         'mensaje': mensaje
 
                     })
-
 
                 except Exception as e:
 
@@ -1310,9 +1272,7 @@ def procesar_y_guardar_correos(
 
                     logger.error(f"Error guardando reporte: {e}")
 
-
             return resultados
-
 
     except Exception as e:
 

@@ -6,7 +6,6 @@ Centraliza la lógica de cálculo para facturas, pólizas y detalles de ramo.
 
 Permite reutilización desde APIs, Celery tasks, o cualquier contexto.
 
-
 ARQUITECTURA:
 
 - Los métodos save() de los modelos siguen funcionando para compatibilidad
@@ -15,16 +14,13 @@ ARQUITECTURA:
 
 - Los servicios son stateless y testables de forma aislada
 
-
 EJEMPLOS DE USO:
-
 
 1. Calcular factura sin guardar (para preview/validación):
 
     ```
 
     from app.services.calculations import FacturaCalculationService
-
 
     resultado = FacturaCalculationService.calcular_factura_completa(
 
@@ -42,13 +38,11 @@ EJEMPLOS DE USO:
 
     ```
 
-
 2. Desde una API REST (sin efectos secundarios del save()):
 
     ```
 
     from app.services.calculations import DetalleRamoCalculationService
-
 
     valores = DetalleRamoCalculationService.calcular_valores_detalle(
 
@@ -64,13 +58,11 @@ EJEMPLOS DE USO:
 
     ```
 
-
 3. Obtener tasas de emisión (ahora configurables desde Admin):
 
     ```
 
     from app.services.calculations import DetalleRamoCalculationService
-
 
     # La tabla se lee de ConfiguracionSistema.TABLA_TASAS_EMISION
 
@@ -84,7 +76,6 @@ EJEMPLOS DE USO:
 
 """
 
-
 from decimal import Decimal
 
 from datetime import timedelta
@@ -92,7 +83,6 @@ from datetime import timedelta
 from typing import Optional, Dict, Any
 
 from django.utils import timezone
-
 
 class FacturaCalculationService:
 

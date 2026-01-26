@@ -8,7 +8,6 @@ filtros por entidad, y generación de reportes personalizables.
 
 """
 
-
 from django.db.models import Sum, Count, Avg, Q, F, Value, Min, Max
 
 from django.db.models.functions import Coalesce, TruncMonth, TruncDay, TruncWeek
@@ -22,7 +21,6 @@ from decimal import Decimal
 from typing import Dict, List, Any, Optional, Tuple
 
 import json
-
 
 class DateRangePresets:
 

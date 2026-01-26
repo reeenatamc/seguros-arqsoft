@@ -26,7 +26,6 @@ import random
 
 import calendar
 
-
 from app.models import (
 
     ConfiguracionSistema, CompaniaAseguradora, CorredorSeguros,
@@ -36,7 +35,6 @@ from app.models import (
     BienAsegurado, SubgrupoRamo, Quote, QuoteOption, PolicyRenewal, PaymentApproval, CalendarEvent
 
 )
-
 
 class Command(BaseCommand):
 

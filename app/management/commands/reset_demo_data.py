@@ -4,7 +4,6 @@ from django.contrib.auth import get_user_model
 
 from django.db import transaction
 
-
 from app.models import (
 
     CompaniaAseguradora,
@@ -48,7 +47,6 @@ from app.models import (
     AdjuntoSiniestro,
 
 )
-
 
 class Command(BaseCommand):
 

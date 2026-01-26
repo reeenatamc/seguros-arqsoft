@@ -2,7 +2,6 @@
 
 Servicios de la Aplicación - Arquitectura por Dominios.
 
-
 Estructura:
 
     services/
@@ -41,7 +40,6 @@ Estructura:
 
 """
 
-
 # ==============================================================================
 
 # BASE Y TIPOS COMPARTIDOS
@@ -57,7 +55,6 @@ from .base import (
     ResultadoOperacion,
 
 )
-
 
 # ==============================================================================
 
@@ -79,7 +76,6 @@ from .nota_credito import NotaCreditoService
 
 from .bien_asegurado import BienAseguradoService
 
-
 # ==============================================================================
 
 # REPORTES Y EXPORTACIÓN
@@ -97,7 +93,6 @@ from .reportes import (
     ExportacionService,
 
 )
-
 
 # ==============================================================================
 
@@ -118,7 +113,6 @@ from .analytics import (
     AdvancedAnalyticsService,
 
 )
-
 
 # ==============================================================================
 
@@ -168,7 +162,6 @@ from .alertas import (
 
 )
 
-
 # ==============================================================================
 
 # EMAIL
@@ -176,7 +169,6 @@ from .alertas import (
 # ==============================================================================
 
 from .email import EmailReaderService
-
 
 # ==============================================================================
 
@@ -208,7 +200,6 @@ from .configuracion import (
 
 )
 
-
 # ==============================================================================
 
 # EXPORTS
@@ -224,7 +215,6 @@ __all__ = [
     'ResultadoValidacion',
 
     'ResultadoOperacion',
-
 
     # Dominio
 
@@ -244,7 +234,6 @@ __all__ = [
 
     'BienAseguradoService',
 
-
     # Reportes
 
     'ReportesService',
@@ -254,7 +243,6 @@ __all__ = [
     'PDFReportesService',
 
     'ExportacionService',
-
 
     # Analytics
 
@@ -267,7 +255,6 @@ __all__ = [
     'DateRangePresets',
 
     'AdvancedAnalyticsService',
-
 
     # Alertas
 
@@ -309,11 +296,9 @@ __all__ = [
 
     'crear_dispatcher_desde_config',
 
-
     # Email
 
     'EmailReaderService',
-
 
     # Configuración
 

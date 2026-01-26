@@ -6,13 +6,11 @@ Responsabilidad única: verificar y generar alertas programadas.
 
 """
 
-
 from typing import Dict, List
 
 from .broker import BrokerNotifier
 
 from .responsable import ResponsableNotifier
-
 
 class AlertasService:
 

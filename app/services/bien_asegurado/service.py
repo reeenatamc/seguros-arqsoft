@@ -6,9 +6,7 @@ Responsabilidad única: Gestión de bienes asegurados y su relación con póliza
 
 """
 
-
 from ..base import BaseService, ResultadoValidacion, ResultadoOperacion
-
 
 class BienAseguradoService(BaseService):
 

@@ -6,7 +6,6 @@ Gestiona la generación de documentos Word, PDF y firma electrónica.
 
 """
 
-
 import hashlib
 
 import os
@@ -14,7 +13,6 @@ import os
 from io import BytesIO, StringIO
 
 from datetime import datetime
-
 
 from django.conf import settings
 
@@ -24,9 +22,7 @@ from django.http import HttpResponse
 
 from django.contrib.staticfiles import finders
 
-
 from app.models import Siniestro, AdjuntoSiniestro, ConfiguracionSistema
-
 
 try:
 
@@ -41,7 +37,6 @@ try:
 except ImportError:
 
     DOCX_AVAILABLE = False
-
 
 class DocumentosService:
 

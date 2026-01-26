@@ -6,9 +6,7 @@ Responsabilidad única: notificar al usuario que registró algo.
 
 """
 
-
 from .base import BaseNotifier
-
 
 class UserNotifier(BaseNotifier):
 
