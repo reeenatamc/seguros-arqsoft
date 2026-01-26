@@ -1,4 +1,35 @@
+"""
+Módulo de Vistas (Controllers) para el Sistema de Gestión de Seguros.
+
+Este módulo implementa la capa de controladores siguiendo el patrón MVT de Django.
+Contiene vistas basadas en funciones (FBV) y clases (CBV) para todas las
+operaciones CRUD y flujos de negocio del sistema.
+
+Arquitectura:
+    - Dashboard: Estadísticas, KPIs, gráficos con filtros dinámicos
+    - Pólizas: CRUD completo con detalles de ramo inline
+    - Siniestros: Gestión con checklist, adjuntos y estados
+    - Facturas/Pagos: Control financiero con notas de crédito
+    - Reportes: Generación de PDF, exportación Excel/CSV
+    - Catálogos: CRUD de entidades maestras (compañías, ramos, etc.)
+
+Decoradores Utilizados:
+    - @login_required: Autenticación obligatoria
+    - @require_GET, @require_POST: Restricción de métodos HTTP
+    - @transaction.atomic: Transacciones para operaciones complejas
+
+Servicios Invocados:
+    - EstadisticasService: Métricas y KPIs del dashboard
+    - ExportacionService: Generación de archivos Excel/CSV
+    - DashboardFiltersService: Filtros dinámicos tipo Odoo
+    - NotificacionesService: Envío de alertas
+
+Autor: Equipo de Desarrollo UTPL
+Versión: 1.0.0
+Última Actualización: Enero 2026
+"""
 from django.shortcuts import render, redirect, get_object_or_404
+
 
 from django.contrib.auth.decorators import login_required
 
