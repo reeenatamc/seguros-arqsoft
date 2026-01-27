@@ -361,15 +361,19 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "verbose" if not DEBUG else "simple",
         },
-        "file": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": BASE_DIR / "logs" / "django.log",
-            "maxBytes": 1024 * 1024 * 10,  # 10 MB
-            "backupCount": 5,
-            "formatter": "verbose",
-        } if DEBUG else {
-            "class": "logging.NullHandler",
-        },
+        "file": (
+            {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": BASE_DIR / "logs" / "django.log",
+                "maxBytes": 1024 * 1024 * 10,  # 10 MB
+                "backupCount": 5,
+                "formatter": "verbose",
+            }
+            if DEBUG
+            else {
+                "class": "logging.NullHandler",
+            }
+        ),
     },
     "loggers": {
         "django": {

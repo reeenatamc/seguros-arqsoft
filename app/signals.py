@@ -34,6 +34,7 @@ Autor: Equipo de Desarrollo UTPL
 Versión: 1.0.0
 Última Actualización: Enero 2026
 """
+
 from decimal import Decimal
 
 from django.db.models.signals import post_save, pre_save
