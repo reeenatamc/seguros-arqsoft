@@ -1,11 +1,56 @@
 """
+Servicio de Dominio para Gestión de Pólizas.
 
-Servicio de Pólizas.
+Este módulo implementa la capa de servicio para la entidad Póliza, encapsulando
+toda la lógica de negocio relacionada con el ciclo de vida de pólizas de seguros.
+Sigue el patrón de Servicio de Dominio para desacoplar la lógica del framework.
 
-Responsabilidad única: Gestión del ciclo de vida de pólizas.
+Responsabilidades del Servicio:
+    1. **Validación de Fechas**: Verifica coherencia temporal y evita superposiciones
+       de pólizas con el mismo número en períodos que se cruzan.
 
+    2. **Validación de Relaciones**: Asegura que el corredor pertenezca a la
+       compañía aseguradora seleccionada.
+
+    3. **Gestión de Estados**: Determina automáticamente el estado de la póliza
+       (vigente, por_vencer, vencida, cancelada) basándose en fechas.
+
+    4. **Operaciones CRUD**: Proporciona métodos transaccionales para crear
+       y actualizar pólizas con validaciones integradas.
+
+Patrones de Diseño:
+    - Service Layer: Encapsula lógica de negocio fuera del modelo
+    - Result Pattern: Retorna ResultadoOperacion en lugar de excepciones
+    - Factory Methods: Construcción de resultados (exito/fallo)
+    - Transaction Script: Operaciones atómicas con @transaction.atomic
+
+Ejemplo de Uso:
+    Crear una póliza::
+
+        from app.services.poliza import PolizaService
+        from datetime import date, timedelta
+
+        resultado = PolizaService.crear_poliza(
+            numero_poliza="POL-2026-001",
+            compania_aseguradora=compania,
+            grupo_ramo=grupo,
+            fecha_inicio=date.today(),
+            fecha_fin=date.today() + timedelta(days=365),
+            corredor=corredor,
+            suma_asegurada=Decimal("1000000.00")
+        )
+
+        if resultado.exitoso:
+            poliza = resultado.objeto
+            print(f"Póliza creada: {poliza.numero_poliza}")
+        else:
+            for campo, error in resultado.errores.items():
+                print(f"Error en {campo}: {error}")
+
+Autor: Equipo de Desarrollo UTPL
+Versión: 1.0.0
+Última Actualización: Enero 2026
 """
-
 from datetime import date
 from typing import Any, Optional
 
