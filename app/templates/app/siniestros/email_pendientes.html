@@ -18,6 +18,12 @@
             </div>
         </div>
         <div class="flex items-center gap-3">
+            <button type="button" onclick="escanearReportesCustodio()"
+               id="btn-escanear"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-medium text-sm">
+                <i class="fas fa-sync-alt" id="icon-escanear"></i>
+                <span id="text-escanear">Escanear Inbox</span>
+            </button>
             <a href="{% url 'siniestros_lista' %}"
                class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition font-medium text-sm">
                 <i class="fas fa-list"></i>
@@ -506,5 +512,53 @@ document.addEventListener('keydown', function(e) {
         });
     }
 });
+
+// Escanear reportes de custodios
+function escanearReportesCustodio() {
+    const btn = document.getElementById('btn-escanear');
+    const icon = document.getElementById('icon-escanear');
+    const text = document.getElementById('text-escanear');
+    
+    btn.disabled = true;
+    icon.classList.add('fa-spin');
+    text.textContent = 'Escaneando...';
+    
+    fetch('{% url "escanear_reportes_custodio" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.encontrados > 0) {
+                text.textContent = `${data.encontrados} nuevo(s)`;
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                text.textContent = 'Sin nuevos';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    icon.classList.remove('fa-spin');
+                    text.textContent = 'Escanear Inbox';
+                }, 2000);
+            }
+        } else {
+            text.textContent = 'Error';
+            setTimeout(() => {
+                btn.disabled = false;
+                icon.classList.remove('fa-spin');
+                text.textContent = 'Escanear Inbox';
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.disabled = false;
+        icon.classList.remove('fa-spin');
+        text.textContent = 'Escanear Inbox';
+    });
+}
 </script>
 {% endblock %}

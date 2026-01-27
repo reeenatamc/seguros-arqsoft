@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Recibo de Indemnización Firmado</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f7f8; font-family: Arial, Helvetica, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f5f7f8;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <!-- Main Container -->
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; width: 100%;">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #ffffff; border-radius: 16px 16px 0 0; padding: 24px 32px; border-bottom: 3px solid #0070c4;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td width="80" style="vertical-align: middle;">
+                                        <img src="cid:logo_utpl" alt="UTPL" width="50" style="display: block; width: 50px; height: auto;">
+                                    </td>
+                                    <td style="vertical-align: middle; padding-left: 16px;">
+                                        <span style="font-size: 20px; font-weight: 700; color: #0f172a; display: block;">UTPL</span>
+                                        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; font-weight: 500;">Seguros</span>
+                                    </td>
+                                    <td align="right" style="vertical-align: middle;">
+                                        <span style="background-color: #dcfce7; color: #166534; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 8px 16px; border-radius: 20px; display: inline-block;">
+                                            Recibo Firmado
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 32px;">
+                            
+                            <!-- Saludo -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 15px; color: #334155; margin: 0; line-height: 1.6;">Estimados,</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Mensaje Principal -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 14px; color: #475569; margin: 0 0 16px 0; line-height: 1.7;">
+                                            Por medio de la presente, adjunto el recibo de indemnización debidamente firmado 
+                                            correspondiente al siniestro referenciado a continuación.
+                                        </p>
+                                        <p style="font-size: 14px; color: #475569; margin: 0; line-height: 1.7;">
+                                            Solicitamos amablemente proceder con la liquidación dentro del plazo establecido 
+                                            de <strong>72 horas hábiles</strong>.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Datos del Siniestro -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #064b83; margin: 0 0 16px 0;">
+                                            <span style="color: #0c8de6;">●</span> Datos del Siniestro
+                                        </p>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                <td width="40%" style="font-size: 13px; font-weight: 600; color: #064b83; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">No. Siniestro:</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">{{ numero_siniestro }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; font-weight: 600; color: #064b83; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">Póliza:</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">{{ numero_poliza }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; font-weight: 600; color: #064b83; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">Bien Afectado:</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">{{ bien_nombre }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; font-weight: 600; color: #064b83; padding: 8px 0;">Fecha de Firma:</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 8px 0;">{{ fecha_firma }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Información de Plazo y Adjunto en una fila -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
+                                <tr>
+                                    <!-- Plazo -->
+                                    <td width="50%" style="padding-right: 8px; vertical-align: top;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px;">
+                                            <tr>
+                                                <td style="padding: 16px;">
+                                                    <p style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: #b45309; margin: 0 0 8px 0;">
+                                                        Plazo de Liquidación
+                                                    </p>
+                                                    <p style="font-size: 15px; font-weight: 700; color: #92400e; margin: 0; font-family: 'Courier New', monospace;">
+                                                        {{ fecha_limite }}
+                                                    </p>
+                                                    <p style="font-size: 11px; color: #a16207; margin: 8px 0 0 0;">
+                                                        72 horas hábiles
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <!-- Adjunto -->
+                                    <td width="50%" style="padding-left: 8px; vertical-align: top;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;">
+                                            <tr>
+                                                <td style="padding: 16px;">
+                                                    <p style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: #166534; margin: 0 0 8px 0;">
+                                                        Documento Adjunto
+                                                    </p>
+                                                    <p style="font-size: 13px; font-weight: 600; color: #15803d; margin: 0;">
+                                                        Recibo de Indemnización
+                                                    </p>
+                                                    <p style="font-size: 11px; color: #16a34a; margin: 8px 0 0 0;">
+                                                        Firmado (PDF)
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Despedida -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 14px; color: #475569; margin: 0; line-height: 1.6;">
+                                            Quedamos atentos a su confirmación.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Firma -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 14px; color: #475569; margin: 0 0 16px 0;">Saludos cordiales,</p>
+                                        <p style="font-size: 14px; font-weight: 600; color: #0f172a; margin: 0 0 4px 0;">{{ firmante_nombre }}</p>
+                                        {% if firmante_cargo %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">{{ firmante_cargo }}</p>{% endif %}
+                                        {% if firmante_departamento %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">{{ firmante_departamento }}</p>{% endif %}
+                                        {% if firmante_telefono %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">Telf. {{ firmante_telefono }}</p>{% endif %}
+                                        {% if firmante_email %}<p style="font-size: 13px; color: #0c8de6; margin: 0;">{{ firmante_email }}</p>{% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f1f5f9; border-radius: 0 0 16px 16px; padding: 24px 32px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td style="font-family: 'Courier New', monospace; font-size: 9px; color: #94a3b8; line-height: 1.8;">
+                                        SYS_OUTPUT: AUTOMATED_MESSAGE_V2.1<br>
+                                        SERVER_NODE: UTPL_INSURE_CORE<br>
+                                        TIMESTAMP: {{ timestamp }}
+                                    </td>
+                                    <td align="right" style="font-size: 14px; color: #94a3b8; font-weight: 600;">
+                                        UTPL <span style="font-weight: 300;">Tech</span>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="text-align: center; font-family: 'Courier New', monospace; font-size: 9px; color: #cbd5e1; margin: 16px 0 0 0; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                                // Este mensaje es generado automáticamente. Por favor no responder a esta dirección. //
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!-- Modal de Vista Previa de Email -->
+<div id="emailPreviewModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <!-- Overlay -->
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeEmailModal()"></div>
+
+        <!-- Contenido del modal -->
+        <div class="relative bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all w-full max-w-2xl">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-brand-600 via-brand-500 to-brand-600 px-5 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-envelope text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-semibold text-white" id="modal-title">Vista Previa de Email</h3>
+                            <span class="text-brand-100 text-xs" id="modal-subtitle"></span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeEmailModal()" class="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white/80 hover:text-white transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <form id="emailPreviewForm" method="POST" action="">
+                {% csrf_token %}
+                <div class="p-5 space-y-4 max-h-[70vh] overflow-y-auto bg-slate-50/50">
+                    
+                    <!-- Destinatario y CC en tarjeta -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+                        <div class="flex items-center gap-2 text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">
+                            <i class="fas fa-users"></i>
+                            <span>Destinatarios</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-500 mb-1">Para</label>
+                                <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg">
+                                    <i class="fas fa-user text-slate-400 text-xs"></i>
+                                    <input type="email" name="destinatario" id="email_destinatario" 
+                                           class="flex-1 bg-transparent text-sm text-slate-700 border-0 p-0 focus:ring-0" readonly>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-500 mb-1">CC (opcional)</label>
+                                <div class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100">
+                                    <i class="fas fa-user-plus text-slate-400 text-xs"></i>
+                                    <input type="text" name="cc" id="email_cc" 
+                                           class="flex-1 bg-transparent text-sm border-0 p-0 focus:ring-0"
+                                           placeholder="email@ejemplo.com">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Asunto en tarjeta -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-4">
+                        <div class="flex items-center gap-2 text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">
+                            <i class="fas fa-heading"></i>
+                            <span>Asunto</span>
+                        </div>
+                        <input type="text" name="asunto" id="email_asunto" 
+                               class="w-full px-3 py-2.5 text-sm font-medium text-slate-800 bg-white border border-slate-200 rounded-lg focus:border-brand-400 focus:ring-2 focus:ring-brand-100">
+                    </div>
+
+                    <!-- Contenido del mensaje -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2 text-slate-400 text-xs font-medium uppercase tracking-wide">
+                                <i class="fas fa-file-alt"></i>
+                                <span>Contenido del Mensaje</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Editable</span>
+                        </div>
+                        <textarea name="contenido" id="email_contenido" rows="12"
+                                  class="w-full px-4 py-3 text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-lg focus:border-brand-400 focus:ring-2 focus:ring-brand-100 leading-relaxed"
+                                  style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif;"></textarea>
+                    </div>
+
+                    <!-- Notas adicionales -->
+                    <div class="bg-amber-50 rounded-xl border border-amber-200 p-4">
+                        <div class="flex items-center gap-2 text-amber-600 text-xs font-medium uppercase tracking-wide mb-2">
+                            <i class="fas fa-sticky-note"></i>
+                            <span>Notas Adicionales</span>
+                            <span class="text-[10px] font-normal normal-case text-amber-500">(se incluirán al final)</span>
+                        </div>
+                        <textarea name="notas_adicionales" id="email_notas" rows="2"
+                                  class="w-full px-3 py-2 text-sm bg-white border border-amber-200 rounded-lg focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                                  placeholder="Agregar comentarios o instrucciones adicionales..."></textarea>
+                    </div>
+
+                    <!-- Adjuntos (si aplica) -->
+                    <div id="adjuntos_container" class="hidden bg-blue-50 rounded-xl border border-blue-200 p-4">
+                        <div class="flex items-center gap-2 text-blue-600 text-xs font-medium uppercase tracking-wide mb-2">
+                            <i class="fas fa-paperclip"></i>
+                            <span>Archivos Adjuntos</span>
+                        </div>
+                        <div id="adjuntos_lista" class="flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <!-- Campos ocultos -->
+                    <input type="hidden" name="accion" id="email_accion">
+                    <input type="hidden" name="objeto_id" id="email_objeto_id">
+                </div>
+
+                <!-- Footer -->
+                <div class="bg-white px-5 py-4 flex items-center justify-between border-t border-slate-200">
+                    <div class="flex items-center gap-2 text-slate-400 text-xs">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Revisa el contenido antes de enviar</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="closeEmailModal()"
+                                class="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-medium transition">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="btnEnviarEmail"
+                                class="group px-5 py-2 text-sm bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white rounded-lg font-medium transition shadow-sm hover:shadow-md flex items-center gap-2">
+                            <i class="fas fa-paper-plane text-xs group-hover:translate-x-0.5 transition-transform"></i>
+                            <span>Enviar Email</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openEmailModal(accion, objetoId, url) {
+    document.getElementById('emailPreviewModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('email_contenido').value = 'Cargando...';
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('email_destinatario').value = data.destinatario || '';
+                document.getElementById('email_cc').value = data.cc || '';
+                document.getElementById('email_asunto').value = data.asunto || '';
+                document.getElementById('email_contenido').value = data.contenido || '';
+                document.getElementById('email_accion').value = accion;
+                document.getElementById('email_objeto_id').value = objetoId;
+                document.getElementById('emailPreviewForm').action = data.submit_url || '';
+                document.getElementById('modal-subtitle').textContent = data.tipo_descripcion || '';
+                
+                if (data.adjuntos && data.adjuntos.length > 0) {
+                    const container = document.getElementById('adjuntos_container');
+                    const lista = document.getElementById('adjuntos_lista');
+                    container.classList.remove('hidden');
+                    lista.innerHTML = data.adjuntos.map(adj => 
+                        `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-sm text-blue-700">
+                            <i class="fas fa-file text-blue-400 text-xs"></i>
+                            ${adj.nombre}
+                        </span>`
+                    ).join('');
+                } else {
+                    document.getElementById('adjuntos_container').classList.add('hidden');
+                }
+            } else {
+                alert('Error: ' + (data.error || 'No se pudo cargar'));
+                closeEmailModal();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar la vista previa');
+            closeEmailModal();
+        });
+}
+
+function closeEmailModal() {
+    document.getElementById('emailPreviewModal').classList.add('hidden');
+    document.body.style.overflow = '';
+    document.getElementById('email_notas').value = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeEmailModal();
+});
+</script>

@@ -10,11 +10,11 @@
             <p class="text-slate-500 mt-1">{{ total_resultados }} siniestros encontrados</p>
         </div>
         <div class="flex items-center gap-3">
-            <!-- Botón Siniestros por Email -->
+            <!-- Botón Siniestros Entrantes -->
             <a href="{% url 'siniestros_email_pendientes' %}" id="btn-email-pendientes"
                class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl hover:bg-amber-100 transition font-medium text-sm relative">
-                <i class="fas fa-envelope"></i>
-                <span>Por Email</span>
+                <i class="fas fa-inbox"></i>
+                <span>Entrantes</span>
                 <span id="badge-email-count" class="hidden absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center"></span>
             </a>
             

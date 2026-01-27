@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Siniestro Cerrado</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f7f8; font-family: Arial, Helvetica, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f5f7f8;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <!-- Main Container -->
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; width: 100%;">
+                    
+                    <!-- Header con badge de éxito -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-radius: 16px 16px 0 0; padding: 32px; text-align: center;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td align="center">
+                                        <!-- Checkmark Circle -->
+                                        <div style="width: 64px; height: 64px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px; line-height: 64px;">
+                                            <span style="color: white; font-size: 32px; font-weight: bold;">&#10003;</span>
+                                        </div>
+                                        <h1 style="color: white; font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">Siniestro Cerrado</h1>
+                                        <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0;">Proceso de indemnización completado exitosamente</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Logo Bar -->
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 20px 32px; border-bottom: 1px solid #e2e8f0;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td width="60">
+                                        <img src="cid:logo_utpl" alt="UTPL" width="45" style="display: block; width: 45px; height: auto;">
+                                    </td>
+                                    <td style="vertical-align: middle;">
+                                        <span style="font-size: 18px; font-weight: 700; color: #0f172a;">UTPL</span>
+                                        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; font-weight: 500; display: block;">Gestión de Seguros</span>
+                                    </td>
+                                    <td align="right">
+                                        <span style="font-size: 12px; color: #64748b;">No. {{ numero_siniestro }}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 32px;">
+                            
+                            <!-- Saludo -->
+                            <p style="font-size: 15px; color: #334155; margin: 0 0 20px 0; line-height: 1.6;">
+                                Estimado/a <strong>{{ destinatario_nombre }}</strong>,
+                            </p>
+
+                            <!-- Mensaje Principal -->
+                            <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.7;">
+                                Nos complace informarle que el proceso de indemnización del siniestro referenciado 
+                                ha sido completado satisfactoriamente. A continuación, el resumen del caso:
+                            </p>
+
+                            <!-- Card de Resumen -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #064b83; margin: 0 0 20px 0;">
+                                            <span style="color: #10b981;">&#9679;</span> Resumen del Siniestro
+                                        </p>
+                                        
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                <td width="45%" style="font-size: 13px; color: #64748b; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">Bien Afectado</td>
+                                                <td style="font-size: 13px; color: #0f172a; font-weight: 600; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">{{ bien_nombre }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #64748b; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">Código de Activo</td>
+                                                <td style="font-size: 13px; color: #0f172a; font-weight: 500; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-family: 'Courier New', monospace;">{{ codigo_activo }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #64748b; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">Póliza</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">{{ numero_poliza }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #64748b; padding: 10px 0;">Fecha de Cierre</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 10px 0;">{{ fecha_cierre }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Monto Liquidado - Destacado -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #6ee7b7; border-radius: 12px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px; text-align: center;">
+                                        <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: #047857; margin: 0 0 8px 0;">
+                                            Monto Liquidado
+                                        </p>
+                                        <p style="font-size: 32px; font-weight: 700; color: #059669; margin: 0; font-family: 'Georgia', serif;">
+                                            ${{ monto_liquidado }}
+                                        </p>
+                                        {% if numero_comprobante %}
+                                        <p style="font-size: 12px; color: #10b981; margin: 12px 0 0 0;">
+                                            Comprobante: <strong style="font-family: 'Courier New', monospace;">{{ numero_comprobante }}</strong>
+                                        </p>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Timeline mini -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 16px 0;">
+                                        <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin: 0 0 12px 0;">
+                                            Proceso Completado
+                                        </p>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                <td width="25%" style="text-align: center;">
+                                                    <div style="width: 24px; height: 24px; background-color: #10b981; border-radius: 50%; margin: 0 auto 8px; line-height: 24px;">
+                                                        <span style="color: white; font-size: 12px;">&#10003;</span>
+                                                    </div>
+                                                    <p style="font-size: 10px; color: #64748b; margin: 0;">Reporte</p>
+                                                </td>
+                                                <td width="25%" style="text-align: center;">
+                                                    <div style="width: 24px; height: 24px; background-color: #10b981; border-radius: 50%; margin: 0 auto 8px; line-height: 24px;">
+                                                        <span style="color: white; font-size: 12px;">&#10003;</span>
+                                                    </div>
+                                                    <p style="font-size: 10px; color: #64748b; margin: 0;">Gestión</p>
+                                                </td>
+                                                <td width="25%" style="text-align: center;">
+                                                    <div style="width: 24px; height: 24px; background-color: #10b981; border-radius: 50%; margin: 0 auto 8px; line-height: 24px;">
+                                                        <span style="color: white; font-size: 12px;">&#10003;</span>
+                                                    </div>
+                                                    <p style="font-size: 10px; color: #64748b; margin: 0;">Liquidación</p>
+                                                </td>
+                                                <td width="25%" style="text-align: center;">
+                                                    <div style="width: 24px; height: 24px; background-color: #10b981; border-radius: 50%; margin: 0 auto 8px; line-height: 24px;">
+                                                        <span style="color: white; font-size: 12px;">&#10003;</span>
+                                                    </div>
+                                                    <p style="font-size: 10px; color: #64748b; margin: 0;">Cierre</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Mensaje de despedida -->
+                            <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.7;">
+                                Agradecemos su colaboración durante el proceso. Si tiene alguna consulta adicional, 
+                                no dude en comunicarse con nosotros.
+                            </p>
+
+                            <!-- Firma -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 14px; color: #475569; margin: 0 0 12px 0;">Atentamente,</p>
+                                        <p style="font-size: 14px; font-weight: 600; color: #0f172a; margin: 0 0 4px 0;">{{ firmante_nombre }}</p>
+                                        {% if firmante_cargo %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">{{ firmante_cargo }}</p>{% endif %}
+                                        {% if firmante_departamento %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">{{ firmante_departamento }}</p>{% endif %}
+                                        {% if firmante_telefono %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">Telf. {{ firmante_telefono }}</p>{% endif %}
+                                        {% if firmante_email %}<p style="font-size: 13px; color: #0c8de6; margin: 0;">{{ firmante_email }}</p>{% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f1f5f9; border-radius: 0 0 16px 16px; padding: 24px 32px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td style="font-family: 'Courier New', monospace; font-size: 9px; color: #94a3b8; line-height: 1.8;">
+                                        SYS_OUTPUT: CASE_CLOSED_V2.1<br>
+                                        SERVER_NODE: UTPL_INSURE_CORE<br>
+                                        TIMESTAMP: {{ timestamp }}
+                                    </td>
+                                    <td align="right" style="font-size: 14px; color: #94a3b8; font-weight: 600;">
+                                        UTPL <span style="font-weight: 300;">Tech</span>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="text-align: center; font-family: 'Courier New', monospace; font-size: 9px; color: #cbd5e1; margin: 16px 0 0 0; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                                // Este mensaje es generado automáticamente. Por favor no responder a esta dirección. //
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

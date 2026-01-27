@@ -6,7 +6,7 @@
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex items-center gap-4">
-        <a href="{% url 'bien_detalle' object.pk %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
+        <a href="{% url 'bien_asegurado_detalle' object.pk %}" class="p-2 hover:bg-slate-100 rounded-lg transition">
             <i class="fas fa-arrow-left text-slate-600"></i>
         </a>
         <div>
@@ -261,7 +261,7 @@
             </div>
 
             <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
-                <a href="{% url 'bien_detalle' object.pk %}"
+                <a href="{% url 'bien_asegurado_detalle' object.pk %}"
                    class="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
                     Cancelar
                 </a>

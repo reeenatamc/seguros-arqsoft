@@ -500,15 +500,56 @@ class EmailReaderService:
 
                     content_disposition = str(part.get("Content-Disposition", ""))
 
-                    if "attachment" in content_disposition:
-
-                        attachments.append(
-                            {
-                                "filename": part.get_filename() or "unknown",
-                                "content_type": content_type,
-                                "payload": part.get_payload(decode=True),
-                            }
-                        )
+                    # Capturar adjuntos y también imágenes inline
+                    if "attachment" in content_disposition or content_type.startswith("image/"):
+                        import base64
+                        
+                        payload_data = part.get_payload(decode=True)
+                        
+                        # Si decode=True no funcionó, intentar decodificar Base64 manualmente
+                        if payload_data is None:
+                            payload_data = part.get_payload()
+                            if isinstance(payload_data, str):
+                                try:
+                                    payload_data = base64.b64decode(payload_data)
+                                except:
+                                    payload_data = None
+                        
+                        # Verificar si el payload existe y tiene tamaño razonable
+                        if payload_data and len(payload_data) > 100:
+                            # Headers válidos de imágenes binarias
+                            valid_headers = [
+                                b'\xff\xd8\xff',  # JPEG (cualquier variante)
+                                b'\x89PNG',       # PNG
+                                b'RIFF',          # WEBP
+                                b'GIF8',          # GIF
+                            ]
+                            
+                            # Verificar si YA es una imagen válida
+                            is_valid_image = any(payload_data.startswith(h) for h in valid_headers)
+                            
+                            # Si no es imagen válida, puede ser Base64 (texto ASCII)
+                            if not is_valid_image:
+                                # Patrones Base64 comunes para imágenes
+                                # /9j/ = JPEG, iVBOR = PNG, UklG = WEBP, R0lG = GIF
+                                b64_patterns = [b'/9j/', b'iVBOR', b'UklG', b'R0lG']
+                                looks_like_base64 = any(payload_data.startswith(p) for p in b64_patterns)
+                                
+                                if looks_like_base64:
+                                    try:
+                                        decoded = base64.b64decode(payload_data)
+                                        if any(decoded.startswith(h) for h in valid_headers):
+                                            payload_data = decoded
+                                    except:
+                                        pass
+                            
+                            attachments.append(
+                                {
+                                    "filename": part.get_filename() or f"imagen.{content_type.split('/')[-1]}",
+                                    "content_type": content_type,
+                                    "payload": payload_data,
+                                }
+                            )
 
                     elif content_type == "text/plain":
 
@@ -931,7 +972,8 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
 
     """
 
-    from app.models import SiniestroEmail
+    from app.models import SiniestroEmail, AdjuntoSiniestro
+    from django.core.files.base import ContentFile
 
     # Verificar si ya existe un registro con este email_id
 
@@ -977,6 +1019,31 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
         if siniestro:
 
             logger.info(f"Siniestro creado automáticamente: {siniestro.numero_siniestro}")
+            
+            # Guardar imágenes adjuntas del email como AdjuntoSiniestro
+            adjuntos_guardados = 0
+            for adjunto in reporte.attachments:
+                filename = adjunto.get('filename', 'adjunto')
+                content_type = adjunto.get('content_type', '')
+                payload = adjunto.get('payload')
+                
+                # Solo procesar imágenes
+                if payload and content_type.startswith('image/'):
+                    try:
+                        adjunto_siniestro = AdjuntoSiniestro(
+                            siniestro=siniestro,
+                            tipo_adjunto='fotos',
+                            nombre=filename,
+                            descripcion='Imagen adjunta del reporte por email'
+                        )
+                        adjunto_siniestro.archivo.save(filename, ContentFile(payload), save=True)
+                        adjuntos_guardados += 1
+                        logger.info(f"Adjunto guardado: {filename}")
+                    except Exception as e:
+                        logger.warning(f"Error guardando adjunto {filename}: {e}")
+            
+            if adjuntos_guardados > 0:
+                logger.info(f"Se guardaron {adjuntos_guardados} imágenes adjuntas")
 
         else:
 

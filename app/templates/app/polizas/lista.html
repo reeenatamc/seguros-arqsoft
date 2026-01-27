@@ -86,7 +86,7 @@
                     <tr class="bg-slate-50 border-b border-slate-200">
                         <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Póliza</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Compañía</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tipo</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Ramo</th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Suma Asegurada</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Vigencia</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Estado</th>
@@ -112,7 +112,7 @@
                         </td>
                         <td class="px-6 py-4">
                             <span class="inline-flex px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
-                                {{ poliza.tipo_poliza.nombre }}
+                                {{ poliza.grupo_ramo.nombre|default:poliza.tipo_poliza.nombre|default:"-" }}
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right">

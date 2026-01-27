@@ -2,68 +2,218 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>{{ titulo|default:"Notificación Sistema de Seguros" }}</title>
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f7; margin: 0; padding: 24px; }
-    .container { max-width: 640px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 24px 32px; box-shadow: 0 10px 30px rgba(6,75,131,0.18); border-top: 4px solid #fbbf24; }
-    .brand { font-weight: 800; font-size: 20px; color: #0070c4; margin-bottom: 2px; letter-spacing: 0.02em; }
-    .brand-sub { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.16em; }
-    h1 { font-size: 20px; margin: 18px 0 10px; color: #0f172a; }
-    p { font-size: 14px; line-height: 1.6; color: #334155; margin: 4px 0; }
-    .section-title { font-size: 13px; font-weight: 600; text-transform: uppercase; color: #0c8de6; margin-top: 20px; margin-bottom: 6px; }
-    .data-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; background: #f9fafb; }
-    .data-row { display: flex; justify-content: space-between; font-size: 13px; margin: 2px 0; }
-    .data-label { font-weight: 600; color: #064b83; padding-right: 8px; }
-    .data-value { color: #111827; text-align: right; }
-    .cta { margin-top: 20px; }
-    .cta a { display: inline-block; padding: 10px 18px; background: #0c8de6; color: #ffffff !important; text-decoration: none; border-radius: 999px; font-size: 13px; font-weight: 600; border-bottom: 2px solid #064b83; }
-    .footer { margin-top: 24px; font-size: 11px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 12px; }
-  </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{{ titulo|default:"Notificación - UTPL Seguros" }}</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
 </head>
-<body>
-  <div class="container">
-    <div class="brand">Seguros UTPL</div>
-    <div class="brand-sub">Sistema de Gestión de Seguros</div>
+<body style="margin: 0; padding: 0; background-color: #f5f7f8; font-family: Arial, Helvetica, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f5f7f8;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <!-- Main Container -->
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; width: 100%;">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #ffffff; border-radius: 16px 16px 0 0; padding: 24px 32px; border-bottom: 3px solid #0070c4;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td width="80" style="vertical-align: middle;">
+                                        <img src="cid:logo_utpl" alt="UTPL" width="50" style="display: block; width: 50px; height: auto;">
+                                    </td>
+                                    <td style="vertical-align: middle; padding-left: 16px;">
+                                        <span style="font-size: 20px; font-weight: 700; color: #0f172a; display: block;">UTPL</span>
+                                        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; font-weight: 500;">Seguros</span>
+                                    </td>
+                                    <td align="right" style="vertical-align: middle;">
+                                        <span style="background-color: #dbeafe; color: #0070c4; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 8px 16px; border-radius: 20px; display: inline-block;">
+                                            {{ tipo_notificacion|default:"Notificación" }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-    {% if titulo %}<h1>{{ titulo }}</h1>{% endif %}
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 32px;">
+                            
+                            <!-- Saludo -->
+                            {% if saludo %}
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 15px; color: #334155; margin: 0; line-height: 1.6;">{{ saludo }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
 
-    {% if intro %}
-      {% for linea in intro %}
-        <p>{{ linea }}</p>
-      {% endfor %}
-    {% endif %}
+                            <!-- Mensaje Intro -->
+                            {% if mensaje_intro %}
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 14px; color: #475569; margin: 0; line-height: 1.6;">{{ mensaje_intro }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
 
-    {% if bloques %}
-      {% for bloque in bloques %}
-        {% if bloque.titulo %}
-          <div class="section-title">{{ bloque.titulo }}</div>
-        {% endif %}
-        <div class="data-box">
-          {% for fila in bloque.filas %}
-            <div class="data-row">
-              <div class="data-label">{{ fila.label }}</div>
-              <div class="data-value">{{ fila.valor }}</div>
-            </div>
-          {% endfor %}
-        </div>
-      {% endfor %}
-    {% endif %}
+                            <!-- Título Reporte -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 20px; border-bottom: 2px solid #0070c4; padding-bottom: 12px;">
+                                <tr>
+                                    <td>
+                                        <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #064b83; text-transform: uppercase; letter-spacing: 1px;">
+                                            Reporte de Siniestro
+                                        </h2>
+                                    </td>
+                                </tr>
+                            </table>
 
-    {% if cta_url and cta_text %}
-      <div class="cta">
-        <a href="{{ cta_url }}" target="_blank">{{ cta_text }}</a>
-      </div>
-    {% endif %}
+                            <!-- Información Principal del Reporte -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 20px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <!-- Usuario Responsable -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td width="40%" style="font-size: 13px; font-weight: 600; color: #064b83; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">Usuario responsable:</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">{{ responsable|default:"N/A" }}</td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <!-- Fecha de Reporte -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td width="40%" style="font-size: 13px; font-weight: 600; color: #064b83; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">Fecha de reporte a MST (Siniestro):</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">{{ fecha_reporte|default:"N/A" }}</td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <!-- Problema -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td width="40%" style="font-size: 13px; font-weight: 600; color: #064b83; padding: 8px 0; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Problema:</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">{{ problema|default:"N/A" }}</td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <!-- Causa Probable -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                <td width="40%" style="font-size: 13px; font-weight: 600; color: #064b83; padding: 8px 0; vertical-align: top;">Causa Probable:</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 8px 0;">{{ causa|default:"N/A" }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
 
-    {% if nota %}
-      <p style="margin-top:16px; font-size:11px; color:#6b7280;">{{ nota }}</p>
-    {% endif %}
+                            <!-- Datos del Equipo -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 14px; font-weight: 600; color: #334155; margin: 0 0 16px 0;">Los datos del equipo son:</p>
+                                    </td>
+                                </tr>
+                            </table>
 
-    <div class="footer">
-      Este mensaje fue generado automáticamente por el Sistema de Gestión de Seguros de la UTPL.
-      Si tiene dudas, por favor contacte al área responsable.
-    </div>
-  </div>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                <td width="30%" style="font-size: 13px; font-weight: 600; color: #064b83; padding: 10px 12px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">Periférico:</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 10px 12px; border-bottom: 1px solid #e2e8f0;">{{ bien_nombre|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; font-weight: 600; color: #064b83; padding: 10px 12px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">Marca:</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 10px 12px; border-bottom: 1px solid #e2e8f0;">{{ marca|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; font-weight: 600; color: #064b83; padding: 10px 12px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">Modelo:</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 10px 12px; border-bottom: 1px solid #e2e8f0;">{{ modelo|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; font-weight: 600; color: #064b83; padding: 10px 12px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">Serie:</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 10px 12px; border-bottom: 1px solid #e2e8f0;">{{ serie|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; font-weight: 600; color: #064b83; padding: 10px 12px; background-color: #f8fafc;">Activo:</td>
+                                                <td style="font-size: 13px; font-weight: 600; color: #0f172a; padding: 10px 12px; font-family: monospace;">{{ codigo_activo|default:"N/A" }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if notas_adicionales %}
+                            <!-- Notas Adicionales -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
+                                <tr>
+                                    <td style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 20px;">
+                                        <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #92400e; margin: 0 0 10px 0;">
+                                            <span style="color: #fbbf24;">■</span> Notas Adicionales
+                                        </p>
+                                        <p style="font-size: 13px; line-height: 1.6; color: #475569; margin: 0;">{{ notas_adicionales }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- Firma -->
+                            {% if firmante_nombre %}
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 14px; font-weight: 600; color: #0f172a; margin: 0 0 4px 0;">{{ firmante_nombre }}</p>
+                                        {% if firmante_cargo %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">{{ firmante_cargo }}</p>{% endif %}
+                                        {% if firmante_departamento %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">{{ firmante_departamento }}</p>{% endif %}
+                                        {% if firmante_telefono %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">Telf. {{ firmante_telefono }}</p>{% endif %}
+                                        {% if firmante_email %}<p style="font-size: 13px; color: #0c8de6; margin: 0;">{{ firmante_email }}</p>{% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f1f5f9; border-radius: 0 0 16px 16px; padding: 24px 32px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td style="font-family: 'Courier New', monospace; font-size: 9px; color: #94a3b8; line-height: 1.8;">
+                                        SYS_OUTPUT: AUTOMATED_MESSAGE_V2.1<br>
+                                        SERVER_NODE: UTPL_INSURE_CORE<br>
+                                        TIMESTAMP: {{ timestamp|default:"N/A" }}
+                                    </td>
+                                    <td align="right" style="font-size: 14px; color: #94a3b8; font-weight: 600;">
+                                        UTPL <span style="font-weight: 300;">Tech</span>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="text-align: center; font-family: 'Courier New', monospace; font-size: 9px; color: #cbd5e1; margin: 16px 0 0 0; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                                // Este mensaje es generado automáticamente. Por favor no responder a esta dirección. //
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
-

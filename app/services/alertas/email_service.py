@@ -116,6 +116,7 @@ class NotificacionesService:
         """
 
         from django.conf import settings
+        from app.models import ConfiguracionSistema
 
         # Obtener email del broker desde el siniestro o la póliza
 
@@ -130,62 +131,53 @@ class NotificacionesService:
             raise ValueError("No se encontró email del broker para notificar")
 
         asunto = f"Notificación de Siniestro - {siniestro.numero_siniestro}"
+        
+        # Obtener datos del bien
+        bien = siniestro.bien_asegurado
+        responsable = bien.responsable_custodio.nombre if bien and bien.responsable_custodio else "N/A"
+        bien_nombre = bien.nombre if bien else siniestro.bien_nombre or "N/A"
+        marca = bien.marca if bien else siniestro.bien_marca or "N/A"
+        modelo = bien.modelo if bien else siniestro.bien_modelo or "N/A"
+        serie = bien.serie if bien else siniestro.bien_serie or "N/A"
+        codigo_activo = bien.codigo_bien if bien else siniestro.bien_codigo_activo or "N/A"
+        
+        # Fecha de reporte
+        fecha_reporte = siniestro.fecha_siniestro.strftime("%d/%m/%Y") if siniestro.fecha_siniestro else "N/A"
+        
+        # Firmante dinámico
+        firmante_nombre = ConfiguracionSistema.get_config('FIRMANTE_CARTA_NOMBRE', 'Gestión de Seguros')
+        firmante_cargo = ConfiguracionSistema.get_config('FIRMANTE_CARTA_CARGO', 'Seguros / Inventarios')
+        firmante_departamento = ConfiguracionSistema.get_config('FIRMANTE_DEPARTAMENTO', '')
+        firmante_telefono = ConfiguracionSistema.get_config('FIRMANTE_TELEFONO', '')
+        firmante_email = ConfiguracionSistema.get_config('FIRMANTE_EMAIL', '')
 
         context = {
-            "titulo": asunto,
-            "intro": [
-                "Se ha registrado un nuevo siniestro que requiere su gestión ante la aseguradora.",
-            ],
-            "bloques": [
-                {
-                    "titulo": "Información del Siniestro",
-                    "filas": [
-                        {"label": "Número de Siniestro", "valor": siniestro.numero_siniestro},
-                        {
-                            "label": "Tipo",
-                            "valor": (
-                                siniestro.tipo_siniestro.get_nombre_display() if siniestro.tipo_siniestro else "N/A"
-                            ),
-                        },
-                        {
-                            "label": "Fecha del Siniestro",
-                            "valor": siniestro.fecha_siniestro.strftime("%d/%m/%Y %H:%M"),
-                        },
-                        {"label": "Ubicación", "valor": siniestro.ubicacion},
-                    ],
-                },
-                {
-                    "titulo": "Bien Afectado",
-                    "filas": [
-                        {"label": "Nombre", "valor": siniestro.bien_nombre},
-                        {"label": "Marca", "valor": siniestro.bien_marca or "N/A"},
-                        {"label": "Modelo", "valor": siniestro.bien_modelo or "N/A"},
-                        {"label": "Serie", "valor": siniestro.bien_serie or "N/A"},
-                        {
-                            "label": "Código de Activo",
-                            "valor": siniestro.bien_codigo_activo or "N/A",
-                        },
-                    ],
-                },
-                {
-                    "titulo": "Póliza Asociada",
-                    "filas": [
-                        {"label": "Número de Póliza", "valor": siniestro.poliza.numero_poliza},
-                        {
-                            "label": "Aseguradora",
-                            "valor": siniestro.poliza.compania_aseguradora.nombre,
-                        },
-                        {
-                            "label": "Vigencia",
-                            "valor": f"{siniestro.poliza.fecha_inicio.strftime('%d/%m/%Y')} - "
-                            f"{siniestro.poliza.fecha_fin.strftime('%d/%m/%Y')}",
-                        },
-                    ],
-                },
-            ],
-            "cta_text": "Ver siniestro en el sistema",
-            "cta_url": getattr(settings, "SITE_URL", "") + f"/siniestros/{siniestro.id}/detalle/",
-            "nota": "Este correo es informativo. Por favor, continúe la gestión según los procedimientos internos.",
+            "tipo_notificacion": "Notificación al Broker",
+            "saludo": "Estimado/a,",
+            "mensaje_intro": "Se reporta el siguiente siniestro para su gestión:",
+            
+            # Datos del reporte
+            "responsable": responsable,
+            "fecha_reporte": fecha_reporte,
+            "problema": siniestro.descripcion_detallada or "N/A",
+            "causa": siniestro.causa or "N/A",
+            
+            # Datos del equipo
+            "bien_nombre": bien_nombre,
+            "marca": marca,
+            "modelo": modelo,
+            "serie": serie,
+            "codigo_activo": codigo_activo,
+            
+            # Firma
+            "firmante_nombre": firmante_nombre,
+            "firmante_cargo": firmante_cargo,
+            "firmante_departamento": firmante_departamento,
+            "firmante_telefono": firmante_telefono,
+            "firmante_email": firmante_email,
+            
+            # Timestamp
+            "timestamp": siniestro.fecha_creacion.strftime("%Y-%m-%d %H:%M:%S") if hasattr(siniestro, 'fecha_creacion') and siniestro.fecha_creacion else "N/A",
         }
 
         contenido_html = render_to_string("emails/base_notificacion.html", context)

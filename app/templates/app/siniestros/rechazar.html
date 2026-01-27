@@ -1,0 +1,62 @@
+{% extends 'app/layouts/base.html' %}
+
+{% block title %}Rechazar Siniestro - {{ siniestro.numero_siniestro }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <nav class="flex mb-6 text-sm text-slate-500">
+        <a href="{% url 'siniestro_detalle' siniestro.pk %}" class="hover:text-brand-600">{{ siniestro.numero_siniestro }}</a>
+        <span class="mx-2">/</span>
+        <span class="text-slate-900 font-medium">Rechazar Siniestro</span>
+    </nav>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-times-circle text-red-600"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Rechazar Siniestro</h1>
+                <p class="text-sm text-slate-500">Cerrar sin indemnización</p>
+            </div>
+        </div>
+
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+            <div class="flex items-start gap-3">
+                <i class="fas fa-exclamation-triangle text-red-600 mt-0.5"></i>
+                <div>
+                    <h3 class="font-medium text-red-800">Acción Irreversible</h3>
+                    <p class="text-red-700 text-sm mt-1">
+                        Esta acción cerrará el siniestro sin proceso de indemnización. 
+                        Esta decisión no puede deshacerse.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Motivo del Rechazo
+                </label>
+                <textarea name="motivo" rows="4" required
+                          class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500"
+                          placeholder="Explique detalladamente el motivo del rechazo..."></textarea>
+            </div>
+
+            <div class="flex gap-3 pt-4 border-t">
+                <a href="{% url 'siniestro_detalle' siniestro.pk %}" 
+                   class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition">
+                    Cancelar
+                </a>
+                <button type="submit" 
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition flex items-center gap-2">
+                    <i class="fas fa-times"></i> Rechazar Siniestro
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -50,6 +50,21 @@ app.conf.beat_schedule = {
         "task": "app.tasks.actualizar_estados_facturas",
         "schedule": crontab(minute=0, hour="*/6"),
     },
+    # Revisar inbox para respuestas del broker cada 5 minutos
+    "revisar-inbox-broker": {
+        "task": "app.tasks.revisar_inbox_broker",
+        "schedule": crontab(minute="*/5"),
+    },
+    # Revisar inbox para recibos de indemnización cada 5 minutos
+    "revisar-inbox-recibos": {
+        "task": "app.tasks.revisar_inbox_recibos",
+        "schedule": crontab(minute="*/5"),
+    },
+    # Verificar plazos de liquidación (72h) cada hora
+    "verificar-plazos-liquidacion": {
+        "task": "app.tasks.verificar_plazos_liquidacion",
+        "schedule": crontab(minute=0),
+    },
 }
 
 # Configuración de zona horaria

@@ -16,42 +16,151 @@
             </div>
         </div>
         <div class="flex flex-wrap gap-2">
-            <!-- Acciones principales del flujo de trabajo -->
-            {% if siniestro.estado == 'registrado' %}
-            <form method="post" action="{% url 'siniestro_notificar_broker' siniestro.pk %}" class="inline">
-                {% csrf_token %}
-                <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-sm">
-                    <i class="fas fa-paper-plane mr-2"></i>
-                    Notificar Broker
-                </button>
-            </form>
-            {% endif %}
-            
-            {% if checklist_completo and siniestro.estado in 'registrado,documentacion_pendiente' %}
-            <form method="post" action="{% url 'siniestro_enviar_aseguradora' siniestro.pk %}" class="inline">
-                {% csrf_token %}
-                <button type="submit" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shadow-sm">
-                    <i class="fas fa-upload mr-2"></i>
-                    Enviar a Aseguradora
-                </button>
-            </form>
-            {% endif %}
-            
+            <!-- Botones de utilidad (siempre visibles) -->
             <a href="{% url 'siniestro_descargar_carta' siniestro.pk %}"
                class="inline-flex items-center px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-sm">
                 <i class="fas fa-file-word mr-2"></i>
-                Carta Formal
-            </a>
-            <a href="{% url 'siniestro_descargar_recibo' siniestro.pk %}"
-               class="inline-flex items-center px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-sm">
-                <i class="fas fa-receipt mr-2"></i>
-                Recibo
+                Carta
             </a>
             <a href="{% url 'siniestro_editar' siniestro.pk %}"
-               class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition shadow-sm">
+               class="inline-flex items-center px-3 py-2 bg-brand-100 hover:bg-brand-200 text-brand-700 rounded-lg transition text-sm">
                 <i class="fas fa-edit mr-2"></i>
                 Editar
             </a>
+        </div>
+    </div>
+    
+    <!-- Panel de Acción Principal (según estado) -->
+    <div class="bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-slate-200 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <!-- Estado actual -->
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium
+                    {% if siniestro.estado == 'cerrado' %}bg-emerald-100 text-emerald-800
+                    {% elif siniestro.estado == 'rechazado' %}bg-red-100 text-red-800
+                    {% elif siniestro.estado == 'notificado_broker' %}bg-amber-100 text-amber-800
+                    {% elif siniestro.estado == 'documentacion_lista' %}bg-green-100 text-green-800
+                    {% elif siniestro.estado == 'enviado_aseguradora' %}bg-blue-100 text-blue-800
+                    {% elif siniestro.estado == 'recibo_recibido' %}bg-purple-100 text-purple-800
+                    {% elif siniestro.estado == 'vencido' %}bg-red-100 text-red-800
+                    {% else %}bg-slate-100 text-slate-800{% endif %}">
+                    {{ siniestro.get_estado_display }}
+                </span>
+                
+                <!-- Mensaje de espera según estado -->
+                {% if siniestro.estado == 'notificado_broker' %}
+                <span class="text-sm text-amber-600">
+                    <i class="fas fa-clock mr-1"></i> Esperando respuesta del broker...
+                </span>
+                {% elif siniestro.estado == 'enviado_aseguradora' %}
+                <span class="text-sm text-blue-600">
+                    <i class="fas fa-clock mr-1"></i> Esperando recibo de indemnización...
+                </span>
+                {% elif siniestro.estado == 'pendiente_liquidacion' %}
+                <span class="text-sm text-amber-600">
+                    <i class="fas fa-clock mr-1"></i> {{ siniestro.horas_restantes_liquidacion|floatformat:0 }}h restantes para liquidación
+                </span>
+                {% elif siniestro.estado == 'vencido' %}
+                <span class="text-sm text-red-600">
+                    <i class="fas fa-exclamation-circle mr-1"></i> Plazo de 72h vencido
+                </span>
+                {% endif %}
+            </div>
+            
+            <!-- Botón de acción principal (solo uno por estado) -->
+            <div class="flex items-center gap-2">
+                {% if siniestro.estado == 'registrado' %}
+                <button type="button" 
+                        onclick="openEmailModal('broker', {{ siniestro.pk }}, '{% url 'siniestro_email_preview' siniestro.pk 'broker' %}')"
+                        class="group inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-full transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-paper-plane text-[10px] group-hover:translate-x-0.5 transition-transform"></i>
+                    <span>Notificar</span>
+                </button>
+                
+                {% elif siniestro.estado == 'documentacion_lista' %}
+                <button type="button"
+                        onclick="openEmailModal('aseguradora', {{ siniestro.pk }}, '{% url 'siniestro_email_preview' siniestro.pk 'aseguradora' %}')"
+                        class="group inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-full transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-upload text-[10px] group-hover:-translate-y-0.5 transition-transform"></i>
+                    <span>Enviar</span>
+                </button>
+                
+                {% elif siniestro.estado == 'recibo_recibido' %}
+                <a href="{% url 'siniestro_firmar_recibo' siniestro.pk %}"
+                   class="group inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-full transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-signature text-[10px]"></i>
+                    <span>Firmar</span>
+                </a>
+                <a href="{% url 'siniestro_rechazar' siniestro.pk %}"
+                   class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full transition">
+                    <i class="fas fa-times text-[10px]"></i>
+                </a>
+                
+                {% elif siniestro.estado == 'en_disputa' %}
+                <a href="{% url 'siniestro_resolver_disputa' siniestro.pk %}"
+                   class="group inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-white rounded-full transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-check-circle text-[10px]"></i>
+                    <span>Resolver</span>
+                </a>
+                <a href="{% url 'siniestro_rechazar' siniestro.pk %}"
+                   class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full transition">
+                    <i class="fas fa-times text-[10px]"></i>
+                </a>
+                
+                {% elif siniestro.estado == 'recibo_firmado' %}
+                <a href="{% url 'siniestro_enviar_liquidacion' siniestro.pk %}"
+                   class="group inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white rounded-full transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-paper-plane text-[10px] group-hover:translate-x-0.5 transition-transform"></i>
+                    <span>Liquidar</span>
+                </a>
+                
+                {% elif siniestro.estado == 'pendiente_liquidacion' or siniestro.estado == 'vencido' %}
+                <a href="{% url 'siniestro_registrar_liquidacion' siniestro.pk %}"
+                   class="group inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-full transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-dollar-sign text-[10px]"></i>
+                    <span>Registrar</span>
+                </a>
+                
+                {% elif siniestro.estado == 'liquidado' %}
+                <a href="{% url 'siniestro_cerrar' siniestro.pk %}"
+                   class="group inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-full transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-check-double text-[10px]"></i>
+                    <span>Cerrar</span>
+                </a>
+                
+                {% elif siniestro.estado == 'cerrado' %}
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-full">
+                    <i class="fas fa-check-circle text-[10px]"></i> Completado
+                </span>
+                
+                {% elif siniestro.estado == 'rechazado' %}
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-full">
+                    <i class="fas fa-times-circle text-[10px]"></i> Rechazado
+                </span>
+                
+                {% elif siniestro.estado == 'notificado_broker' %}
+                <span class="text-slate-400 text-[11px]">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">RESPUESTA SINIESTRO {{ siniestro.numero_siniestro }}</code>
+                </span>
+                <button type="button" 
+                        onclick="escanearInbox('broker')"
+                        class="group inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-full transition">
+                    <i class="fas fa-sync-alt text-[9px] group-hover:animate-spin"></i>
+                    <span>Escanear</span>
+                </button>
+                
+                {% elif siniestro.estado == 'enviado_aseguradora' %}
+                <span class="text-slate-400 text-[11px]">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">RECIBO DE INDEMNIZACIÓN</code>
+                </span>
+                <button type="button"
+                        onclick="escanearInbox('recibos')"
+                        class="group inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-full transition">
+                    <i class="fas fa-sync-alt text-[9px] group-hover:animate-spin"></i>
+                    <span>Escanear</span>
+                </button>
+                {% endif %}
+            </div>
         </div>
     </div>
     
@@ -72,67 +181,67 @@
             <div class="flex items-center justify-between">
                 <!-- Estado 1: Registrado -->
                 <div class="flex flex-col items-center flex-1">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all
                         {% if estado_index >= 1 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
-                        {% if estado_index == 1 %}ring-4 ring-emerald-100{% endif %}">
-                        {% if estado_index > 1 %}<i class="fas fa-check"></i>{% else %}1{% endif %}
+                        {% if estado_index == 1 %}ring-4 ring-emerald-200 scale-110{% endif %}">
+                        {% if estado_index > 1 %}<i class="fas fa-check"></i>{% else %}<i class="fas fa-clipboard-list text-xs"></i>{% endif %}
                     </div>
-                    <span class="text-xs text-slate-600 mt-2 text-center">Registrado</span>
+                    <span class="text-xs mt-2 text-center {% if estado_index >= 1 %}text-emerald-700 font-medium{% else %}text-slate-500{% endif %}">Registro</span>
                 </div>
-                <div class="flex-1 h-1 mx-1 rounded {% if estado_index > 1 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
+                <div class="flex-1 h-1 mx-1 rounded transition-all {% if estado_index > 1 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
                 
-                <!-- Estado 2: Documentación -->
+                <!-- Estado 2: Gestión Broker -->
                 <div class="flex flex-col items-center flex-1">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all
                         {% if estado_index >= 2 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
-                        {% if estado_index == 2 %}ring-4 ring-emerald-100{% endif %}">
-                        {% if estado_index > 2 %}<i class="fas fa-check"></i>{% else %}2{% endif %}
+                        {% if estado_index == 2 %}ring-4 ring-emerald-200 scale-110{% endif %}">
+                        {% if estado_index > 2 %}<i class="fas fa-check"></i>{% else %}<i class="fas fa-user-tie text-xs"></i>{% endif %}
                     </div>
-                    <span class="text-xs text-slate-600 mt-2 text-center">Documentación</span>
+                    <span class="text-xs mt-2 text-center {% if estado_index >= 2 %}text-emerald-700 font-medium{% else %}text-slate-500{% endif %}">Gestión</span>
                 </div>
-                <div class="flex-1 h-1 mx-1 rounded {% if estado_index > 2 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
+                <div class="flex-1 h-1 mx-1 rounded transition-all {% if estado_index > 2 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
                 
-                <!-- Estado 3: Enviado -->
+                <!-- Estado 3: Enviado Aseguradora -->
                 <div class="flex flex-col items-center flex-1">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all
                         {% if estado_index >= 3 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
-                        {% if estado_index == 3 %}ring-4 ring-emerald-100{% endif %}">
-                        {% if estado_index > 3 %}<i class="fas fa-check"></i>{% else %}3{% endif %}
+                        {% if estado_index == 3 %}ring-4 ring-emerald-200 scale-110{% endif %}">
+                        {% if estado_index > 3 %}<i class="fas fa-check"></i>{% else %}<i class="fas fa-paper-plane text-xs"></i>{% endif %}
                     </div>
-                    <span class="text-xs text-slate-600 mt-2 text-center">Enviado</span>
+                    <span class="text-xs mt-2 text-center {% if estado_index >= 3 %}text-emerald-700 font-medium{% else %}text-slate-500{% endif %}">Enviado</span>
                 </div>
-                <div class="flex-1 h-1 mx-1 rounded {% if estado_index > 3 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
+                <div class="flex-1 h-1 mx-1 rounded transition-all {% if estado_index > 3 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
                 
-                <!-- Estado 4: Evaluación -->
+                <!-- Estado 4: Recibo -->
                 <div class="flex flex-col items-center flex-1">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all
                         {% if estado_index >= 4 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
-                        {% if estado_index == 4 %}ring-4 ring-emerald-100{% endif %}">
-                        {% if estado_index > 4 %}<i class="fas fa-check"></i>{% else %}4{% endif %}
+                        {% if estado_index == 4 %}ring-4 ring-emerald-200 scale-110{% endif %}">
+                        {% if estado_index > 4 %}<i class="fas fa-check"></i>{% else %}<i class="fas fa-file-invoice text-xs"></i>{% endif %}
                     </div>
-                    <span class="text-xs text-slate-600 mt-2 text-center">Evaluación</span>
+                    <span class="text-xs mt-2 text-center {% if estado_index >= 4 %}text-emerald-700 font-medium{% else %}text-slate-500{% endif %}">Recibo</span>
                 </div>
-                <div class="flex-1 h-1 mx-1 rounded {% if estado_index > 4 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
+                <div class="flex-1 h-1 mx-1 rounded transition-all {% if estado_index > 4 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
                 
-                <!-- Estado 5: Liquidado -->
+                <!-- Estado 5: Liquidación -->
                 <div class="flex flex-col items-center flex-1">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all
                         {% if estado_index >= 5 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
-                        {% if estado_index == 5 %}ring-4 ring-emerald-100{% endif %}">
-                        {% if estado_index > 5 %}<i class="fas fa-check"></i>{% else %}5{% endif %}
+                        {% if estado_index == 5 %}ring-4 ring-emerald-200 scale-110{% endif %}">
+                        {% if estado_index > 5 %}<i class="fas fa-check"></i>{% else %}<i class="fas fa-dollar-sign text-xs"></i>{% endif %}
                     </div>
-                    <span class="text-xs text-slate-600 mt-2 text-center">Liquidado</span>
+                    <span class="text-xs mt-2 text-center {% if estado_index >= 5 %}text-emerald-700 font-medium{% else %}text-slate-500{% endif %}">Liquidación</span>
                 </div>
-                <div class="flex-1 h-1 mx-1 rounded {% if estado_index > 5 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
+                <div class="flex-1 h-1 mx-1 rounded transition-all {% if estado_index > 5 %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></div>
                 
                 <!-- Estado 6: Cerrado -->
                 <div class="flex flex-col items-center flex-1">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all
                         {% if estado_index >= 6 %}bg-emerald-500 text-white{% else %}bg-slate-200 text-slate-500{% endif %}
-                        {% if estado_index == 6 %}ring-4 ring-emerald-100{% endif %}">
-                        {% if estado_index > 6 %}<i class="fas fa-check"></i>{% else %}6{% endif %}
+                        {% if estado_index == 6 %}ring-4 ring-emerald-200 scale-110{% endif %}">
+                        {% if estado_index >= 6 %}<i class="fas fa-check-double"></i>{% else %}<i class="fas fa-flag-checkered text-xs"></i>{% endif %}
                     </div>
-                    <span class="text-xs text-slate-600 mt-2 text-center">Cerrado</span>
+                    <span class="text-xs mt-2 text-center {% if estado_index >= 6 %}text-emerald-700 font-medium{% else %}text-slate-500{% endif %}">Cerrado</span>
                 </div>
             </div>
         </div>
@@ -163,6 +272,118 @@
         <div class="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">
             <i class="fas fa-exclamation-triangle text-red-500"></i>
             <span>Han pasado más de 72 horas desde la firma del recibo sin registrar el depósito</span>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Alerta de Infraseguro -->
+    {% if siniestro.tiene_infraseguro %}
+    <div class="bg-amber-50 border-l-4 border-amber-500 rounded-lg p-3">
+        <div class="flex items-center gap-2 mb-2">
+            <i class="fas fa-exclamation-triangle text-amber-600"></i>
+            <span class="font-semibold text-amber-800">Infraseguro Detectado</span>
+            <span class="text-amber-600 text-sm">— Se aplicará regla proporcional</span>
+        </div>
+        <div class="grid grid-cols-4 gap-3 text-sm">
+            <div class="bg-white rounded px-2 py-1.5 border border-amber-200">
+                <span class="text-[10px] text-amber-600 uppercase block">V. Asegurado</span>
+                <span class="font-bold text-amber-800">${{ siniestro.valor_asegurado_bien|floatformat:2 }}</span>
+            </div>
+            <div class="bg-white rounded px-2 py-1.5 border border-amber-200">
+                <span class="text-[10px] text-amber-600 uppercase block">V. Reposición</span>
+                <span class="font-bold text-amber-800">${{ siniestro.valor_reposicion_bien|floatformat:2 }}</span>
+            </div>
+            <div class="bg-white rounded px-2 py-1.5 border border-amber-200">
+                <span class="text-[10px] text-amber-600 uppercase block">Cobertura</span>
+                <span class="font-bold text-amber-800">{{ siniestro.porcentaje_cobertura|floatformat:1 }}%</span>
+            </div>
+            <div class="bg-white rounded px-2 py-1.5 border border-red-200">
+                <span class="text-[10px] text-red-600 uppercase block">Déficit</span>
+                <span class="font-bold text-red-600">${{ siniestro.monto_infraseguro|floatformat:2 }}</span>
+            </div>
+        </div>
+        {% if siniestro.monto_a_indemnizar > 0 %}
+        <div class="flex items-center gap-4 mt-2 pt-2 border-t border-amber-200 text-sm">
+            <span class="text-amber-700">Sin ajuste: <strong>${{ siniestro.monto_a_indemnizar|floatformat:2 }}</strong></span>
+            <span class="text-amber-800">Con regla: <strong>${{ siniestro.indemnizacion_con_regla_proporcional|floatformat:2 }}</strong></span>
+            <span class="text-red-600 ml-auto">Pérdida: <strong>-${{ siniestro.perdida_por_infraseguro|floatformat:2 }}</strong></span>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Información del Flujo de Indemnización -->
+    {% if siniestro.estado in 'recibo_recibido,en_disputa,recibo_firmado,pendiente_liquidacion,vencido,liquidado,cerrado' %}
+    <div class="bg-white rounded-xl shadow-card p-4">
+        <h3 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+            <i class="fas fa-file-invoice-dollar text-brand-500"></i>
+            Flujo de Indemnización
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 text-sm">
+            {% if siniestro.fecha_recibo_recibido %}
+            <div class="bg-slate-50 rounded-lg p-2">
+                <span class="text-[10px] text-slate-500 uppercase block">Recibo Recibido</span>
+                <span class="font-medium text-slate-800">{{ siniestro.fecha_recibo_recibido|date:"d/m/Y" }}</span>
+                {% if siniestro.recibo_indemnizacion %}
+                <a href="{{ siniestro.recibo_indemnizacion.url }}" target="_blank" class="text-brand-600 text-xs block mt-1">
+                    <i class="fas fa-file-pdf"></i> Ver
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if siniestro.fecha_firma_indemnizacion %}
+            <div class="bg-slate-50 rounded-lg p-2">
+                <span class="text-[10px] text-slate-500 uppercase block">Recibo Firmado</span>
+                <span class="font-medium text-slate-800">{{ siniestro.fecha_firma_indemnizacion|date:"d/m/Y" }}</span>
+                {% if siniestro.recibo_firmado %}
+                <a href="{{ siniestro.recibo_firmado.url }}" target="_blank" class="text-brand-600 text-xs block mt-1">
+                    <i class="fas fa-file-pdf"></i> Ver
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if siniestro.fecha_envio_liquidacion %}
+            <div class="bg-slate-50 rounded-lg p-2">
+                <span class="text-[10px] text-slate-500 uppercase block">Enviado Liquidación</span>
+                <span class="font-medium text-slate-800">{{ siniestro.fecha_envio_liquidacion|date:"d/m/Y" }}</span>
+            </div>
+            {% endif %}
+            
+            {% if siniestro.fecha_limite_liquidacion %}
+            <div class="{% if siniestro.plazo_vencido %}bg-red-50{% else %}bg-amber-50{% endif %} rounded-lg p-2">
+                <span class="text-[10px] {% if siniestro.plazo_vencido %}text-red-500{% else %}text-amber-500{% endif %} uppercase block">Límite 72h</span>
+                <span class="font-medium {% if siniestro.plazo_vencido %}text-red-800{% else %}text-amber-800{% endif %}">{{ siniestro.fecha_limite_liquidacion|date:"d/m/Y H:i" }}</span>
+            </div>
+            {% endif %}
+            
+            {% if siniestro.monto_liquidado %}
+            <div class="bg-green-50 rounded-lg p-2">
+                <span class="text-[10px] text-green-500 uppercase block">Monto Liquidado</span>
+                <span class="font-bold text-green-800">${{ siniestro.monto_liquidado|floatformat:2 }}</span>
+                {% if siniestro.numero_comprobante %}
+                <span class="text-green-600 text-xs block">Ref: {{ siniestro.numero_comprobante }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if siniestro.fecha_cierre %}
+            <div class="bg-emerald-50 rounded-lg p-2">
+                <span class="text-[10px] text-emerald-500 uppercase block">Fecha Cierre</span>
+                <span class="font-medium text-emerald-800">{{ siniestro.fecha_cierre|date:"d/m/Y" }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if siniestro.en_disputa or siniestro.motivo_disputa %}
+        <div class="mt-3 p-2 bg-red-50 rounded-lg">
+            <span class="text-[10px] text-red-500 uppercase block">Disputa</span>
+            <p class="text-red-700 text-sm">{{ siniestro.motivo_disputa }}</p>
+            {% if siniestro.resolucion_disputa %}
+            <p class="text-green-700 text-sm mt-1"><strong>Resolución:</strong> {{ siniestro.resolucion_disputa }}</p>
+            {% endif %}
         </div>
         {% endif %}
     </div>
@@ -289,6 +510,41 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Galería de Fotos del Siniestro -->
+            {% with fotos_lista=siniestro.adjuntos_fotos %}
+            {% if fotos_lista %}
+            <div class="bg-white rounded-xl shadow-card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                        <i class="fas fa-images text-blue-500 mr-2"></i>
+                        Fotos del Siniestro
+                    </h2>
+                    <span class="text-sm text-slate-500">{{ fotos_lista|length }} foto{{ fotos_lista|length|pluralize:"s" }}</span>
+                </div>
+                
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                    {% for foto in fotos_lista %}
+                    <div class="group relative aspect-square rounded-lg overflow-hidden bg-slate-100 cursor-pointer"
+                         onclick="abrirGaleria('{{ foto.archivo.url }}', '{{ foto.nombre }}')">
+                        <img src="{{ foto.archivo.url }}" 
+                             alt="{{ foto.nombre }}"
+                             class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition">
+                            <p class="text-white text-xs truncate">{{ foto.nombre }}</p>
+                        </div>
+                        <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
+                            <span class="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow">
+                                <i class="fas fa-expand text-slate-700 text-sm"></i>
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endwith %}
         </div>
 
         <!-- Sidebar -->
@@ -301,6 +557,12 @@
                 </h2>
 
                 <div class="space-y-3">
+                    {% if siniestro.valor_asegurado_bien %}
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Suma Asegurada</span>
+                        <span class="font-semibold text-slate-800">${{ siniestro.valor_asegurado_bien|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
                     <div class="flex justify-between items-center py-2 border-b border-slate-100">
                         <span class="text-slate-600">Monto Estimado</span>
                         <span class="font-bold text-slate-800">${{ siniestro.monto_estimado|floatformat:2 }}</span>
@@ -311,10 +573,10 @@
                         <span class="font-semibold text-slate-800">${{ siniestro.valor_reclamo|floatformat:2 }}</span>
                     </div>
                     {% endif %}
-                    {% if siniestro.deducible %}
+                    {% if siniestro.deducible_aplicado %}
                     <div class="flex justify-between items-center py-2 border-b border-slate-100">
                         <span class="text-slate-600">Deducible</span>
-                        <span class="text-red-600">-${{ siniestro.deducible|floatformat:2 }}</span>
+                        <span class="text-red-600">-${{ siniestro.deducible_aplicado|floatformat:2 }}</span>
                     </div>
                     {% endif %}
                     {% if siniestro.depreciacion %}
@@ -613,5 +875,83 @@ document.addEventListener('keydown', function(e) {
 document.getElementById('uploadModal').addEventListener('click', function(e) {
     if (e.target === this) closeUploadModal();
 });
+
+// Escanear inbox IMAP
+function escanearInbox(tipo) {
+    const btn = event.target.closest('button');
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Escaneando...';
+    
+    fetch('{% url "escanear_inbox" siniestro.pk %}?tipo=' + tipo, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.encontrado) {
+                // Recargar página si se encontró respuesta
+                window.location.reload();
+            } else {
+                btn.innerHTML = '<i class="fas fa-inbox mr-1"></i> No hay nuevos';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                }, 2000);
+            }
+        } else {
+            btn.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> Error';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+    });
+}
+
+// Galería de fotos
+function abrirGaleria(url, nombre) {
+    document.getElementById('galeria-imagen').src = url;
+    document.getElementById('galeria-nombre').textContent = nombre;
+    document.getElementById('galeria-modal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarGaleria() {
+    document.getElementById('galeria-modal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+// Cerrar galería con ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') cerrarGaleria();
+});
 </script>
+
+<!-- Modal de Vista Previa de Email -->
+{% include 'app/partials/modal_email_preview.html' %}
+{% endblock %}
+
+{% block modals %}
+<!-- Modal de Galería de Fotos (fuera del contenedor con scroll) -->
+<div id="galeria-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 99999;" onclick="cerrarGaleria()">
+    <button onclick="event.stopPropagation(); cerrarGaleria()" style="position: absolute; top: 20px; right: 20px; width: 48px; height: 48px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; cursor: pointer; z-index: 100000; display: flex; align-items: center; justify-content: center;">
+        <i class="fas fa-times text-white text-2xl"></i>
+    </button>
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;" onclick="event.stopPropagation()">
+        <div style="text-align: center;">
+            <img id="galeria-imagen" src="" alt="" style="max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 8px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+            <p id="galeria-nombre" style="color: white; font-size: 14px; margin-top: 16px; padding: 0 16px;"></p>
+        </div>
+    </div>
+</div>
 {% endblock %}

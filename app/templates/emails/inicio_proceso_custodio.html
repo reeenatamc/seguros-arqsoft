@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Proceso de Siniestro Iniciado</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f7f8; font-family: Arial, Helvetica, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f5f7f8;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <!-- Main Container -->
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; width: 100%;">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #ffffff; border-radius: 16px 16px 0 0; padding: 24px 32px; border-bottom: 3px solid #0070c4;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td width="80" style="vertical-align: middle;">
+                                        <img src="cid:logo_utpl" alt="UTPL" width="50" style="display: block; width: 50px; height: auto;">
+                                    </td>
+                                    <td style="vertical-align: middle; padding-left: 16px;">
+                                        <span style="font-size: 20px; font-weight: 700; color: #0f172a; display: block;">UTPL</span>
+                                        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; font-weight: 500;">Seguros</span>
+                                    </td>
+                                    <td align="right" style="vertical-align: middle;">
+                                        <span style="background-color: #dbeafe; color: #1e40af; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 8px 16px; border-radius: 20px; display: inline-block;">
+                                            Proceso Iniciado
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 32px;">
+                            
+                            <!-- Saludo -->
+                            <p style="font-size: 15px; color: #334155; margin: 0 0 20px 0; line-height: 1.6;">
+                                Estimado/a <strong>{{ custodio_nombre }}</strong>,
+                            </p>
+
+                            <!-- Mensaje Principal -->
+                            <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.7;">
+                                Le informamos que se ha iniciado el proceso de gestión del siniestro relacionado con 
+                                el bien bajo su custodia. El caso ha sido notificado al corredor de seguros para su 
+                                respectivo trámite.
+                            </p>
+
+                            <!-- Card de Info del Siniestro -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #064b83; margin: 0 0 16px 0;">
+                                            <span style="color: #0c8de6;">&#9679;</span> Información del Siniestro
+                                        </p>
+                                        
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                <td width="40%" style="font-size: 13px; color: #64748b; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">No. Siniestro</td>
+                                                <td style="font-size: 13px; color: #0f172a; font-weight: 600; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">{{ numero_siniestro }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #64748b; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">Bien Afectado</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">{{ bien_nombre }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #64748b; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">Código de Activo</td>
+                                                <td style="font-size: 13px; color: #0f172a; font-family: 'Courier New', monospace; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">{{ codigo_activo }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #64748b; padding: 8px 0;">Fecha de Reporte</td>
+                                                <td style="font-size: 13px; color: #0f172a; padding: 8px 0;">{{ fecha_reporte }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Estado del Proceso -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                <td width="50" style="vertical-align: top;">
+                                                    <div style="width: 40px; height: 40px; background-color: #3b82f6; border-radius: 50%; text-align: center; line-height: 40px;">
+                                                        <span style="color: white; font-size: 18px;">&#10003;</span>
+                                                    </div>
+                                                </td>
+                                                <td style="vertical-align: middle; padding-left: 12px;">
+                                                    <p style="font-size: 14px; font-weight: 600; color: #1e40af; margin: 0 0 4px 0;">
+                                                        Broker Notificado
+                                                    </p>
+                                                    <p style="font-size: 13px; color: #3b82f6; margin: 0;">
+                                                        El corredor de seguros ha sido informado y gestionará el reclamo ante la aseguradora.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Mensaje informativo -->
+                            <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.7;">
+                                Le mantendremos informado sobre el avance del proceso. Si tiene alguna consulta, 
+                                no dude en comunicarse con nosotros.
+                            </p>
+
+                            <!-- Firma -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 14px; color: #475569; margin: 0 0 12px 0;">Atentamente,</p>
+                                        <p style="font-size: 14px; font-weight: 600; color: #0f172a; margin: 0 0 4px 0;">{{ firmante_nombre }}</p>
+                                        {% if firmante_cargo %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">{{ firmante_cargo }}</p>{% endif %}
+                                        {% if firmante_departamento %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">{{ firmante_departamento }}</p>{% endif %}
+                                        {% if firmante_telefono %}<p style="font-size: 13px; color: #475569; margin: 0 0 2px 0;">Telf. {{ firmante_telefono }}</p>{% endif %}
+                                        {% if firmante_email %}<p style="font-size: 13px; color: #0c8de6; margin: 0;">{{ firmante_email }}</p>{% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f1f5f9; border-radius: 0 0 16px 16px; padding: 24px 32px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td style="font-family: 'Courier New', monospace; font-size: 9px; color: #94a3b8; line-height: 1.8;">
+                                        SYS_OUTPUT: PROCESS_STARTED_V2.1<br>
+                                        SERVER_NODE: UTPL_INSURE_CORE<br>
+                                        TIMESTAMP: {{ timestamp }}
+                                    </td>
+                                    <td align="right" style="font-size: 14px; color: #94a3b8; font-weight: 600;">
+                                        UTPL <span style="font-weight: 300;">Tech</span>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="text-align: center; font-family: 'Courier New', monospace; font-size: 9px; color: #cbd5e1; margin: 16px 0 0 0; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                                // Este es un mensaje informativo automático. //
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
