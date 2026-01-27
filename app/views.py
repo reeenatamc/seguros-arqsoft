@@ -175,27 +175,27 @@ def desglose_ramos_lista(request):
     from django.db.models import Sum
     
     detalles = DetallePolizaRamo.objects.select_related(
-        'poliza', 'poliza__compania_aseguradora', 'grupo_ramo', 'subgrupo_ramo'
-    ).order_by('-poliza__fecha_inicio', 'grupo_ramo__nombre')
+        'poliza', 'poliza__compania_aseguradora', 'poliza__grupo_ramo', 'subgrupo_ramo'
+    ).order_by('-poliza__fecha_inicio', 'subgrupo_ramo__nombre')
     
     # Filtro de búsqueda
     query = request.GET.get('q', '').strip()
     if query:
         detalles = detalles.filter(
-            Q(numero_factura__icontains=query) |
-            Q(documento_contable__icontains=query) |
+            Q(poliza__facturas__numero_factura__icontains=query) |
+            Q(poliza__facturas__documento_contable__icontains=query) |
             Q(poliza__numero_poliza__icontains=query)
-        )
+        ).distinct()
     
     # Filtro por compañía
     compania = request.GET.get('compania')
     if compania:
         detalles = detalles.filter(poliza__compania_aseguradora_id=compania)
     
-    # Filtro por grupo de ramo
+    # Filtro por grupo de ramo (muestra todos los subramos del grupo)
     ramo = request.GET.get('ramo')
     if ramo:
-        detalles = detalles.filter(grupo_ramo_id=ramo)
+        detalles = detalles.filter(subgrupo_ramo__grupo_ramo_id=ramo)
     
     # Filtro por póliza
     poliza = request.GET.get('poliza')
@@ -282,17 +282,17 @@ def desglose_ramos_exportar(request):
     formato = request.GET.get('formato', 'excel')
     
     detalles = DetallePolizaRamo.objects.select_related(
-        'poliza', 'poliza__compania_aseguradora', 'grupo_ramo'
-    ).order_by('-poliza__fecha_inicio', 'grupo_ramo__nombre')
+        'poliza', 'poliza__compania_aseguradora', 'poliza__grupo_ramo', 'subgrupo_ramo'
+    ).order_by('-poliza__fecha_inicio', 'subgrupo_ramo__nombre')
     
     # Aplicar mismos filtros que la vista
     query = request.GET.get('q', '').strip()
     if query:
         detalles = detalles.filter(
-            Q(numero_factura__icontains=query) |
-            Q(documento_contable__icontains=query) |
+            Q(poliza__facturas__numero_factura__icontains=query) |
+            Q(poliza__facturas__documento_contable__icontains=query) |
             Q(poliza__numero_poliza__icontains=query)
-        )
+        ).distinct()
     
     compania = request.GET.get('compania')
     if compania:
@@ -300,7 +300,7 @@ def desglose_ramos_exportar(request):
     
     ramo = request.GET.get('ramo')
     if ramo:
-        detalles = detalles.filter(grupo_ramo_id=ramo)
+        detalles = detalles.filter(subgrupo_ramo__grupo_ramo_id=ramo)
     
     poliza = request.GET.get('poliza')
     if poliza:
@@ -333,7 +333,7 @@ def desglose_ramos_exportar(request):
         
         for d in detalles:
             writer.writerow([
-                d.grupo_ramo.nombre,
+                d.subgrupo_ramo.nombre if d.subgrupo_ramo else '-',
                 d.numero_factura or '',
                 d.documento_contable or '',
                 d.poliza.numero_poliza,
@@ -385,7 +385,7 @@ def desglose_ramos_exportar(request):
     
     # Datos
     for row, d in enumerate(detalles, 2):
-        ws.cell(row=row, column=1, value=d.grupo_ramo.nombre).border = border
+        ws.cell(row=row, column=1, value=d.subgrupo_ramo.nombre if d.subgrupo_ramo else '-').border = border
         ws.cell(row=row, column=2, value=d.numero_factura or '').border = border
         ws.cell(row=row, column=3, value=d.documento_contable or '').border = border
         ws.cell(row=row, column=4, value=d.poliza.numero_poliza).border = border
@@ -1967,7 +1967,7 @@ class PolizaDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         # Usar select_related para evitar N+1 en ramos
         context['detalles_ramo'] = self.object.detalles_ramo.select_related(
-            'grupo_ramo', 'subgrupo_ramo'
+            'subgrupo_ramo'
         )
         context['siniestros'] = self.object.siniestros.select_related(
             'tipo_siniestro'
@@ -4004,6 +4004,30 @@ def siniestro_cerrar(request, pk):
 
 
 @login_required
+@login_required
+def siniestro_marcar_docs_listos(request, pk):
+    """
+    Vista para marcar la documentación como lista.
+    Cambia el estado de 'documentacion_pendiente' a 'documentacion_lista'.
+    """
+    siniestro = get_object_or_404(Siniestro, pk=pk)
+    
+    if siniestro.estado != 'documentacion_pendiente':
+        messages.error(request, 'El siniestro no está en estado de documentación pendiente.')
+        return redirect('siniestro_detalle', pk=pk)
+    
+    if request.method == 'POST':
+        siniestro.estado = 'documentacion_lista'
+        siniestro.save(update_fields=['estado'])
+        messages.success(request, 'Documentación marcada como lista. Ahora puede enviar a la aseguradora.')
+        return redirect('siniestro_detalle', pk=pk)
+    
+    # GET: mostrar confirmación simple
+    return render(request, 'app/siniestros/confirmar_docs_listos.html', {
+        'siniestro': siniestro,
+    })
+
+
 def siniestro_rechazar(request, pk):
     """
     Vista para rechazar un siniestro (cierre sin pago).

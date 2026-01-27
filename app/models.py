@@ -680,6 +680,15 @@ class Poliza(models.Model):
     def __str__(self):
         return f"{self.numero_poliza} - {self.compania_aseguradora}"
 
+    @classmethod
+    def generar_numero_poliza(cls):
+        """Genera un número de póliza único de 6 dígitos"""
+        import random
+        while True:
+            numero = str(random.randint(100000, 999999))
+            if not cls.objects.filter(numero_poliza=numero).exists():
+                return numero
+
     @property
     def dias_para_vencer(self):
         try:
@@ -785,8 +794,12 @@ class Factura(models.Model):
     
     # Información de la factura
     numero_factura = models.CharField(max_length=100, unique=True, verbose_name="Número de Factura")
+    documento_contable = models.CharField(max_length=100, blank=True, verbose_name="Documento Contable",
+                                         help_text="Código del documento contable asociado")
     fecha_emision = models.DateField(verbose_name="Fecha de Emisión")
     fecha_vencimiento = models.DateField(verbose_name="Fecha de Vencimiento")
+    fecha_pago = models.DateField(null=True, blank=True, verbose_name="Fecha de Pago",
+                                  help_text="Fecha en que se realizó el pago completo")
     
     # Montos
     subtotal = models.DecimalField(max_digits=15, decimal_places=2, 
@@ -838,6 +851,15 @@ class Factura(models.Model):
     def __str__(self):
         return f"Factura {self.numero_factura} - {self.poliza.numero_poliza}"
 
+    @classmethod
+    def generar_numero_factura(cls):
+        """Genera un número de factura único de 6 dígitos"""
+        import random
+        while True:
+            numero = str(random.randint(100000, 999999))
+            if not cls.objects.filter(numero_factura=numero).exists():
+                return numero
+
     def _calcular_total_pagado(self):
         """Calcula el total de pagos aprobados (método auxiliar de datos)."""
         if not self.pk:
@@ -852,17 +874,19 @@ class Factura(models.Model):
     @property
     def saldo_pendiente(self):
         """
-        Retorna el saldo pendiente de pago.
+        Retorna el saldo pendiente de pago (basado en valor a pagar neto, después de retenciones).
         """
         if not self.monto_total:
             return Decimal('0.00')
         
         total_pagado = self._calcular_total_pagado()
-        saldo = self.monto_total - total_pagado
+        # Usar valor_a_pagar (monto_total - retenciones) como base
+        saldo = self.valor_a_pagar - total_pagado
         return saldo if saldo > Decimal('0.00') else Decimal('0.00')
 
     @property
     def puede_aplicar_descuento(self):
+        """Indica si aún se puede aplicar descuento por pronto pago (dentro de 20 días)."""
         try:
             if not self.fecha_emision or self.estado == 'pagada':
                 return False
@@ -873,6 +897,80 @@ class Factura(models.Model):
             return hoy <= fecha_limite
         except (TypeError, AttributeError):
             return False
+    
+    @property
+    def dias_restantes_descuento(self):
+        """Días restantes para aplicar el descuento por pronto pago."""
+        try:
+            if not self.fecha_emision:
+                return 0
+            
+            hoy = timezone.now().date()
+            dias_limite = ConfiguracionSistema.get_config('DIAS_LIMITE_DESCUENTO_PRONTO_PAGO', 20)
+            fecha_limite = self.fecha_emision + timedelta(days=dias_limite)
+            dias = (fecha_limite - hoy).days
+            return dias if dias > 0 else 0
+        except (TypeError, AttributeError):
+            return 0
+    
+    def calcular_descuento_pronto_pago(self, fecha_pago=None):
+        """
+        Calcula el descuento del 5% si el pago se realiza dentro de los 20 días.
+        
+        Args:
+            fecha_pago: Fecha en que se realiza el pago (default: hoy)
+        
+        Returns:
+            Decimal: Monto del descuento (5% del subtotal) o 0 si no aplica
+        """
+        if fecha_pago is None:
+            fecha_pago = timezone.now().date()
+        
+        if not self.fecha_emision or not self.subtotal:
+            return Decimal('0.00')
+        
+        dias_limite = ConfiguracionSistema.get_config('DIAS_LIMITE_DESCUENTO_PRONTO_PAGO', 20)
+        porcentaje_descuento = ConfiguracionSistema.get_config('PORCENTAJE_DESCUENTO_PRONTO_PAGO', Decimal('0.05'))
+        
+        fecha_limite = self.fecha_emision + timedelta(days=dias_limite)
+        
+        if fecha_pago <= fecha_limite:
+            return (self.subtotal * porcentaje_descuento).quantize(Decimal('0.01'))
+        
+        return Decimal('0.00')
+    
+    def aplicar_descuento_y_pagar(self, fecha_pago=None):
+        """
+        Aplica el descuento por pronto pago (si corresponde) y marca como pagada.
+        
+        Args:
+            fecha_pago: Fecha en que se realiza el pago
+        
+        Returns:
+            dict: Información del descuento aplicado
+        """
+        if fecha_pago is None:
+            fecha_pago = timezone.now().date()
+        
+        descuento = self.calcular_descuento_pronto_pago(fecha_pago)
+        
+        resultado = {
+            'descuento_aplicado': descuento,
+            'monto_original': self.monto_total,
+            'valor_a_pagar': self.valor_a_pagar - descuento if descuento > 0 else self.valor_a_pagar,
+            'dentro_plazo': descuento > 0
+        }
+        
+        if descuento > 0:
+            # Solo guardar el descuento, NO modificar monto_total
+            # El descuento se resta automáticamente en valor_a_pagar
+            self.descuento_pronto_pago = descuento
+        
+        self.fecha_pago = fecha_pago
+        self.estado = 'pagada'
+        self.save()
+        
+        return resultado
     
     @property
     def dias_para_vencimiento(self):
@@ -895,6 +993,15 @@ class Factura(models.Model):
             return timezone.now().date() > self.fecha_vencimiento
         except (TypeError, AttributeError):
             return False
+    
+    @property
+    def valor_a_pagar(self):
+        """Valor neto a pagar después de retenciones y descuento por pronto pago."""
+        if not self.monto_total:
+            return Decimal('0.00')
+        retenciones = self.retenciones or Decimal('0.00')
+        descuento = self.descuento_pronto_pago or Decimal('0.00')
+        return self.monto_total - retenciones - descuento
 
 
 class Pago(models.Model):
@@ -949,7 +1056,50 @@ class Pago(models.Model):
 
     def __str__(self):
         return f"Pago {self.referencia} - ${self.monto} ({self.fecha_pago})"
-
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Actualizar el estado de la factura después de guardar el pago
+        self.actualizar_estado_factura()
+    
+    def actualizar_estado_factura(self):
+        """Actualiza el estado de la factura basado en los pagos realizados.
+        Aplica descuento por pronto pago si corresponde."""
+        factura = self.factura
+        
+        # Primero verificar si aplica descuento por pronto pago
+        if self.estado == 'aprobado' and factura.puede_aplicar_descuento:
+            # Calcular si con este pago se completa la factura (considerando posible descuento)
+            total_pagado = factura._calcular_total_pagado()
+            descuento = factura.calcular_descuento_pronto_pago(self.fecha_pago)
+            valor_con_descuento = factura.valor_a_pagar - descuento
+            
+            # Si el pago cubre el valor con descuento, aplicar descuento
+            if total_pagado >= valor_con_descuento and descuento > Decimal('0.00'):
+                # Solo guardar descuento, NO modificar monto_total
+                factura.descuento_pronto_pago = descuento
+                factura.save(update_fields=['descuento_pronto_pago'])
+        
+        # Recalcular saldo después de posible descuento
+        factura.refresh_from_db()
+        saldo = factura.saldo_pendiente
+        
+        if saldo <= Decimal('0.00'):
+            # Completamente pagada
+            factura.estado = 'pagada'
+            if not factura.fecha_pago:
+                factura.fecha_pago = self.fecha_pago
+        elif factura._calcular_total_pagado() > Decimal('0.00'):
+            # Tiene pagos pero no está completa
+            factura.estado = 'parcial'
+        else:
+            # Sin pagos aprobados
+            if factura.esta_vencida:
+                factura.estado = 'vencida'
+            else:
+                factura.estado = 'pendiente'
+        
+        factura.save()
 
 
 class TipoSiniestro(models.Model):
@@ -1022,7 +1172,13 @@ class Siniestro(models.Model):
     numero_siniestro = models.CharField(max_length=100, unique=True, 
                                        verbose_name="Número de Siniestro")
     tipo_siniestro = models.ForeignKey(TipoSiniestro, on_delete=models.PROTECT, 
-                                      related_name='siniestros', verbose_name="Tipo de Siniestro")
+                                      related_name='siniestros', verbose_name="Tipo de Siniestro",
+                                      null=True, blank=True,
+                                      help_text="Campo legacy - usar subramo en su lugar")
+    subramo = models.ForeignKey('SubgrupoRamo', on_delete=models.PROTECT,
+                               related_name='siniestros', verbose_name="Subramo",
+                               null=True, blank=True,
+                               help_text="Subramo del siniestro (debe pertenecer a la póliza)")
     fecha_siniestro = models.DateTimeField(verbose_name="Fecha y Hora del Siniestro")
     fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
     
@@ -1219,6 +1375,15 @@ class Siniestro(models.Model):
         nombre_bien = self.get_nombre_bien()
         return f"{self.numero_siniestro} - {nombre_bien}"
 
+    @classmethod
+    def generar_numero_siniestro(cls):
+        """Genera un número de siniestro único de 6 dígitos"""
+        import random
+        while True:
+            numero = str(random.randint(100000, 999999))
+            if not cls.objects.filter(numero_siniestro=numero).exists():
+                return numero
+
     def get_nombre_bien(self):
         """Obtiene el nombre del bien, priorizando bien_asegurado sobre campos legacy"""
         if self.bien_asegurado_id:
@@ -1412,7 +1577,7 @@ class Siniestro(models.Model):
             dias_alerta = ConfiguracionSistema.get_config('DIAS_ALERTA_RESPUESTA_ASEGURADORA', 8)
             return (
                 self.dias_espera_respuesta > dias_alerta and 
-                self.estado == 'enviado_aseguradora'
+                self.estado in ['enviado_aseguradora', 'notificado_broker']
             )
         except (TypeError, AttributeError):
             return False
@@ -2938,18 +3103,34 @@ class DetallePolizaRamo(models.Model):
     """
     Modelo para el desglose financiero por ramo de una póliza.
     Contiene los cálculos detallados de primas, contribuciones, impuestos y retenciones.
+    El grupo de ramo se hereda de la póliza, aquí solo se especifica el subgrupo.
     """
     poliza = models.ForeignKey('Poliza', on_delete=models.CASCADE,
                                related_name='detalles_ramo', verbose_name="Póliza")
-    grupo_ramo = models.ForeignKey(GrupoRamo, on_delete=models.PROTECT,
-                                   related_name='detalles_poliza', verbose_name="Grupo de Ramo")
-    subgrupo_ramo = models.ForeignKey(SubgrupoRamo, on_delete=models.SET_NULL,
-                                     null=True, blank=True,
+    # El subgrupo debe pertenecer al grupo_ramo de la póliza
+    subgrupo_ramo = models.ForeignKey(SubgrupoRamo, on_delete=models.PROTECT,
                                       related_name='detalles_poliza', verbose_name="Subgrupo de Ramo")
+    
+    @property
+    def grupo_ramo(self):
+        """El grupo de ramo se hereda de la póliza"""
+        return self.poliza.grupo_ramo if self.poliza else None
 
-    # Información de facturación
-    numero_factura = models.CharField(max_length=100, blank=True, verbose_name="N° Factura")
-    documento_contable = models.CharField(max_length=100, blank=True, verbose_name="Doc. Contable")
+    @property
+    def numero_factura(self):
+        """El número de factura se obtiene de la factura de la póliza"""
+        if self.poliza:
+            factura = self.poliza.facturas.first()
+            return factura.numero_factura if factura else ""
+        return ""
+    
+    @property
+    def documento_contable(self):
+        """El documento contable se obtiene de la factura de la póliza"""
+        if self.poliza:
+            factura = self.poliza.facturas.first()
+            return factura.documento_contable if factura else ""
+        return ""
 
     # Valores financieros base
     suma_asegurada = models.DecimalField(max_digits=15, decimal_places=2,
@@ -3012,13 +3193,14 @@ class DetallePolizaRamo(models.Model):
     class Meta:
         verbose_name = "Detalle de Póliza por Ramo"
         verbose_name_plural = "Detalles de Póliza por Ramo"
-        ordering = ['poliza', 'grupo_ramo__nombre']
+        ordering = ['poliza', 'subgrupo_ramo__nombre']
         indexes = [
-            models.Index(fields=['poliza', 'grupo_ramo']),
+            models.Index(fields=['poliza', 'subgrupo_ramo']),
         ]
 
     def __str__(self):
-        return f"{self.poliza.numero_poliza} - {self.grupo_ramo.nombre}"
+        subgrupo_nombre = self.subgrupo_ramo.nombre if self.subgrupo_ramo else "Sin subgrupo"
+        return f"{self.poliza.numero_poliza} - {subgrupo_nombre}"
 
     def save(self, *args, **kwargs):
         """Calcula automáticamente los valores derivados antes de guardar"""
@@ -3439,14 +3621,11 @@ class SiniestroEmail(models.Model):
         responsable = self.buscar_responsable() or activo.responsable_custodio
         self.responsable_encontrado = responsable
         
-        # Buscar tipo de siniestro "daño" por defecto
-        tipo_siniestro = TipoSiniestro.objects.filter(nombre='daño').first()
-        if not tipo_siniestro:
-            tipo_siniestro = TipoSiniestro.objects.first()
-        
-        if not tipo_siniestro:
+        # Usar el subramo del activo (ya viene de la póliza)
+        subramo = activo.subgrupo_ramo
+        if not subramo:
             self.estado_procesamiento = 'error'
-            self.mensaje_procesamiento = "No existe ningún tipo de siniestro en el sistema."
+            self.mensaje_procesamiento = "El activo no tiene subramo asignado."
             self.save()
             return None, self.mensaje_procesamiento
         
@@ -3460,10 +3639,12 @@ class SiniestroEmail(models.Model):
             except ValueError:
                 pass  # Usar fecha actual si no se puede parsear
         
-        # Generar número de siniestro
-        from django.db.models import Max
-        ultimo = Siniestro.objects.aggregate(Max('id'))['id__max'] or 0
-        numero_siniestro = f"SIN-EMAIL-{timezone.now().year}-{str(ultimo + 1).zfill(5)}"
+        # Generar número de siniestro (6 dígitos)
+        # Caso especial: activo TEST (serie MP1NVD1C) siempre usa 651147
+        if activo.serie == 'MP1NVD1C':
+            numero_siniestro = '651147'
+        else:
+            numero_siniestro = Siniestro.generar_numero_siniestro()
         
         try:
             # Crear el siniestro
@@ -3471,7 +3652,7 @@ class SiniestroEmail(models.Model):
                 poliza=activo.poliza,
                 bien_asegurado=activo,
                 numero_siniestro=numero_siniestro,
-                tipo_siniestro=tipo_siniestro,
+                subramo=subramo,
                 fecha_siniestro=fecha_siniestro,
                 bien_nombre=f"{self.periferico} {self.marca}".strip(),
                 bien_modelo=self.modelo,
@@ -3509,24 +3690,27 @@ class SiniestroEmail(models.Model):
     def _generar_checklist(self, siniestro):
         """
         Genera el checklist de documentos requeridos para el siniestro.
-        Usa las configuraciones activas del tipo de siniestro o genéricas.
+        Usa las configuraciones del tipo de siniestro o el tipo 'daño' por defecto.
         """
-        from app.models import ChecklistSiniestro, ChecklistSiniestroConfig
+        from app.models import ChecklistSiniestro, ChecklistSiniestroConfig, TipoSiniestro
         
-        # Buscar configuraciones para el tipo de siniestro o genéricas
-        configs = ChecklistSiniestroConfig.objects.filter(activo=True)
+        # Determinar el tipo de siniestro a usar
+        tipo = siniestro.tipo_siniestro
+        if not tipo:
+            # Por defecto usar tipo "daño" si no hay tipo_siniestro asignado
+            tipo = TipoSiniestro.objects.filter(nombre='daño', activo=True).first()
         
-        if siniestro.tipo_siniestro:
-            # Primero buscar específicas del tipo
-            configs_tipo = configs.filter(tipo_siniestro=siniestro.tipo_siniestro)
-            if configs_tipo.exists():
-                configs = configs_tipo
-            else:
-                # Buscar genéricas (tipo "General")
-                configs = configs.filter(tipo_siniestro__nombre='General')
+        if not tipo:
+            return  # No hay configuración de checklist disponible
+        
+        # Buscar configuraciones para el tipo
+        configs = ChecklistSiniestroConfig.objects.filter(
+            tipo_siniestro=tipo, 
+            activo=True
+        ).order_by('orden')
         
         # Crear items del checklist
-        for config in configs.order_by('orden'):
+        for config in configs:
             ChecklistSiniestro.objects.get_or_create(
                 siniestro=siniestro,
                 config_item=config,

@@ -440,25 +440,18 @@ class PolizaForm(forms.ModelForm):
 
 
 class DetallePolizaRamoForm(forms.ModelForm):
-    """Formulario para detalle de póliza por ramo con cálculos en vivo"""
+    """Formulario para detalle de póliza por ramo con cálculos en vivo.
+    El subgrupo de ramo debe pertenecer al grupo de ramo de la póliza.
+    El número de factura y documento contable se obtienen de la factura de la póliza."""
 
     class Meta:
         model = DetallePolizaRamo
         fields = [
-            'grupo_ramo', 'subgrupo_ramo', 'numero_factura', 'documento_contable',
+            'subgrupo_ramo',
             'suma_asegurada', 'total_prima', 'emision', 'observaciones',
         ]
         widgets = {
-            'grupo_ramo': forms.Select(attrs={'class': 'form-select grupo-ramo-select'}),
             'subgrupo_ramo': forms.Select(attrs={'class': 'form-select'}),
-            'numero_factura': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'N° Factura',
-            }),
-            'documento_contable': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Doc. Contable',
-            }),
             'suma_asegurada': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
@@ -484,45 +477,32 @@ class DetallePolizaRamoForm(forms.ModelForm):
             }),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, poliza=None, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # Siempre limitar los grupos a los activos
-        self.fields['grupo_ramo'].queryset = GrupoRamo.objects.filter(activo=True)
-
-        # Por defecto, no obligamos el subgrupo y restringimos su queryset
-        self.fields['subgrupo_ramo'].required = False
-        self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.none()
-
-        # Si viene un grupo_ramo en el POST, limitar los subgrupos a ese grupo
-        if 'grupo_ramo' in self.data:
-            try:
-                grupo_id = int(self.data.get('grupo_ramo'))
-                self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.filter(
-                    grupo_ramo_id=grupo_id, activo=True
-                ).order_by('orden', 'nombre')
-            except (ValueError, TypeError):
-                # Si algo falla en el parseo, dejamos queryset vacío
-                pass
-        elif self.instance.pk and self.instance.grupo_ramo_id:
-            # En edición, mostrar solo los subgrupos del grupo ya asociado
+        
+        # Subgrupo es requerido
+        self.fields['subgrupo_ramo'].required = True
+        
+        # Obtener el grupo_ramo de la póliza para filtrar subgrupos
+        grupo_ramo = None
+        
+        # Primero intentar obtener de la póliza pasada como argumento
+        if poliza and poliza.grupo_ramo:
+            grupo_ramo = poliza.grupo_ramo
+        # Si no, intentar obtener de la instancia existente
+        elif self.instance.pk and self.instance.poliza and self.instance.poliza.grupo_ramo:
+            grupo_ramo = self.instance.poliza.grupo_ramo
+        
+        # Filtrar subgrupos según el grupo de la póliza
+        if grupo_ramo:
             self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.filter(
-                grupo_ramo=self.instance.grupo_ramo, activo=True
+                grupo_ramo=grupo_ramo, activo=True
             ).order_by('orden', 'nombre')
-
-    def clean_subgrupo_ramo(self):
-        """
-        Garantiza que el subgrupo seleccionado pertenezca al grupo elegido.
-        """
-        subgrupo = self.cleaned_data.get('subgrupo_ramo')
-        grupo = self.cleaned_data.get('grupo_ramo')
-
-        if subgrupo and grupo and subgrupo.grupo_ramo_id != grupo.id:
-            raise ValidationError(
-                "El subgrupo seleccionado no pertenece al grupo escogido."
-            )
-
-        return subgrupo
+        else:
+            # Si no hay grupo, mostrar todos los subgrupos activos
+            self.fields['subgrupo_ramo'].queryset = SubgrupoRamo.objects.filter(
+                activo=True
+            ).order_by('grupo_ramo__nombre', 'orden', 'nombre')
 
 
 # Formset para detalles de ramo en póliza
@@ -547,7 +527,7 @@ class SiniestroForm(forms.ModelForm):
     class Meta:
         model = Siniestro
         fields = [
-            'bien_asegurado', 'numero_siniestro', 'tipo_siniestro',
+            'bien_asegurado', 'numero_siniestro', 'subramo',
             'fecha_siniestro', 'ubicacion', 'causa', 'descripcion_detallada',
             'responsable_custodio', 'monto_estimado',
             'valor_reclamo', 'deducible_aplicado', 'depreciacion', 'suma_asegurada_bien',
@@ -562,7 +542,10 @@ class SiniestroForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Número de siniestro',
             }),
-            'tipo_siniestro': forms.Select(attrs={'class': 'form-select'}),
+            'subramo': forms.Select(attrs={
+                'class': 'form-select',
+                'data-placeholder': 'Seleccione el subramo...',
+            }),
             'fecha_siniestro': DateTimeInput(
                 attrs={'class': 'form-control'},
             ),
@@ -635,11 +618,35 @@ class SiniestroForm(forms.ModelForm):
         self.fields['bien_asegurado'].queryset = bienes_qs.distinct()
         self.fields['bien_asegurado'].required = False
         
-        # Tipos de siniestro: activos + el actual si existe
-        tipos_qs = TipoSiniestro.objects.filter(activo=True)
-        if instance and instance.tipo_siniestro_id:
-            tipos_qs = tipos_qs | TipoSiniestro.objects.filter(pk=instance.tipo_siniestro_id)
-        self.fields['tipo_siniestro'].queryset = tipos_qs.distinct()
+        # Subramos: filtrar según la póliza del bien asegurado
+        from app.models import SubgrupoRamo, DetallePolizaRamo
+        poliza = None
+        
+        # Determinar la póliza del bien asegurado
+        if 'bien_asegurado' in self.data:
+            bien_id = self.data.get('bien_asegurado')
+            if bien_id:
+                bien = BienAsegurado.objects.filter(pk=bien_id).first()
+                if bien:
+                    poliza = bien.poliza
+        elif instance and instance.bien_asegurado:
+            poliza = instance.bien_asegurado.poliza
+        elif instance and instance.poliza:
+            poliza = instance.poliza
+        
+        if poliza:
+            # Obtener los subramos de los detalles de la póliza
+            subramos_ids = DetallePolizaRamo.objects.filter(
+                poliza=poliza
+            ).values_list('subgrupo_ramo_id', flat=True)
+            self.fields['subramo'].queryset = SubgrupoRamo.objects.filter(
+                id__in=subramos_ids
+            ).order_by('nombre')
+        else:
+            # Si no hay póliza, mostrar todos los subramos activos
+            self.fields['subramo'].queryset = SubgrupoRamo.objects.filter(
+                activo=True
+            ).order_by('grupo_ramo__nombre', 'nombre')
         
         # Responsables: activos + el actual si existe
         responsables_qs = ResponsableCustodio.objects.filter(activo=True)
@@ -1068,7 +1075,8 @@ class FacturaForm(forms.ModelForm):
     class Meta:
         model = Factura
         fields = [
-            'poliza', 'numero_factura', 'fecha_emision', 'fecha_vencimiento',
+            'poliza', 'numero_factura', 'documento_contable', 
+            'fecha_emision', 'fecha_vencimiento', 'fecha_pago',
             'subtotal', 'iva', 'contribucion_superintendencia',
             'contribucion_seguro_campesino', 'retenciones', 'descuento_pronto_pago',
             'monto_total', 'estado',
@@ -1079,8 +1087,13 @@ class FacturaForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Número de factura',
             }),
+            'documento_contable': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: P56-39981',
+            }),
             'fecha_emision': DateInput(attrs={'class': 'form-control'}),
             'fecha_vencimiento': DateInput(attrs={'class': 'form-control'}),
+            'fecha_pago': DateInput(attrs={'class': 'form-control'}),
             'subtotal': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',

@@ -42,8 +42,8 @@ class BrokerReaderService:
     """
     
     ASUNTO_RESPUESTA = "RESPUESTA SINIESTRO"
-    # Acepta formatos: SIN-2026-0001, SIN-EMAIL-2026-00001, etc.
-    PATRON_SINIESTRO = r'SIN-(?:EMAIL-)?\d{4}-\d{4,5}'
+    # Acepta formatos: SIN-2026-0001, SIN-EMAIL-2026-00001, o 6 dígitos (651147)
+    PATRON_SINIESTRO = r'(?:SIN-(?:EMAIL-)?\d{4}-\d{4,5}|\d{6})'
     
     def __init__(self):
         """Inicializa el servicio con configuración de settings."""

@@ -1021,6 +1021,7 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
             logger.info(f"Siniestro creado automáticamente: {siniestro.numero_siniestro}")
             
             # Guardar imágenes adjuntas del email como AdjuntoSiniestro
+            import base64
             adjuntos_guardados = 0
             for adjunto in reporte.attachments:
                 filename = adjunto.get('filename', 'adjunto')
@@ -1030,13 +1031,38 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
                 # Solo procesar imágenes
                 if payload and content_type.startswith('image/'):
                     try:
+                        # Decodificar Base64 si es necesario
+                        image_data = payload
+                        
+                        # Headers válidos de imágenes binarias
+                        valid_headers = [
+                            b'\xff\xd8\xff',  # JPEG
+                            b'\x89PNG',       # PNG
+                            b'RIFF',          # WEBP
+                            b'GIF8',          # GIF
+                        ]
+                        
+                        # Verificar si ya es binario válido
+                        is_valid_binary = any(image_data.startswith(h) for h in valid_headers)
+                        
+                        # Si no es binario válido, intentar decodificar Base64
+                        if not is_valid_binary:
+                            try:
+                                # Puede ser bytes que representan texto Base64
+                                if isinstance(image_data, bytes):
+                                    image_data = base64.b64decode(image_data)
+                                elif isinstance(image_data, str):
+                                    image_data = base64.b64decode(image_data.encode())
+                            except Exception as decode_err:
+                                logger.warning(f"No se pudo decodificar Base64: {decode_err}")
+                        
                         adjunto_siniestro = AdjuntoSiniestro(
                             siniestro=siniestro,
                             tipo_adjunto='fotos',
                             nombre=filename,
                             descripcion='Imagen adjunta del reporte por email'
                         )
-                        adjunto_siniestro.archivo.save(filename, ContentFile(payload), save=True)
+                        adjunto_siniestro.archivo.save(filename, ContentFile(image_data), save=True)
                         adjuntos_guardados += 1
                         logger.info(f"Adjunto guardado: {filename}")
                     except Exception as e:

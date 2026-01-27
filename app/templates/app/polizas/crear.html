@@ -215,8 +215,8 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Grupo de Ramo</label>
-                            {{ form_detalle.grupo_ramo }}
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Subgrupo de Ramo</label>
+                            {{ form_detalle.subgrupo_ramo }}
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">N° Factura</label>
@@ -399,6 +399,57 @@
 
         addBtn.addEventListener('click', addRamoForm);
         document.querySelectorAll('.remove-ramo-btn').forEach(attachRemoveHandler);
+        
+        // =============================================
+        // Filtrar subgrupos según grupo_ramo de póliza
+        // =============================================
+        const grupoRamoSelect = document.getElementById('id_grupo_ramo');
+        
+        function actualizarSubgruposDetalles(grupoRamoId) {
+            // Obtener subgrupos del grupo seleccionado
+            if (!grupoRamoId) {
+                // Si no hay grupo, limpiar todos los selects de subgrupo
+                document.querySelectorAll('select[name$="-subgrupo_ramo"]').forEach(select => {
+                    select.innerHTML = '<option value="">---------</option>';
+                });
+                return;
+            }
+            
+            fetch(`/api/subtipos-ramo/?grupo_ramo_id=${grupoRamoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const subgrupos = data.subgrupos || [];
+                    
+                    // Actualizar todos los selects de subgrupo en el formset
+                    document.querySelectorAll('select[name$="-subgrupo_ramo"]').forEach(select => {
+                        const currentValue = select.value;
+                        select.innerHTML = '<option value="">Seleccione subgrupo</option>';
+                        
+                        subgrupos.forEach(sg => {
+                            const option = document.createElement('option');
+                            option.value = sg.id;
+                            option.textContent = `${sg.codigo} - ${sg.nombre}`;
+                            if (sg.id == currentValue) {
+                                option.selected = true;
+                            }
+                            select.appendChild(option);
+                        });
+                    });
+                })
+                .catch(error => console.error('Error cargando subgrupos:', error));
+        }
+        
+        // Escuchar cambios en grupo_ramo de la póliza
+        if (grupoRamoSelect) {
+            grupoRamoSelect.addEventListener('change', function() {
+                actualizarSubgruposDetalles(this.value);
+            });
+            
+            // Cargar subgrupos iniciales si hay grupo seleccionado
+            if (grupoRamoSelect.value) {
+                actualizarSubgruposDetalles(grupoRamoSelect.value);
+            }
+        }
     });
 </script>
 {% endblock %}

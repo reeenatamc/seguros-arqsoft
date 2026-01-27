@@ -196,6 +196,9 @@ urlpatterns = [
     path('siniestros/escanear-reportes/', views.escanear_reportes_custodio, name='escanear_reportes_custodio'),
     path('siniestros/<int:pk>/escanear-inbox/', views.escanear_inbox, name='escanear_inbox'),
     
+    # Flujo de Documentación
+    path('siniestros/<int:pk>/marcar-docs-listos/', views.siniestro_marcar_docs_listos, name='siniestro_marcar_docs_listos'),
+    
     # Flujo de Indemnización
     path('siniestros/<int:pk>/firmar-recibo/', views.siniestro_firmar_recibo, name='siniestro_firmar_recibo'),
     path('siniestros/<int:pk>/disputar/', views.siniestro_disputar, name='siniestro_disputar'),

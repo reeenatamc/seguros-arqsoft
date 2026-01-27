@@ -20,7 +20,7 @@
         <form method="post" class="space-y-6" data-calc-form="factura">
             {% csrf_token %}
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">
                         Póliza <span class="text-red-500">*</span>
@@ -37,6 +37,13 @@
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Documento Contable
+                    </label>
+                    {{ form.documento_contable }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
                         Fecha de Emisión <span class="text-red-500">*</span>
                     </label>
                     {{ form.fecha_emision }}
@@ -47,6 +54,28 @@
                         Fecha de Vencimiento <span class="text-red-500">*</span>
                     </label>
                     {{ form.fecha_vencimiento }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Fecha de Pago
+                    </label>
+                    {{ form.fecha_pago }}
+                    <p class="text-xs text-slate-500 mt-1">Si se paga dentro de 20 días, aplica 5% descuento</p>
+                </div>
+            </div>
+            
+            <!-- Alerta de descuento pronto pago -->
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-clock text-amber-600 mt-0.5"></i>
+                    <div>
+                        <h4 class="font-medium text-amber-800">Descuento por Pronto Pago</h4>
+                        <p class="text-sm text-amber-700 mt-1">
+                            Si el pago se realiza dentro de los <strong>20 días</strong> posteriores a la emisión,
+                            se aplica automáticamente un <strong>5% de descuento</strong> sobre la prima.
+                        </p>
+                    </div>
                 </div>
             </div>
 

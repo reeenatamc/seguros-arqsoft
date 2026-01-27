@@ -134,7 +134,13 @@ class NotificacionesService:
         
         # Obtener datos del bien
         bien = siniestro.bien_asegurado
-        responsable = bien.responsable_custodio.nombre if bien and bien.responsable_custodio else "N/A"
+        # Obtener responsable: priorizar bien_asegurado, luego siniestro
+        if bien and bien.responsable_custodio:
+            responsable = bien.responsable_custodio.nombre
+        elif siniestro.responsable_custodio:
+            responsable = siniestro.responsable_custodio.nombre
+        else:
+            responsable = "N/A"
         bien_nombre = bien.nombre if bien else siniestro.bien_nombre or "N/A"
         marca = bien.marca if bien else siniestro.bien_marca or "N/A"
         modelo = bien.modelo if bien else siniestro.bien_modelo or "N/A"

@@ -39,6 +39,10 @@
                     <p class="font-medium text-slate-800">{{ poliza.tipo_poliza.nombre }}</p>
                 </div>
                 <div>
+                    <span class="text-xs text-slate-500 uppercase">Grupo de Ramo</span>
+                    <p class="font-medium text-slate-800">{{ poliza.grupo_ramo.nombre|default:"-" }}</p>
+                </div>
+                <div>
                     <span class="text-xs text-slate-500 uppercase">Corredor</span>
                     <p class="font-medium text-slate-800">{{ poliza.corredor_seguros.nombre }}</p>
                 </div>
@@ -155,7 +159,7 @@
                     {% for detalle in detalles_ramo %}
                     <tr class="hover:bg-slate-50">
                         <td class="px-3 py-2.5 whitespace-nowrap">
-                            <span class="font-medium text-slate-800">{{ detalle.ramo.nombre }}</span>
+                            <span class="font-medium text-slate-800">{{ detalle.subgrupo_ramo.nombre|default:"-" }}</span>
                         </td>
                         <td class="px-3 py-2.5 whitespace-nowrap text-slate-600">{{ detalle.numero_factura|default:"-" }}</td>
                         <td class="px-3 py-2.5 whitespace-nowrap text-slate-600">{{ detalle.documento_contable|default:"-" }}</td>

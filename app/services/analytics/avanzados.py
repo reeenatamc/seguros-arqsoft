@@ -23,7 +23,7 @@ from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, W
 from django.db.models.functions import Coalesce, Extract, TruncMonth, TruncYear
 from django.utils import timezone
 
-from app.models import CompaniaAseguradora, Factura, Pago, PolicyRenewal, Poliza, Siniestro, TipoPoliza, TipoSiniestro
+from app.models import CompaniaAseguradora, Factura, GrupoRamo, Pago, PolicyRenewal, Poliza, Siniestro, SubgrupoRamo, TipoPoliza, TipoSiniestro
 
 
 class AdvancedAnalyticsService:
@@ -32,73 +32,65 @@ class AdvancedAnalyticsService:
     @classmethod
     def get_loss_ratio_by_policy_type(cls):
         """
-
-        Calcula el ratio de siniestralidad por tipo de póliza.
-
+        Calcula el ratio de siniestralidad por grupo de ramo.
+        
         Ratio = (Monto Indemnizado / Primas Pagadas) * 100
-
-        Un ratio > 100% indica pérdida, < 100% indica ganancia.
-
+        
+        Un ratio > 100% indica pérdida (pagaste más de lo que recibiste).
+        Un ratio < 100% indica que pagaste más en primas de lo que recuperaste.
+        Desde la perspectiva del cliente: ratio alto = bueno (recuperas más).
         """
-
         results = []
-
-        tipos_poliza = TipoPoliza.objects.filter(activo=True)
-
-        for tipo in tipos_poliza:
-
-            # Obtener pólizas de este tipo
-
-            polizas = Poliza.objects.filter(tipo_poliza=tipo)
-
+        
+        grupos_ramo = GrupoRamo.objects.filter(activo=True)
+        
+        for grupo in grupos_ramo:
+            # Obtener pólizas de este grupo de ramo
+            polizas = Poliza.objects.filter(grupo_ramo=grupo)
             poliza_ids = polizas.values_list("id", flat=True)
-
-            # Calcular primas cobradas (pagos aprobados de facturas de estas pólizas)
-
-            primas_pagadas = Pago.objects.filter(factura__poliza__in=poliza_ids, estado="aprobado").aggregate(
+            
+            # Calcular primas pagadas (pagos aprobados de facturas de estas pólizas)
+            primas_pagadas = Pago.objects.filter(
+                factura__poliza__in=poliza_ids, 
+                estado="aprobado"
+            ).aggregate(
                 total=Coalesce(Sum("monto"), Value(Decimal("0")))
             )["total"]
-
+            
             # Calcular montos indemnizados (siniestros liquidados de estas pólizas)
-
             montos_indemnizados = Siniestro.objects.filter(
-                poliza__in=poliza_ids, estado__in=["liquidado", "cerrado"]
-            ).aggregate(total=Coalesce(Sum("monto_indemnizado"), Value(Decimal("0"))))["total"]
-
+                poliza__in=poliza_ids, 
+                estado__in=["liquidado", "cerrado"]
+            ).aggregate(
+                total=Coalesce(Sum("monto_indemnizado"), Value(Decimal("0")))
+            )["total"]
+            
             # Calcular ratio
-
             if primas_pagadas > 0:
-
                 ratio = (float(montos_indemnizados) / float(primas_pagadas)) * 100
-
             else:
-
                 ratio = 0
-
+            
             # Conteos adicionales
-
             num_polizas = polizas.count()
-
             num_siniestros = Siniestro.objects.filter(poliza__in=poliza_ids).count()
-
-            results.append(
-                {
-                    "tipo": tipo.nombre,
-                    "tipo_id": tipo.id,
-                    "primas_pagadas": float(primas_pagadas),
-                    "montos_indemnizados": float(montos_indemnizados),
-                    "ratio": round(ratio, 2),
-                    "num_polizas": num_polizas,
-                    "num_siniestros": num_siniestros,
-                    "siniestros_por_poliza": round(num_siniestros / max(num_polizas, 1), 2),
-                    "status": "danger" if ratio > 100 else ("warning" if ratio > 70 else "success"),
-                }
-            )
-
+            
+            results.append({
+                "grupo_ramo": grupo.nombre,
+                "grupo_ramo_id": grupo.id,
+                "primas_pagadas": float(primas_pagadas),
+                "montos_indemnizados": float(montos_indemnizados),
+                "ratio": round(ratio, 2),
+                "num_polizas": num_polizas,
+                "num_siniestros": num_siniestros,
+                "siniestros_por_poliza": round(num_siniestros / max(num_polizas, 1), 2),
+                # Desde perspectiva del cliente: ratio alto = bueno (recuperas más)
+                "status": "success" if ratio > 70 else ("warning" if ratio > 30 else "danger"),
+            })
+        
         # Ordenar por ratio descendente
-
         results.sort(key=lambda x: x["ratio"], reverse=True)
-
+        
         return results
 
     @classmethod
@@ -250,13 +242,11 @@ class AdvancedAnalyticsService:
     @classmethod
     def get_claims_by_type_distribution(cls):
         """
-
-        Distribución de siniestros por tipo para visualización.
-
+        Distribución de siniestros por subramo (grupo de ramo de la póliza).
         """
-
         distribution = (
-            Siniestro.objects.values("tipo_siniestro__nombre")
+            Siniestro.objects.filter(poliza__grupo_ramo__isnull=False)
+            .values("poliza__grupo_ramo__nombre")
             .annotate(
                 count=Count("id"),
                 total_estimado=Coalesce(Sum("monto_estimado"), Value(Decimal("0"))),
@@ -272,13 +262,9 @@ class AdvancedAnalyticsService:
         }
 
         for item in distribution:
-
-            tipo = item["tipo_siniestro__nombre"] or "Sin tipo"
-
-            result["labels"].append(tipo)
-
+            grupo = item["poliza__grupo_ramo__nombre"] or "Sin grupo"
+            result["labels"].append(grupo)
             result["counts"].append(item["count"])
-
             result["amounts"].append(float(item["total_estimado"]))
 
         return result

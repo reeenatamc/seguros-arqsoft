@@ -29,6 +29,32 @@
         </div>
     </div>
 
+    <!-- Alerta de descuento pronto pago -->
+    {% if factura.puede_aplicar_descuento and factura.estado != 'pagada' %}
+    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+        <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-piggy-bank text-emerald-600"></i>
+            </div>
+            <div class="flex-1">
+                <h4 class="font-semibold text-emerald-800">¡Descuento Disponible!</h4>
+                <p class="text-sm text-emerald-700 mt-1">
+                    Quedan <strong>{{ factura.dias_restantes_descuento }} días</strong> para aplicar el 
+                    <strong>5% de descuento</strong> por pronto pago.
+                </p>
+                <p class="text-xs text-emerald-600 mt-2">
+                    Ahorro potencial: <strong>${{ factura.subtotal|floatformat:2 }}</strong> × 5% = 
+                    <strong>${{ factura.calcular_descuento_pronto_pago|floatformat:2 }}</strong>
+                </p>
+            </div>
+            <a href="{% url 'pago_crear' %}?factura={{ factura.pk }}" 
+               class="flex-shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition">
+                <i class="fas fa-credit-card mr-1"></i> Pagar Ahora
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Información Principal -->
         <div class="lg:col-span-2 space-y-6">
@@ -43,6 +69,10 @@
                     <div>
                         <span class="text-xs text-slate-500 uppercase">Número</span>
                         <p class="font-medium text-slate-800">{{ factura.numero_factura }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 uppercase">Doc. Contable</span>
+                        <p class="font-medium text-slate-800">{{ factura.documento_contable|default:"-" }}</p>
                     </div>
                     <div>
                         <span class="text-xs text-slate-500 uppercase">Estado</span>
@@ -61,6 +91,10 @@
                         </a>
                     </div>
                     <div>
+                        <span class="text-xs text-slate-500 uppercase">Compañía</span>
+                        <p class="font-medium text-slate-800">{{ factura.poliza.compania_aseguradora }}</p>
+                    </div>
+                    <div>
                         <span class="text-xs text-slate-500 uppercase">Fecha Emisión</span>
                         <p class="font-medium text-slate-800">{{ factura.fecha_emision|date:"d/m/Y" }}</p>
                     </div>
@@ -69,8 +103,10 @@
                         <p class="font-medium text-slate-800">{{ factura.fecha_vencimiento|date:"d/m/Y" }}</p>
                     </div>
                     <div>
-                        <span class="text-xs text-slate-500 uppercase">Compañía</span>
-                        <p class="font-medium text-slate-800">{{ factura.poliza.compania_aseguradora }}</p>
+                        <span class="text-xs text-slate-500 uppercase">Fecha Pago</span>
+                        <p class="font-medium {% if factura.fecha_pago %}text-emerald-600{% else %}text-slate-400{% endif %}">
+                            {{ factura.fecha_pago|date:"d/m/Y"|default:"Pendiente" }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -150,6 +186,10 @@
                         <span class="text-slate-600">IVA</span>
                         <span class="text-slate-700">${{ factura.iva|floatformat:2 }}</span>
                     </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Total Facturado</span>
+                        <span class="font-semibold text-slate-800">${{ factura.monto_total|floatformat:2 }}</span>
+                    </div>
                     {% if factura.retenciones %}
                     <div class="flex justify-between items-center py-2 border-b border-slate-100">
                         <span class="text-slate-600">Retenciones</span>
@@ -158,13 +198,13 @@
                     {% endif %}
                     {% if factura.descuento_pronto_pago %}
                     <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                        <span class="text-slate-600">Dto. Pronto Pago</span>
+                        <span class="text-slate-600">Dto. Pronto Pago (5%)</span>
                         <span class="text-emerald-600">-${{ factura.descuento_pronto_pago|floatformat:2 }}</span>
                     </div>
                     {% endif %}
-                    <div class="flex justify-between items-center py-2 bg-brand-50 -mx-2 px-2 rounded">
-                        <span class="font-semibold text-brand-700">Total</span>
-                        <span class="font-bold text-brand-700">${{ factura.monto_total|floatformat:2 }}</span>
+                    <div class="flex justify-between items-center py-2 bg-emerald-50 -mx-2 px-2 rounded mb-2">
+                        <span class="font-semibold text-emerald-700">Valor a Pagar</span>
+                        <span class="font-bold text-emerald-700">${{ factura.valor_a_pagar|floatformat:2 }}</span>
                     </div>
                     <div class="flex justify-between items-center py-2 bg-slate-50 -mx-2 px-2 rounded">
                         <span class="font-semibold text-slate-700">Saldo Pendiente</span>

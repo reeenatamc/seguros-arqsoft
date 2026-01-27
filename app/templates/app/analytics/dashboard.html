@@ -38,22 +38,22 @@
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div class="metric-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
             <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                    <i class="fas fa-dollar-sign text-emerald-600"></i>
+                <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-dollar-sign text-red-600"></i>
                 </div>
             </div>
             <p class="text-2xl font-bold text-slate-900">${{ summary.total_premiums_ytd|floatformat:0 }}</p>
-            <p class="text-xs text-slate-500">Primas Cobradas (YTD)</p>
+            <p class="text-xs text-slate-500">Primas Pagadas (YTD)</p>
         </div>
         
         <div class="metric-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
             <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-                    <i class="fas fa-hand-holding-dollar text-red-600"></i>
+                <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <i class="fas fa-hand-holding-dollar text-emerald-600"></i>
                 </div>
             </div>
             <p class="text-2xl font-bold text-slate-900">${{ summary.total_claims_ytd|floatformat:0 }}</p>
-            <p class="text-xs text-slate-500">Indemnizaciones (YTD)</p>
+            <p class="text-xs text-slate-500">Indemnizaciones Recibidas (YTD)</p>
         </div>
         
         <div class="metric-card bg-white rounded-2xl p-5 shadow-card border border-slate-200/60">
@@ -102,7 +102,7 @@
         <!-- Tendencia Primas vs Indemnizaciones -->
         <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 p-6">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-lg font-semibold text-slate-900">Tendencia: Primas vs Indemnizaciones</h2>
+                <h2 class="text-lg font-semibold text-slate-900">Primas Pagadas vs Indemnizaciones Recibidas</h2>
                 <select id="trendPeriod" onchange="updateTrendChart()" class="text-sm border border-slate-200 rounded-lg px-3 py-1.5">
                     <option value="6">6 meses</option>
                     <option value="12" selected>12 meses</option>
@@ -114,14 +114,14 @@
             </div>
         </div>
 
-        <!-- Ratio de Siniestralidad por Tipo -->
+        <!-- Ratio de Siniestralidad por Grupo de Ramo -->
         <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 p-6">
-            <h2 class="text-lg font-semibold text-slate-900 mb-6">Ratio de Siniestralidad por Tipo de Póliza</h2>
+            <h2 class="text-lg font-semibold text-slate-900 mb-6">Ratio de Siniestralidad por Grupo de Ramo</h2>
             <div class="space-y-4 max-h-80 overflow-y-auto">
                 {% for item in loss_ratio_data %}
                 <div class="flex items-center gap-4">
-                    <div class="w-32 text-sm font-medium text-slate-700 truncate" title="{{ item.tipo }}">
-                        {{ item.tipo }}
+                    <div class="w-32 text-sm font-medium text-slate-700 truncate" title="{{ item.grupo_ramo }}">
+                        {{ item.grupo_ramo }}
                     </div>
                     <div class="flex-1">
                         <div class="h-6 bg-slate-100 rounded-full overflow-hidden relative">
@@ -185,9 +185,9 @@
             </div>
         </div>
 
-        <!-- Distribución por Tipo de Siniestro -->
+        <!-- Distribución por Ramo -->
         <div class="bg-white rounded-2xl shadow-card border border-slate-200/60 p-6">
-            <h2 class="text-lg font-semibold text-slate-900 mb-6">Distribución por Tipo de Siniestro</h2>
+            <h2 class="text-lg font-semibold text-slate-900 mb-6">Siniestros por Ramo</h2>
             <div class="h-80">
                 <canvas id="claimsDistributionChart"></canvas>
             </div>
@@ -269,10 +269,10 @@ function initTrendChart() {
             labels: trendData.labels,
             datasets: [
                 {
-                    label: 'Primas Cobradas',
+                    label: 'Primas Pagadas',
                     data: trendData.premiums,
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
                     fill: true,
                     tension: 0.4,
                     borderWidth: 3,
@@ -280,10 +280,10 @@ function initTrendChart() {
                     pointHoverRadius: 6,
                 },
                 {
-                    label: 'Indemnizaciones',
+                    label: 'Indemnizaciones Recibidas',
                     data: trendData.claims,
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     fill: true,
                     tension: 0.4,
                     borderWidth: 3,

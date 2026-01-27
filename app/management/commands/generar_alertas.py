@@ -160,7 +160,7 @@ class Command(BaseCommand):
 
         usuarios_admin = User.objects.filter(is_staff=True, is_active=True)
 
-        # Alertas por documentación pendiente (más de 30 días)
+        # Alertas por documentación pendiente (más de 15 días)
 
         siniestros_doc_pendiente = Siniestro.objects.filter(estado="documentacion_pendiente")
 
@@ -196,7 +196,7 @@ class Command(BaseCommand):
         # Alertas por falta de respuesta de aseguradora (más de 8 días)
 
         siniestros_sin_respuesta = Siniestro.objects.filter(
-            estado="enviado_aseguradora",
+            estado__in=["enviado_aseguradora", "notificado_broker"],
             fecha_envio_aseguradora__isnull=False,
             fecha_respuesta_aseguradora__isnull=True,
         )
