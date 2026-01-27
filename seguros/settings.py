@@ -52,13 +52,22 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     # SECURE_SSL_REDIRECT solo en producción real con HTTPS configurado
-    # En testing/CI usamos HTTP, así que no forzamos redirect
-    SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "False").lower() == "true"
-    SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true"
-    CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "False").lower() == "true"
+    SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True").lower() == "true"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
+
+# CSRF Trusted Origins (necesario para Railway y otros hosts)
+csrf_trusted_origins = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+if csrf_trusted_origins:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_trusted_origins.split(",")]
+elif not DEBUG:
+    # Para Railway, el dominio se pasa automáticamente
+    railway_url = os.getenv("RAILWAY_PUBLIC_DOMAIN", "")
+    if railway_url:
+        CSRF_TRUSTED_ORIGINS = [f"https://{railway_url}"]
 
 # ALLOWED_HOSTS can be set in .env as a comma-separated list
 
@@ -112,6 +121,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Servir archivos estáticos en producción
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -209,10 +219,12 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"  # Directory where collectstatic will collect static files for deployment
 
 # Additional locations of static files (if you have static files outside of apps)
+# Solo incluir si el directorio existe
+_static_dir = BASE_DIR / "static"
+STATICFILES_DIRS = [_static_dir] if _static_dir.exists() else []
 
-STATICFILES_DIRS = [
-    BASE_DIR / "static",  # You can create this directory if needed
-]
+# Whitenoise para servir archivos estáticos en producción
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media files (User uploaded files)
 
@@ -316,12 +328,26 @@ LOGOUT_REDIRECT_URL = "/admin/login/"
 
 # ==============================================================================
 
+# Logging configuration - usa solo console en producción (Railway)
+_log_handlers = ["console"]
+
+# En desarrollo local, también escribir a archivo si es posible
+if DEBUG:
+    logs_dir = BASE_DIR / "logs"
+    if not os.path.exists(logs_dir):
+        try:
+            os.makedirs(logs_dir)
+        except OSError:
+            pass
+    if os.path.exists(logs_dir):
+        _log_handlers.append("file")
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "format": "{levelname} {asctime} {module} {message}",
             "style": "{",
         },
         "simple": {
@@ -332,7 +358,7 @@ LOGGING = {
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "simple",
+            "formatter": "verbose" if not DEBUG else "simple",
         },
         "file": {
             "class": "logging.handlers.RotatingFileHandler",
@@ -340,21 +366,23 @@ LOGGING = {
             "maxBytes": 1024 * 1024 * 10,  # 10 MB
             "backupCount": 5,
             "formatter": "verbose",
+        } if DEBUG else {
+            "class": "logging.NullHandler",
         },
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "file"],
+            "handlers": _log_handlers,
             "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
         "app": {
-            "handlers": ["console", "file"],
+            "handlers": _log_handlers,
             "level": "INFO",
             "propagate": False,
         },
         "celery": {
-            "handlers": ["console", "file"],
+            "handlers": _log_handlers,
             "level": "INFO",
             "propagate": False,
         },
@@ -364,14 +392,6 @@ LOGGING = {
         "level": "INFO",
     },
 }
-
-# Create logs directory if it doesn't exist
-
-logs_dir = BASE_DIR / "logs"
-
-if not os.path.exists(logs_dir):
-
-    os.makedirs(logs_dir)
 
 # ===========================================
 
