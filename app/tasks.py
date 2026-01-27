@@ -1,3 +1,51 @@
+"""
+Módulo de Tareas Asíncronas Celery para el Sistema de Gestión de Seguros.
+
+Este módulo define todas las tareas asíncronas y periódicas del sistema,
+utilizando Celery para procesamiento en background y Celery Beat para
+tareas programadas.
+
+Categorías de Tareas:
+    1. **Alertas y Notificaciones**:
+       - generar_alertas_automaticas: Crea alertas para pólizas, facturas y siniestros
+       - enviar_alertas_email: Envía alertas pendientes por correo electrónico
+
+    2. **Actualización de Estados**:
+       - actualizar_estados_polizas: Actualiza estados según fechas de vigencia
+       - actualizar_estados_facturas: Actualiza estados de pago de facturas
+       - actualizar_descuentos_pronto_pago: Recalcula descuentos aplicables
+
+    3. **Reportes**:
+       - generar_reporte_siniestros_mensual: Genera reportes mensuales automáticos
+
+    4. **Mantenimiento**:
+       - limpiar_alertas_antiguas: Elimina alertas con más de X días
+       - backup_automatico: Crea respaldos programados de la base de datos
+       - limpiar_backups_antiguos: Elimina backups obsoletos
+       - verificar_integridad_backups: Verifica que los archivos de backup existen
+
+Configuración de Celery Beat:
+    Las tareas periódicas se configuran en seguros/celery.py y pueden
+    visualizarse en el panel de administración via django-celery-beat.
+
+    Ejemplo de programación::
+
+        CELERY_BEAT_SCHEDULE = {
+            'generar-alertas-diario': {
+                'task': 'app.tasks.generar_alertas_automaticas',
+                'schedule': crontab(hour=8, minute=0),
+            },
+        }
+
+Requisitos:
+    - Redis como message broker
+    - Celery worker corriendo: celery -A seguros worker -l info
+    - Celery beat corriendo: celery -A seguros beat -l info
+
+Autor: Equipo de Desarrollo UTPL
+Versión: 1.0.0
+Última Actualización: Enero 2026
+"""
 import logging
 from datetime import timedelta
 
