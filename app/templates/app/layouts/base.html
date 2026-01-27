@@ -385,10 +385,11 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="h-full bg-slate-50 font-sans antialiased">
-    <div class="flex h-screen overflow-hidden">
-        {% include 'app/partials/sidebar.html' %}
-        
-        <div id="main-content" class="flex-1 flex flex-col overflow-hidden transition-all duration-300">
+    <!-- Sidebar fuera del flex para que no ocupe espacio en móvil -->
+    {% include 'app/partials/sidebar.html' %}
+    
+    <div class="flex h-screen overflow-hidden lg:pl-72" id="app-container">
+        <div id="main-content" class="flex-1 flex flex-col overflow-hidden transition-all duration-300 w-full">
             {% include 'app/partials/header.html' %}
             
             <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gradient-to-br from-slate-50 via-slate-100/50 to-slate-50">
@@ -431,20 +432,26 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('sidebar');
+            const appContainer = document.getElementById('app-container');
             
-            // Apply initial state solo con clases; el layout se maneja con flex
+            // Apply initial state
             if (sidebarCollapsed) {
                 sidebar.classList.remove('sidebar-expanded');
                 sidebar.classList.add('sidebar-collapsed');
+                if (appContainer) {
+                    appContainer.classList.remove('lg:pl-72');
+                    appContainer.classList.add('lg:pl-20');
+                }
             } else {
                 sidebar.classList.remove('sidebar-collapsed');
                 sidebar.classList.add('sidebar-expanded');
             }
         });
         
-        // Sidebar toggle functions
+        // Sidebar toggle functions (desktop)
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
+            const appContainer = document.getElementById('app-container');
             
             sidebarCollapsed = !sidebarCollapsed;
             localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
@@ -452,9 +459,17 @@
             if (sidebarCollapsed) {
                 sidebar.classList.remove('sidebar-expanded');
                 sidebar.classList.add('sidebar-collapsed');
+                if (appContainer) {
+                    appContainer.classList.remove('lg:pl-72');
+                    appContainer.classList.add('lg:pl-20');
+                }
             } else {
                 sidebar.classList.remove('sidebar-collapsed');
                 sidebar.classList.add('sidebar-expanded');
+                if (appContainer) {
+                    appContainer.classList.remove('lg:pl-20');
+                    appContainer.classList.add('lg:pl-72');
+                }
             }
         }
         
@@ -475,9 +490,30 @@
             
             sidebar.classList.add('-translate-x-full');
             sidebar.classList.remove('translate-x-0');
-            overlay.classList.add('opacity-0', 'pointer-events-none');
-            overlay.classList.remove('opacity-100', 'pointer-events-auto');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
             document.body.style.overflow = '';
+        }
+        
+        // Toggle mobile sidebar
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                // Abrir
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                if (overlay) overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                // Cerrar
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+                if (overlay) overlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
         }
         
         // Submenu toggle

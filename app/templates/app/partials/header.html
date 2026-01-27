@@ -1,16 +1,16 @@
 <header class="glass-effect border-b border-slate-200/80 sticky top-0 z-40">
-    <div class="px-6 py-4 flex items-center gap-6">
+    <div class="px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-6">
         <!-- Título (izquierda) -->
-        <div class="flex-shrink-0">
-            <div class="flex items-center gap-4">
-                <button class="lg:hidden text-slate-600 hover:text-brand-600 transition">
-                    <i class="fas fa-bars text-xl"></i>
+        <div class="flex-shrink-0 min-w-0">
+            <div class="flex items-center gap-2 sm:gap-4">
+                <button onclick="toggleMobileSidebar()" class="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 hover:text-brand-600 transition">
+                    <i class="fas fa-bars text-lg"></i>
                 </button>
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800 tracking-tight">
+                <div class="min-w-0">
+                    <h2 class="text-base sm:text-xl font-bold text-slate-800 tracking-tight truncate">
                         {% block page_title %}Dashboard{% endblock %}
                     </h2>
-                    <p class="text-sm text-slate-500 mt-0.5">
+                    <p class="text-xs sm:text-sm text-slate-500 mt-0.5 hidden sm:block">
                         {% block page_subtitle %}Gestión integral de seguros{% endblock %}
                     </p>
                 </div>

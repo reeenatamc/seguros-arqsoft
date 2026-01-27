@@ -1,6 +1,9 @@
 {% load static %}
+<!-- Overlay para móvil -->
+<div id="sidebar-overlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden"></div>
+
 <!-- Sidebar con menú colapsable y animaciones -->
-<aside id="sidebar" class="sidebar-expanded w-72 gradient-brand flex flex-col shadow-2xl relative overflow-visible transition-all duration-300 ease-in-out lg:translate-x-0 -translate-x-full fixed lg:relative h-full z-50">
+<aside id="sidebar" class="sidebar-expanded w-72 gradient-brand flex flex-col shadow-2xl overflow-visible transition-all duration-300 ease-in-out lg:translate-x-0 -translate-x-full fixed left-0 top-0 h-full z-50">
     <!-- Decoración de fondo -->
     <div class="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
         <div class="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2 animate-blob"></div>
