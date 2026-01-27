@@ -9,10 +9,13 @@ import logging
 import re
 from dataclasses import dataclass
 from email.header import decode_header
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from django.conf import settings
 from django.utils import timezone
+
+if TYPE_CHECKING:
+    from app.models import Siniestro
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +69,7 @@ class RecibosIndemnizacionService:
         if self._connection:
             try:
                 self._connection.logout()
-            except:
+            except Exception:
                 pass
             self._connection = None
 
@@ -225,7 +228,7 @@ class RecibosIndemnizacionService:
                 valor_str = match_valor.group(1).replace(",", "").replace(" ", "")
                 try:
                     valor = float(valor_str)
-                except:
+                except (ValueError, TypeError):
                     continue
 
                 # LA SUMA DE - monto final a indemnizar (prioridad máxima)

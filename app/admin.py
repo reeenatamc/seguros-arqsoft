@@ -1744,7 +1744,7 @@ class PaymentApprovalAdmin(ModelAdmin):
 
             approval.approve(request.user, "Aprobado masivamente desde admin")
 
-        self.message_user(request, f"Pagos aprobados correctamente.")
+        self.message_user(request, "Pagos aprobados correctamente.")
 
     @admin.action(description="Rechazar pagos seleccionados")
     def reject_payments(self, request, queryset):
@@ -1753,7 +1753,7 @@ class PaymentApprovalAdmin(ModelAdmin):
 
             approval.reject(request.user, "Rechazado masivamente desde admin")
 
-        self.message_user(request, f"Pagos rechazados correctamente.")
+        self.message_user(request, "Pagos rechazados correctamente.")
 
 
 @admin.register(CalendarEvent)

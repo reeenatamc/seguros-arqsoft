@@ -81,7 +81,7 @@ class BrokerReaderService:
             try:
                 self._connection.close()
                 self._connection.logout()
-            except:
+            except Exception:
                 pass
             finally:
                 self._connection = None
@@ -163,7 +163,7 @@ class BrokerReaderService:
             if date_str:
                 try:
                     date = email.utils.parsedate_to_datetime(date_str)
-                except:
+                except Exception:
                     pass
 
             return RespuestaBroker(

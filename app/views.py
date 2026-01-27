@@ -1,4 +1,7 @@
+import mimetypes
+import os
 from decimal import Decimal
+from itertools import chain
 
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -8,7 +11,7 @@ from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponse, JsonResponse
+from django.http import FileResponse, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -21,6 +24,8 @@ from .forms import (  # Formularios de entidades base
     BienAseguradoForm,
     ChecklistSiniestroConfigForm,
     CompaniaAseguradoraForm,
+    ConfiguracionBulkForm,
+    ConfiguracionSistemaForm,
     CorredorSegurosForm,
     DetallePolizaRamoFormSet,
     DocumentoForm,
@@ -45,11 +50,13 @@ from .models import SubtipoRamo  # Alias de compatibilidad
 from .models import (
     AdjuntoSiniestro,
     Alerta,
+    BackupRegistro,
     BienAsegurado,
     CalendarEvent,
     ChecklistSiniestro,
     ChecklistSiniestroConfig,
     CompaniaAseguradora,
+    ConfiguracionBackup,
     ConfiguracionSistema,
     CorredorSeguros,
     DetallePolizaRamo,
@@ -68,6 +75,7 @@ from .models import (
     Ramo,
     ResponsableCustodio,
     Siniestro,
+    SiniestroEmail,
     SubgrupoRamo,
     TipoPoliza,
     TipoRamo,
@@ -851,13 +859,6 @@ def api_kpis(request):
 # DOCUMENTOS
 # ============================================================================
 
-import mimetypes
-import os
-
-from django.http import FileResponse
-
-from .models import Documento
-
 
 @login_required
 def documentos_lista(request):
@@ -949,10 +950,6 @@ def documento_descargar(request, pk):
 # ============================================================================
 # BÚSQUEDA GLOBAL
 # ============================================================================
-
-from itertools import chain
-
-from django.contrib import messages
 
 
 @login_required
@@ -3456,8 +3453,6 @@ class PagoUpdateView(LoginRequiredMixin, UpdateView):
 # VISTAS DE SINIESTROS POR EMAIL
 # ==========================================================================
 
-from .models import SiniestroEmail
-
 
 @login_required
 def siniestros_email_pendientes(request):
@@ -4353,7 +4348,7 @@ Atentamente,
                     destinatario=dest_info["email"],
                 )
                 email.send()
-        except Exception as e:
+        except Exception:
             # logger.error(f"Error enviando notificaciones de cierre: {e}")
             pass
 
@@ -4361,8 +4356,6 @@ Atentamente,
 # ==============================================================================
 # VISTAS DE CONFIGURACIÓN DEL SISTEMA
 # ==============================================================================
-
-from .forms import ConfiguracionBulkForm, ConfiguracionSistemaForm
 
 
 @login_required
@@ -4500,8 +4493,6 @@ def configuracion_restablecer(request):
 # ==============================================================================
 # VISTAS DE RESPALDO Y RECUPERACIÓN
 # ==============================================================================
-
-from .models import BackupRegistro, ConfiguracionBackup
 
 
 @login_required

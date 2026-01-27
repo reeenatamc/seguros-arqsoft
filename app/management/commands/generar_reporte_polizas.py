@@ -42,7 +42,7 @@ class Command(BaseCommand):
         formato = options["formato"]
         estado = options["estado"]
 
-        self.stdout.write(self.style.SUCCESS(f"Generando reporte de pólizas..."))
+        self.stdout.write(self.style.SUCCESS("Generando reporte de pólizas..."))
 
         # OPTIMIZACIÓN: usar select_related y prefetch_related para evitar N+1
         base_queryset = Poliza.objects.select_related(

@@ -3,7 +3,7 @@ Formularios Custom para el Sistema de Seguros.
 Formularios Django para gestión de pólizas, siniestros, ramos y bienes asegurados.
 """
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django import forms
 from django.core.exceptions import ValidationError
@@ -1831,13 +1831,13 @@ class ConfiguracionSistemaForm(forms.ModelForm):
         if tipo == "decimal":
             try:
                 Decimal(valor)
-            except:
+            except (ValueError, TypeError, InvalidOperation):
                 raise ValidationError("Debe ser un valor decimal válido (ej: 0.035)")
 
         elif tipo == "entero":
             try:
                 int(valor)
-            except:
+            except (ValueError, TypeError):
                 raise ValidationError("Debe ser un número entero válido")
 
         elif tipo == "json":

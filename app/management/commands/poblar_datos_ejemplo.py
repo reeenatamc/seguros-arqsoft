@@ -472,7 +472,7 @@ class Command(BaseCommand):
             {
                 "tipo_alerta": "pago_pendiente",
                 "titulo": "Factura con pago vencido",
-                "mensaje": f"La factura FAC-2026-0002 tiene 15 días de vencida. Monto: $4,500.00",
+                "mensaje": "La factura FAC-2026-0002 tiene 15 días de vencida. Monto: $4,500.00",
                 "factura": facturas[1] if len(facturas) > 1 else None,
                 "estado": "pendiente",
             },
@@ -499,7 +499,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("━" * 50))
         self.stdout.write(self.style.SUCCESS("✅ POBLACIÓN DE DATOS COMPLETADA"))
         self.stdout.write(self.style.SUCCESS("━" * 50))
-        self.stdout.write(f"  👤 Usuario: admin / admin123")
+        self.stdout.write("  👤 Usuario: admin / admin123")
         self.stdout.write(f"  🏢 Compañías: {len(companias)}")
         self.stdout.write(f"  🤝 Corredores: {len(corredores)}")
         self.stdout.write(f"  📋 Pólizas: {len(polizas)}")

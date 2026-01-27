@@ -512,7 +512,7 @@ class EmailReaderService:
                             if isinstance(payload_data, str):
                                 try:
                                     payload_data = base64.b64decode(payload_data)
-                                except:
+                                except Exception:
                                     payload_data = None
 
                         # Verificar si el payload existe y tiene tamaño razonable
@@ -540,7 +540,7 @@ class EmailReaderService:
                                         decoded = base64.b64decode(payload_data)
                                         if any(decoded.startswith(h) for h in valid_headers):
                                             payload_data = decoded
-                                    except:
+                                    except Exception:
                                         pass
 
                             attachments.append(

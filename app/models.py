@@ -3741,10 +3741,6 @@ class SiniestroEmail(models.Model):
         Returns:
             tuple: (siniestro_creado, mensaje)
         """
-        from datetime import datetime
-
-        from django.utils import timezone
-
         # Buscar activo
         activo = self.buscar_activo_por_serie()
         self.activo_encontrado = activo
