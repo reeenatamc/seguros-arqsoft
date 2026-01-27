@@ -895,7 +895,7 @@ class Command(BaseCommand):
             departamento = custodio.departamento or "No especificado"
 
             # Construir asunto personalizado
-            asunto = f"[URGENTE] Documentación Pendiente - Siniestro(s) bajo su custodia"
+            asunto = "[URGENTE] Documentación Pendiente - Siniestro(s) bajo su custodia"
 
             # Construir mensaje HTML siguiendo el estilo de base_notificacion.html
             mensaje_html = f"""<!DOCTYPE html>
@@ -910,12 +910,12 @@ class Command(BaseCommand):
         <tr>
             <td style="padding: 40px 20px;">
                 <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" align="center" style="max-width: 600px; margin: 0 auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border-radius: 20px; overflow: hidden;">
-                    
+
                     <!-- Barra de urgencia -->
                     <tr>
                         <td style="background: linear-gradient(90deg, #ef4444 0%, #dc2626 50%, #ef4444 100%); height: 8px;">&nbsp;</td>
                     </tr>
-                    
+
                     <!-- Header con alerta -->
                     <tr>
                         <td style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%); padding: 40px; text-align: center;">
@@ -930,11 +930,11 @@ class Command(BaseCommand):
                             </h1>
                         </td>
                     </tr>
-                    
+
                     <!-- Contenido -->
                     <tr>
                         <td style="background: #ffffff; padding: 36px 40px;">
-                            
+
                             <!-- Info del Custodio -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
                                 <tr>
@@ -955,13 +955,13 @@ class Command(BaseCommand):
                                     </td>
                                 </tr>
                             </table>
-                            
+
                             <!-- Mensaje -->
                             <p style="font-size: 15px; color: #475569; line-height: 1.7; margin: 0 0 20px 0;">
-                                Tiene <strong style="color: #dc2626; font-size: 18px;">{len(siniestros)}</strong> siniestro(s) 
+                                Tiene <strong style="color: #dc2626; font-size: 18px;">{len(siniestros)}</strong> siniestro(s)
                                 bajo su responsabilidad que requieren documentación para continuar con el proceso de reclamo.
                             </p>
-                            
+
                             <!-- Documentos Requeridos -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 24px 0;">
                                 <tr>
@@ -992,7 +992,7 @@ class Command(BaseCommand):
                                     </td>
                                 </tr>
                             </table>
-                            
+
                             <!-- Título siniestros -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 16px; border-bottom: 2px solid #0070c4; padding-bottom: 10px;">
                                 <tr>
@@ -1003,7 +1003,7 @@ class Command(BaseCommand):
                                     </td>
                                 </tr>
                             </table>
-                            
+
                             <!-- Tabla de siniestros -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
 """
@@ -1031,9 +1031,9 @@ class Command(BaseCommand):
                                 </tr>
 """
 
-            mensaje_html += f"""
+            mensaje_html += """
                             </table>
-                            
+
                             <!-- Nota de acción -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: 24px;">
                                 <tr>
@@ -1047,10 +1047,10 @@ class Command(BaseCommand):
                                     </td>
                                 </tr>
                             </table>
-                            
+
                         </td>
                     </tr>
-                    
+
                     <!-- Footer -->
                     <tr>
                         <td style="background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); padding: 28px 40px;">
@@ -1071,7 +1071,7 @@ class Command(BaseCommand):
                             </table>
                         </td>
                     </tr>
-                    
+
                 </table>
             </td>
         </tr>
@@ -1129,7 +1129,7 @@ Días pend.:   {s.dias_desde_registro} días
 --------------------------------------------------------------------------------
 """
 
-            mensaje_texto += f"""
+            mensaje_texto += """
 ================================================================================
 ¿CÓMO ENVIAR LA DOCUMENTACIÓN?
 ================================================================================
@@ -1137,7 +1137,7 @@ Días pend.:   {s.dias_desde_registro} días
 Responda directamente a este correo adjuntando los documentos, o acérquese
 al Departamento de Seguros de la UTPL.
 
-⚠️  IMPORTANTE: El retraso en la entrega de documentación puede afectar el 
+⚠️  IMPORTANTE: El retraso en la entrega de documentación puede afectar el
 proceso de indemnización.
 
 --------------------------------------------------------------------------------
