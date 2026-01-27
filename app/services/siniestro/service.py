@@ -1,11 +1,63 @@
 """
+Servicio de Dominio para Gestión de Siniestros.
 
-Servicio de Siniestros.
+Este módulo implementa la capa de servicio para la entidad Siniestro, encapsulando
+toda la lógica de negocio relacionada con el ciclo de vida de reclamaciones de seguros.
+Sigue el patrón de Servicio de Dominio para desacoplar la lógica del framework.
 
-Responsabilidad única: Gestión del ciclo de vida de siniestros.
+Responsabilidades del Servicio:
+    1. **Sincronización de Datos**: Copia información del bien asegurado al siniestro
+       para mantener un registro histórico independiente.
 
+    2. **Validaciones de Negocio**:
+       - Verificar existencia de bien asegurado o datos manuales
+       - Validar que la fecha del siniestro no sea futura
+       - Verificar que el siniestro ocurra dentro de la vigencia de la póliza
+
+    3. **Generación de Identificadores**: Crea números de siniestro únicos
+       con formato: {PREFIJO}-{AÑO}-{SECUENCIAL}
+
+    4. **Operaciones CRUD**: Proporciona métodos transaccionales para crear
+       y actualizar siniestros con validaciones integradas.
+
+    5. **Integración con Email**: Permite crear siniestros desde registros
+       de correo electrónico procesados automáticamente.
+
+Estados del Ciclo de Vida:
+    registrado → documentacion_pendiente → enviado_aseguradora →
+    en_evaluacion → aprobado/rechazado → liquidado → cerrado
+
+Patrones de Diseño:
+    - Service Layer: Encapsula lógica de negocio fuera del modelo
+    - Result Pattern: Retorna ResultadoOperacion en lugar de excepciones
+    - Factory Methods: Construcción de resultados (exito/fallo)
+    - Transaction Script: Operaciones atómicas con @transaction.atomic
+
+Ejemplo de Uso:
+    Crear un siniestro::
+
+        from app.services.siniestro import SiniestroService
+        from django.utils import timezone
+
+        resultado = SiniestroService.crear_siniestro(
+            bien_asegurado=bien,
+            tipo_siniestro=tipo,
+            fecha_siniestro=timezone.now(),
+            causa="Daño por cortocircuito",
+            ubicacion="Edificio Central - Piso 3"
+        )
+
+        if resultado.exitoso:
+            siniestro = resultado.objeto
+            print(f"Siniestro registrado: {siniestro.numero_siniestro}")
+        else:
+            for campo, error in resultado.errores.items():
+                print(f"Error en {campo}: {error}")
+
+Autor: Equipo de Desarrollo UTPL
+Versión: 1.0.0
+Última Actualización: Enero 2026
 """
-
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Dict, Optional
