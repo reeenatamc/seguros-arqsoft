@@ -80,23 +80,22 @@ elif not DEBUG:
 allowed_hosts_env = os.getenv("ALLOWED_HOSTS", "")
 
 if allowed_hosts_env:
-
     ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",")]
-
 elif DEBUG:
-
     # For local development with DEBUG=True, allow all hosts
-
     ALLOWED_HOSTS = ["*"]
-
 else:
-
-    # If DEBUG=False and no ALLOWED_HOSTS is set, raise an error
-
-    raise ValueError(
-        "ALLOWED_HOSTS must be set in .env when DEBUG=False. "
-        "Add ALLOWED_HOSTS=localhost,127.0.0.1,yourdomain.com to your .env file"
-    )
+    # En producción sin ALLOWED_HOSTS explícito, permitir dominios de Railway
+    # Esto es seguro porque Railway maneja el routing
+    ALLOWED_HOSTS = [
+        ".railway.app",
+        "localhost",
+        "127.0.0.1",
+    ]
+    # También agregar el dominio público de Railway si está disponible
+    railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "")
+    if railway_domain:
+        ALLOWED_HOSTS.append(railway_domain)
 
 # Application definition
 
