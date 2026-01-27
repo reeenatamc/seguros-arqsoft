@@ -1,3 +1,47 @@
+"""
+Módulo de Configuración de URLs para la Aplicación de Seguros.
+
+Este módulo define todas las rutas (URL patterns) de la aplicación,
+organizadas por funcionalidad para facilitar el mantenimiento y la navegación.
+
+Estructura de Rutas:
+
+    Módulos Principales:
+        - /                     : Dashboard principal
+        - /polizas/             : CRUD de pólizas
+        - /facturas/            : CRUD de facturas
+        - /siniestros/          : CRUD de siniestros
+        - /alertas/             : Sistema de alertas
+        - /documentos/          : Gestión documental
+        - /reportes/            : Reportes y estadísticas
+
+    APIs REST:
+        - /api/stats/           : Estadísticas generales
+        - /api/kpis/            : Indicadores clave
+        - /api/buscar/          : Búsqueda global
+        - /api/dashboard/       : Endpoints del dashboard analítico
+        - /api/analytics/       : Analytics avanzados
+
+    Catálogos:
+        - /ramos/               : Catálogo de ramos de seguros
+        - /bienes/              : Bienes asegurados
+        - /grupos-bienes/       : Grupos de bienes
+
+    Administración:
+        - /configuracion/       : Configuración del sistema
+        - /backups/             : Respaldos y recuperación
+
+Convenciones de Nombrado:
+    - Listas: <modelo>_lista (ej: polizas_lista)
+    - Detalle: <modelo>_detalle (ej: poliza_detalle)
+    - Crear: <modelo>_crear (ej: poliza_crear)
+    - Editar: <modelo>_editar (ej: poliza_editar)
+    - APIs: api_<recurso> (ej: api_stats)
+
+Autor: Equipo de Desarrollo UTPL
+Versión: 1.0.0
+Última Actualización: Enero 2026
+"""
 from django.urls import path
 
 from . import views
