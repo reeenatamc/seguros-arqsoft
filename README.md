@@ -8,7 +8,7 @@
 ![Status](https://img.shields.io/badge/status-production-brightgreen.svg)
 ![Architecture](https://img.shields.io/badge/architecture-microservices-blueviolet.svg)
 
-### 🥇 **¡GANADORES DEL CONCURSO DE SISTEMAS DE ARQUITECTURA!** 🥇
+### 🥇 **¡GANADORES DEL CONCURSO DE SISTEMAS DE SEGUROS DE BIENES PARA LA UNIVERSIDAD TÉCNICA PARTICULAR DE LOJA!** 🥇
 
 *Reconocidos por excelencia en diseño arquitectónico, implementación de mejores prácticas y solución integral de software empresarial.*
 
@@ -18,7 +18,7 @@
 
 ## 🌟 ¿Por Qué Este Proyecto Ganó?
 
-Este sistema fue galardonado en el **Concurso de Sistemas de Arquitectura** por su destacada implementación de:
+Este sistema fue galardonado en el **Concurso de Sistemas de Seguros de Bienes para la Universidad Técnica Particular de Loja** por su destacada implementación de:
 
 - ✨ **Arquitectura Limpia** - Separación clara de responsabilidades con capas bien definidas
 - 🔄 **Procesamiento Asíncrono** - Tareas en segundo plano con Celery y Redis
@@ -608,7 +608,7 @@ python manage.py migrate
 
 ## 🤝 Contribuciones
 
-Este proyecto fue desarrollado como trabajo académico en la **Universidad Técnica Particular de Loja (UTPL)** y reconocido en el **Concurso de Sistemas de Arquitectura**.
+Este proyecto fue desarrollado como trabajo académico en la **Universidad Técnica Particular de Loja (UTPL)** y reconocido en el **Concurso de Sistemas de Seguros de Bienes para la Universidad Técnica Particular de Loja**.
 
 ### Equipo de Desarrollo
 
@@ -644,7 +644,7 @@ Este proyecto es propiedad intelectual de la UTPL y fue desarrollado con fines a
 
 ## 🎉 Reconocimientos
 
-### 🏆 Ganadores del Concurso de Sistemas de Arquitectura
+### 🏆 Ganadores del Concurso de Sistemas de Seguros de Bienes para la Universidad Técnica Particular de Loja
 
 Este proyecto fue reconocido por:
 - **Excelencia en Arquitectura de Software**
@@ -655,7 +655,7 @@ Este proyecto fue reconocido por:
 
 **Agradecimientos especiales:**
 - 🙏 Al equipo docente de la UTPL
-- 🙏 Al jurado del concurso de arquitectura
+- 🙏 Al jurado del Concurso de Sistemas de Seguros de Bienes
 - 🙏 A la comunidad de código abierto
 - 🙏 A todos los que contribuyeron al éxito del proyecto
 
