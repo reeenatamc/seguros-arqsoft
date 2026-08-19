@@ -42,12 +42,12 @@ Example:
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
-
+from typing import Any, Dict, Optional
 
 # =============================================================================
 # TIPOS DE RESULTADO - RESULT PATTERN
 # =============================================================================
+
 
 @dataclass
 class ResultadoValidacion:
@@ -91,7 +91,7 @@ class ResultadoValidacion:
         if self.errores is None:
             self.errores = {}
 
-    def agregar_error(self, campo: str, mensaje: str) -> 'ResultadoValidacion':
+    def agregar_error(self, campo: str, mensaje: str) -> "ResultadoValidacion":
         """
         Agrega un error de validación y marca el resultado como inválido.
 
@@ -112,7 +112,7 @@ class ResultadoValidacion:
         self.es_valido = False
         return self
 
-    def fusionar(self, otro: 'ResultadoValidacion') -> 'ResultadoValidacion':
+    def fusionar(self, otro: "ResultadoValidacion") -> "ResultadoValidacion":
         """
         Fusiona otro resultado de validación con este.
 
@@ -186,7 +186,7 @@ class ResultadoOperacion:
             self.errores = {}
 
     @classmethod
-    def exito(cls, objeto: Any, mensaje: str = "") -> 'ResultadoOperacion':
+    def exito(cls, objeto: Any, mensaje: str = "") -> "ResultadoOperacion":
         """
         Factory method para crear un resultado exitoso.
 
@@ -204,7 +204,7 @@ class ResultadoOperacion:
         return cls(exitoso=True, objeto=objeto, mensaje=mensaje)
 
     @classmethod
-    def fallo(cls, errores: Dict[str, str], mensaje: str = "") -> 'ResultadoOperacion':
+    def fallo(cls, errores: Dict[str, str], mensaje: str = "") -> "ResultadoOperacion":
         """
         Factory method para crear un resultado fallido.
 
@@ -224,7 +224,7 @@ class ResultadoOperacion:
         return cls(exitoso=False, errores=errores, mensaje=mensaje)
 
     @classmethod
-    def desde_validacion(cls, validacion: ResultadoValidacion, mensaje: str = "") -> 'ResultadoOperacion':
+    def desde_validacion(cls, validacion: ResultadoValidacion, mensaje: str = "") -> "ResultadoOperacion":
         """
         Factory method para crear un resultado desde una validación fallida.
 
@@ -243,16 +243,13 @@ class ResultadoOperacion:
             >>> if not validacion.es_valido:
             ...     return ResultadoOperacion.desde_validacion(validacion)
         """
-        return cls(
-            exitoso=False,
-            errores=validacion.errores,
-            mensaje=mensaje or "Error de validación"
-        )
+        return cls(exitoso=False, errores=validacion.errores, mensaje=mensaje or "Error de validación")
 
 
 # =============================================================================
 # CLASE BASE PARA SERVICIOS
 # =============================================================================
+
 
 class BaseService:
     """
@@ -297,4 +294,5 @@ class BaseService:
             >>> dias_alerta = BaseService._get_config('DIAS_ALERTA_POLIZA', 30)
         """
         from app.models import ConfiguracionSistema
+
         return ConfiguracionSistema.get_config(clave, default)

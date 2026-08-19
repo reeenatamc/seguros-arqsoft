@@ -235,7 +235,7 @@ MEDIA_URL = "/media/"  # URL prefix for media files
 
 MEDIA_ROOT = BASE_DIR / "media"  # Directory where uploaded files will be stored
 
-X_FRAME_OPTIONS = 'ALLOWALL'
+X_FRAME_OPTIONS = "ALLOWALL"
 
 # Default primary key field type
 
@@ -363,15 +363,19 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "verbose" if not DEBUG else "simple",
         },
-        "file": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": BASE_DIR / "logs" / "django.log",
-            "maxBytes": 1024 * 1024 * 10,  # 10 MB
-            "backupCount": 5,
-            "formatter": "verbose",
-        } if DEBUG else {
-            "class": "logging.NullHandler",
-        },
+        "file": (
+            {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": BASE_DIR / "logs" / "django.log",
+                "maxBytes": 1024 * 1024 * 10,  # 10 MB
+                "backupCount": 5,
+                "formatter": "verbose",
+            }
+            if DEBUG
+            else {
+                "class": "logging.NullHandler",
+            }
+        ),
     },
     "loggers": {
         "django": {

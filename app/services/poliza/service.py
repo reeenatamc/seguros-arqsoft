@@ -51,6 +51,7 @@ Autor: Equipo de Desarrollo UTPL
 Versión: 1.0.0
 Última Actualización: Enero 2026
 """
+
 from datetime import date
 from typing import Any, Optional
 

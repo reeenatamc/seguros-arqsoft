@@ -1,75 +1,74 @@
-name: CI/CD Pipeline - Sistema de Gestión de Seguros
+name: CI
 
 on:
   push:
-    branches: [ main, master, develop, rama-samuel ]
+    branches: [main]
   pull_request:
-    branches: [ main, master, develop ]
   workflow_dispatch:
 
+# A branch only cares about its newest run. Cancel the ones it superseded
+# instead of paying for them.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# The workflow only reads the repository. Nothing here needs write access.
+permissions:
+  contents: read
+
 env:
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: "3.11"
   DJANGO_SETTINGS_MODULE: seguros.settings
 
+# lint, test and security are independent and run in parallel. A trailing
+# space must never be able to stop the test suite from running.
 jobs:
-  # ============================================
-  # JOB 1: LINT - Verificación de Calidad
-  # ============================================
   lint:
-    name: 🔍 Lint - Calidad de Código
+    name: Lint
     runs-on: ubuntu-latest
-    
     steps:
-    - name: 📥 Checkout código
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-    - name: 🐍 Configurar Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
 
-    - name: 📦 Instalar dependencias
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+      - name: Install linters
+        run: pip install black==24.1.1 isort==5.13.2 flake8==7.0.0
 
-    - name: 🔍 Ejecutar flake8
-      run: |
-        echo "🔍 Analizando código con flake8..."
-        flake8 . --count --statistics --show-source
+      - name: Byte-compile every module
+        run: |
+          # Catches syntax errors the linter is configured to skip.
+          # app/management/commands/poblar_datos_prueba.py is excluded here and
+          # in .flake8 because its indentation is corrupted and it has never
+          # compiled. Fix or delete it, then drop this exclusion.
+          find app seguros -name '*.py' \
+            ! -path '*/migrations/*' \
+            ! -name 'poblar_datos_prueba.py' \
+            -print0 | xargs -0 python -m py_compile
 
-    - name: ⚫ Verificar formato con black
-      run: |
-        echo "⚫ Verificando formato de código..."
-        black --check --diff . --exclude="app/management/commands/poblar_datos_prueba.py"
+      - name: black
+        run: black --check --diff .
 
-    - name: 📋 Verificar orden de imports con isort
-      run: |
-        echo "📋 Verificando orden de imports..."
-        isort --check-only --diff .
+      - name: isort
+        run: isort --check-only --diff .
 
-    - name: ✅ Lint completado
-      run: echo "✅ Todas las verificaciones de lint pasaron correctamente"
+      - name: flake8
+        run: flake8 . --count --statistics
 
-  # ============================================
-  # JOB 2: TEST - Pruebas y Cobertura
-  # ============================================
   test:
-    name: 🧪 Test - Pruebas Unitarias
+    name: Test
     runs-on: ubuntu-latest
-    needs: lint
-    
+
     services:
       postgres:
-        image: postgres:14
+        image: postgres:16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: test_seguros
-        ports:
-          - 5432:5432
+        ports: ["5432:5432"]
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -78,267 +77,72 @@ jobs:
 
       redis:
         image: redis:7
-        ports:
-          - 6379:6379
+        ports: ["6379:6379"]
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_seguros
+      CELERY_BROKER_URL: redis://localhost:6379/0
+      SECRET_KEY: ci-only-not-a-real-secret-000000000000000000000000000000000000
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+
     steps:
-    - name: 📥 Checkout código
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-    - name: 🐍 Configurar Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
 
-    - name: 📦 Instalar dependencias del sistema
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libmagic1 libpq-dev
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest==8.0.0 pytest-django==4.7.0 pytest-cov==4.1.0
 
-    - name: 📦 Instalar dependencias de Python
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run --no-input
 
-    - name: ⚙️ Configurar variables de entorno
-      run: |
-        echo "SECRET_KEY=test-very-long-secret-key-with-many-unique-characters-1234567890-abcdefghijklmnopqrstuvwxyz" >> $GITHUB_ENV
-        echo "DEBUG=False" >> $GITHUB_ENV
-        echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> $GITHUB_ENV
-        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_seguros" >> $GITHUB_ENV
-        echo "CELERY_BROKER_URL=redis://localhost:6379/0" >> $GITHUB_ENV
+      - name: Migrate
+        run: python manage.py migrate --no-input
 
-    - name: 🔍 Verificar migraciones pendientes
-      run: |
-        echo "🔍 Verificando que no haya migraciones sin crear..."
-        python manage.py makemigrations --check --dry-run --no-input
+      - name: Deployment checklist
+        run: python manage.py check --deploy
 
-    - name: 🗄️ Ejecutar migraciones
-      run: |
-        echo "🗄️ Aplicando migraciones..."
-        python manage.py migrate --no-input
+      - name: Collect static files
+        run: python manage.py collectstatic --no-input
 
-    - name: ✅ Verificar configuración de deploy
-      run: |
-        echo "✅ Verificando configuración para producción..."
-        python manage.py check --deploy
+      - name: Run tests
+        run: pytest --cov=app --cov=seguros --cov-report=term-missing --cov-report=xml
 
-    - name: 📁 Recolectar archivos estáticos
-      run: |
-        echo "📁 Recolectando archivos estáticos..."
-        python manage.py collectstatic --no-input --clear
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+          retention-days: 7
 
-    - name: 🧪 Ejecutar tests con pytest
-      run: |
-        echo "🧪 Ejecutando tests..."
-        pytest app/tests.py --verbose --tb=short --cov=app --cov=seguros --cov-report=term-missing --cov-report=xml --cov-report=html
-
-    - name: 📊 Subir reporte de cobertura
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: |
-          htmlcov/
-          coverage.xml
-        retention-days: 7
-
-    - name: 📈 Comentar cobertura en PR
-      if: github.event_name == 'pull_request'
-      run: |
-        COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); print(root.attrib['line-rate'])")
-        COVERAGE_PERCENT=$(python -c "print(f'{float($COVERAGE) * 100:.2f}%')")
-        echo "📈 Cobertura de código: $COVERAGE_PERCENT"
-
-    - name: ✅ Tests completados
-      run: echo "✅ Todos los tests pasaron correctamente"
-
-  # ============================================
-  # JOB 3: SECURITY - Análisis de Seguridad
-  # ============================================
   security:
-    name: 🔒 Security - Análisis de Seguridad
+    name: Security
     runs-on: ubuntu-latest
-    needs: lint
-    
     steps:
-    - name: 📥 Checkout código
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-    - name: 🐍 Configurar Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
 
-    - name: 📦 Instalar dependencias
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+      - name: Install scanners
+        run: pip install bandit==1.7.6 pip-audit
 
-    - name: 🛡️ Verificar vulnerabilidades con safety
-      run: |
-        echo "🛡️ Verificando vulnerabilidades en dependencias..."
-        safety check --file requirements.txt --output text || true
+      - name: bandit
+        run: bandit -r app seguros -x '*/migrations/*,*/tests.py' -ll
 
-    - name: 🔐 Análisis de seguridad con bandit
-      run: |
-        echo "🔐 Analizando código en busca de problemas de seguridad..."
-        bandit -r app/ seguros/ -ll -f json -o bandit-report.json || true
-        bandit -r app/ seguros/ -ll
-
-    - name: 📊 Subir reporte de seguridad
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: security-reports
-        path: bandit-report.json
-        retention-days: 7
-
-    - name: ✅ Security scan completado
-      run: echo "✅ Análisis de seguridad completado"
-
-  # ============================================
-  # JOB 4: BUILD - Verificación de Build
-  # ============================================
-  build:
-    name: 🏗️ Build - Verificación de Construcción
-    runs-on: ubuntu-latest
-    needs: [test, security]
-    
-    steps:
-    - name: 📥 Checkout código
-      uses: actions/checkout@v4
-
-    - name: 🐍 Configurar Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
-
-    - name: 📦 Instalar dependencias del sistema
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libmagic1
-
-    - name: 📦 Instalar dependencias de Python
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: ⚙️ Configurar variables de entorno
-      run: |
-        echo "SECRET_KEY=test-very-long-secret-key-with-many-unique-characters-1234567890-abcdefghijklmnopqrstuvwxyz" >> $GITHUB_ENV
-        echo "DEBUG=False" >> $GITHUB_ENV
-        echo "ALLOWED_HOSTS=*" >> $GITHUB_ENV
-
-    - name: 🔍 Verificar migraciones
-      run: |
-        echo "🔍 Verificando migraciones..."
-        python manage.py makemigrations --check --dry-run --no-input
-
-    - name: ✅ Verificar configuración
-      run: |
-        echo "✅ Verificando configuración de producción..."
-        python manage.py check --deploy
-
-    - name: 📁 Recolectar archivos estáticos
-      run: |
-        echo "📁 Recolectando archivos estáticos..."
-        python manage.py collectstatic --no-input --clear
-
-    - name: 📦 Crear artefacto de build
-      run: |
-        echo "📦 Build completado exitosamente"
-        echo "Versión: $(python --version)"
-        echo "Django: $(python -c 'import django; print(django.get_version())')"
-
-    - name: ✅ Build completado
-      run: echo "✅ Build verificado correctamente"
-
-  # ============================================
-  # JOB 5: DEPLOY - Despliegue Manual
-  # ============================================
-  deploy:
-    name: 🚀 Deploy - Despliegue a Producción
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    environment:
-      name: production
-      url: https://tu-dominio.com
-    
-    steps:
-    - name: 📥 Checkout código
-      uses: actions/checkout@v4
-
-    - name: ⏸️ Deploy manual requerido
-      run: |
-        echo "🚀 DEPLOY A PRODUCCIÓN"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "⚠️  Este job requiere aprobación manual"
-        echo "📝 Para configurar el deploy automático:"
-        echo "   1. Configura los secrets en GitHub:"
-        echo "      - HOST: Dirección del servidor"
-        echo "      - USERNAME: Usuario SSH"
-        echo "      - SSH_KEY: Clave privada SSH"
-        echo "   2. Descomenta el código de deploy a continuación"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-    # Descomenta y configura según tu entorno de producción
-    # - name: 🔐 Setup SSH
-    #   uses: webfactory/ssh-agent@v0.8.0
-    #   with:
-    #     ssh-private-key: ${{ secrets.SSH_KEY }}
-    
-    # - name: 🚀 Deploy to Production
-    #   run: |
-    #     ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'ENDSSH'
-    #       cd /path/to/your/app
-    #       git pull origin main
-    #       source venv/bin/activate
-    #       pip install -r requirements.txt
-    #       python manage.py migrate --no-input
-    #       python manage.py collectstatic --no-input
-    #       sudo systemctl restart gunicorn
-    #       sudo systemctl restart nginx
-    #     ENDSSH
-
-    - name: ✅ Deploy process completed
-      run: echo "✅ Proceso de deploy completado (configuración requerida)"
-
-  # ============================================
-  # SUMMARY - Resumen del Pipeline
-  # ============================================
-  summary:
-    name: 📋 Resumen del Pipeline
-    runs-on: ubuntu-latest
-    needs: [lint, test, security, build]
-    if: always()
-    
-    steps:
-    - name: 📊 Generar resumen
-      run: |
-        echo "## 📋 Resumen del Pipeline CI/CD" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### ✅ Jobs Completados" >> $GITHUB_STEP_SUMMARY
-        echo "- 🔍 **Lint**: Verificación de calidad de código" >> $GITHUB_STEP_SUMMARY
-        echo "- 🧪 **Test**: Pruebas unitarias y cobertura" >> $GITHUB_STEP_SUMMARY
-        echo "- 🔒 **Security**: Análisis de seguridad" >> $GITHUB_STEP_SUMMARY
-        echo "- 🏗️ **Build**: Verificación de construcción" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📈 Métricas" >> $GITHUB_STEP_SUMMARY
-        echo "- **Rama**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Autor**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "---" >> $GITHUB_STEP_SUMMARY
-        echo "Universidad Técnica Particular de Loja" >> $GITHUB_STEP_SUMMARY
-        echo "Sistema de Gestión de Seguros - CI/CD Pipeline" >> $GITHUB_STEP_SUMMARY
+      - name: Audit dependencies for known CVEs
+        run: pip-audit -r requirements.txt

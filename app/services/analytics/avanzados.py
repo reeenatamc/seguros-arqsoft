@@ -23,7 +23,18 @@ from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, W
 from django.db.models.functions import Coalesce, Extract, TruncMonth, TruncYear
 from django.utils import timezone
 
-from app.models import CompaniaAseguradora, Factura, GrupoRamo, Pago, PolicyRenewal, Poliza, Siniestro, SubgrupoRamo, TipoPoliza, TipoSiniestro
+from app.models import (
+    CompaniaAseguradora,
+    Factura,
+    GrupoRamo,
+    Pago,
+    PolicyRenewal,
+    Poliza,
+    Siniestro,
+    SubgrupoRamo,
+    TipoPoliza,
+    TipoSiniestro,
+)
 
 
 class AdvancedAnalyticsService:
@@ -33,64 +44,60 @@ class AdvancedAnalyticsService:
     def get_loss_ratio_by_policy_type(cls):
         """
         Calcula el ratio de siniestralidad por grupo de ramo.
-        
+
         Ratio = (Monto Indemnizado / Primas Pagadas) * 100
-        
+
         Un ratio > 100% indica pérdida (pagaste más de lo que recibiste).
         Un ratio < 100% indica que pagaste más en primas de lo que recuperaste.
         Desde la perspectiva del cliente: ratio alto = bueno (recuperas más).
         """
         results = []
-        
+
         grupos_ramo = GrupoRamo.objects.filter(activo=True)
-        
+
         for grupo in grupos_ramo:
             # Obtener pólizas de este grupo de ramo
             polizas = Poliza.objects.filter(grupo_ramo=grupo)
             poliza_ids = polizas.values_list("id", flat=True)
-            
+
             # Calcular primas pagadas (pagos aprobados de facturas de estas pólizas)
-            primas_pagadas = Pago.objects.filter(
-                factura__poliza__in=poliza_ids, 
-                estado="aprobado"
-            ).aggregate(
+            primas_pagadas = Pago.objects.filter(factura__poliza__in=poliza_ids, estado="aprobado").aggregate(
                 total=Coalesce(Sum("monto"), Value(Decimal("0")))
             )["total"]
-            
+
             # Calcular montos indemnizados (siniestros liquidados de estas pólizas)
             montos_indemnizados = Siniestro.objects.filter(
-                poliza__in=poliza_ids, 
-                estado__in=["liquidado", "cerrado"]
-            ).aggregate(
-                total=Coalesce(Sum("monto_indemnizado"), Value(Decimal("0")))
-            )["total"]
-            
+                poliza__in=poliza_ids, estado__in=["liquidado", "cerrado"]
+            ).aggregate(total=Coalesce(Sum("monto_indemnizado"), Value(Decimal("0"))))["total"]
+
             # Calcular ratio
             if primas_pagadas > 0:
                 ratio = (float(montos_indemnizados) / float(primas_pagadas)) * 100
             else:
                 ratio = 0
-            
+
             # Conteos adicionales
             num_polizas = polizas.count()
             num_siniestros = Siniestro.objects.filter(poliza__in=poliza_ids).count()
-            
-            results.append({
-                "grupo_ramo": grupo.nombre,
-                "grupo_ramo_id": grupo.id,
-                "primas_pagadas": float(primas_pagadas),
-                "montos_indemnizados": float(montos_indemnizados),
-                "ratio": round(ratio, 2),
-                "num_polizas": num_polizas,
-                "num_siniestros": num_siniestros,
-                "siniestros_por_poliza": round(num_siniestros / max(num_polizas, 1), 2),
-                # Desde perspectiva del cliente: ratio alto = bueno (recuperas más)
-                "status": "success" if ratio > 70 else ("warning" if ratio > 30 else "danger"),
-            })
-        
+
+            results.append(
+                {
+                    "grupo_ramo": grupo.nombre,
+                    "grupo_ramo_id": grupo.id,
+                    "primas_pagadas": float(primas_pagadas),
+                    "montos_indemnizados": float(montos_indemnizados),
+                    "ratio": round(ratio, 2),
+                    "num_polizas": num_polizas,
+                    "num_siniestros": num_siniestros,
+                    "siniestros_por_poliza": round(num_siniestros / max(num_polizas, 1), 2),
+                    # Desde perspectiva del cliente: ratio alto = bueno (recuperas más)
+                    "status": "success" if ratio > 70 else ("warning" if ratio > 30 else "danger"),
+                }
+            )
+
         # Ordenar por ratio descendente
         results.sort(key=lambda x: x["ratio"], reverse=True)
-        
+
         return results
 
     @classmethod
