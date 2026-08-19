@@ -14,7 +14,7 @@ failure in this business.
 watches two clocks independently: paperwork pending for more than thirty days,
 and an insurer that has not responded in eight.
 
-**Billing.** The Ecuadorian arithmetic is encoded rather than done by hand —
+**Billing.** The Ecuadorian arithmetic is encoded rather than done by hand:
 Superintendencia contribution at 3.5%, Seguro Campesino at 0.5%, and the 5%
 early-payment discount inside twenty days. Invoice states and balances follow
 from it.
@@ -40,7 +40,7 @@ the usual `migrate` and `runserver` plus a worker.
 
 ## Credits
 
-Built by a team of three. I wrote the application layer — models, views, forms,
-services and business rules — and led the project; a teammate built the Docker
+Built by a team of three. I wrote the application layer (models, views, forms,
+services and business rules) and led the project; a teammate built the Docker
 setup and the CI pipeline. It won the insurance systems contest at Universidad
 Técnica Particular de Loja.
