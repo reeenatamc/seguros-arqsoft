@@ -55,7 +55,7 @@ def main():
     # 2. LINT: black
     results.append(
         run_command(
-            [sys.executable, "-m", "black", "--check", ".", "--exclude=app/management/commands/poblar_datos_prueba.py"],
+            [sys.executable, "-m", "black", "--check", "."],
             description="2/6: Black - Verificación de formato",
         )
     )

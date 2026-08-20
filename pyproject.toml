@@ -24,7 +24,6 @@ extend-exclude = '''
   | staticfiles
   | media
 )/
-| app/management/commands/poblar_datos_prueba\.py
 '''
 
 [tool.isort]
