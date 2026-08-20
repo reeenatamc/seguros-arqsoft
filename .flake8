@@ -31,7 +31,6 @@ exclude =
     .mypy_cache,
     .pytest_cache,
     node_modules,
-    validate-pipeline-complete.py
 
 # Códigos de error a ignorar
 ignore =
