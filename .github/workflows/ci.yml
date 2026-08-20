@@ -40,12 +40,8 @@ jobs:
       - name: Byte-compile every module
         run: |
           # Catches syntax errors the linter is configured to skip.
-          # app/management/commands/poblar_datos_prueba.py is excluded here and
-          # in .flake8 because its indentation is corrupted and it has never
-          # compiled. Fix or delete it, then drop this exclusion.
           find app seguros -name '*.py' \
             ! -path '*/migrations/*' \
-            ! -name 'poblar_datos_prueba.py' \
             -print0 | xargs -0 python -m py_compile
 
       - name: black
