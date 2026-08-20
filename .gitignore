@@ -49,6 +49,7 @@ db.sqlite3-journal
 # Environment Variables
 # ============================================
 .env
+.env.docker
 .env.local
 .env.production
 .env.staging
