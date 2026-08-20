@@ -123,7 +123,7 @@ docker compose exec web python manage.py createsuperuser
 docker compose exec web python manage.py shell
 
 # Poblar datos de prueba
-docker compose exec web python poblar_ejemplo.py
+docker compose exec web python manage.py poblar_datos_ejemplo
 ```
 
 ### **Gestión de Base de Datos:**
