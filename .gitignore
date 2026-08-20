@@ -45,10 +45,6 @@ db.sqlite3-journal
 /staticfiles
 /static
 
-# Migraciones (excepto __init__.py)
-*/migrations/*.py
-!*/migrations/__init__.py
-
 # ============================================
 # Environment Variables
 # ============================================
