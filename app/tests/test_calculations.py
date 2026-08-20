@@ -472,6 +472,71 @@ class DeducibleTests(SimpleTestCase):
         self.assertEqual(deducible, Decimal("500"))
 
 
+class DeducibleDelModeloTests(SimpleTestCase):
+    """The deductible calculation that production actually runs.
+
+    Poliza.calcular_deducible_aplicable is a second copy of the service method above,
+    and it is the one every caller reaches: deducible_calculado goes through the model,
+    and nothing in the codebase calls PolizaCalculationService.calcular_deducible_aplicable
+    at all. Testing only the service would have left the live path uncovered.
+
+    The model is built in memory and never saved, so these stay database-free.
+    """
+
+    def _poliza(self, **kwargs):
+        from app.models import Poliza
+
+        return Poliza(**kwargs)
+
+    def test_with_no_percentage_the_fixed_amount_is_the_deductible(self):
+        poliza = self._poliza(deducible=Decimal("500"), porcentaje_deducible=Decimal("0"))
+
+        self.assertEqual(poliza.calcular_deducible_aplicable(Decimal("10000")), Decimal("500"))
+
+    def test_a_percentage_is_taken_against_the_claim(self):
+        poliza = self._poliza(deducible=Decimal("0"), porcentaje_deducible=Decimal("10"))
+
+        self.assertEqual(poliza.calcular_deducible_aplicable(Decimal("10000")), Decimal("1000"))
+
+    def test_when_both_apply_the_larger_one_wins(self):
+        poliza = self._poliza(deducible=Decimal("2000"), porcentaje_deducible=Decimal("10"))
+
+        self.assertEqual(poliza.calcular_deducible_aplicable(Decimal("10000")), Decimal("2000"))
+
+    def test_the_minimum_lifts_a_percentage_that_falls_under_it(self):
+        poliza = self._poliza(
+            deducible=Decimal("0"), porcentaje_deducible=Decimal("10"), deducible_minimo=Decimal("500")
+        )
+
+        self.assertEqual(poliza.calcular_deducible_aplicable(Decimal("1000")), Decimal("500"))
+
+    def test_unset_deductible_fields_are_treated_as_zero_rather_than_crashing(self):
+        # The fields are nullable, and the method coerces None with `or Decimal("0.00")`.
+        poliza = self._poliza(deducible=None, porcentaje_deducible=None, deducible_minimo=None)
+
+        self.assertEqual(poliza.calcular_deducible_aplicable(Decimal("10000")), Decimal("0.00"))
+
+    def test_it_agrees_with_the_service_copy_it_duplicates(self):
+        # While two implementations of this exist, they have to give the same answer.
+        # If this ever fails, one of them was edited and the other was not.
+        casos = [
+            (Decimal("10000"), Decimal("500"), Decimal("0"), Decimal("0")),
+            (Decimal("10000"), Decimal("0"), Decimal("10"), Decimal("0")),
+            (Decimal("10000"), Decimal("500"), Decimal("10"), Decimal("0")),
+            (Decimal("1000"), Decimal("0"), Decimal("10"), Decimal("500")),
+            (Decimal("87431.19"), Decimal("250.75"), Decimal("2.5"), Decimal("100")),
+        ]
+
+        for monto, fijo, pct, minimo in casos:
+            with self.subTest(monto=monto, fijo=fijo, pct=pct, minimo=minimo):
+                poliza = self._poliza(deducible=fijo, porcentaje_deducible=pct, deducible_minimo=minimo)
+
+                self.assertEqual(
+                    poliza.calcular_deducible_aplicable(monto),
+                    PolizaCalculationService.calcular_deducible_aplicable(monto, fijo, pct, minimo),
+                )
+
+
 class IndemnizacionTests(SimpleTestCase):
     """What is actually paid out."""
 
