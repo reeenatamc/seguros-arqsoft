@@ -50,14 +50,16 @@ select = ["E", "F", "W", "B", "UP", "SIM", "S", "BLE", "DJ"]
 ignore = [
     "E501",   # line length is black's job
     "UP042",  # str+Enum -> StrEnum changes str() output
-    # Held back until the review in #13; each one needs a decision, not a mechanical fix.
-    "B007", "S311", "BLE001", "DJ012",
-    "SIM102", "SIM105", "SIM108", "SIM115",
+    "BLE001",  # broad except is deliberate in Celery tasks, IMAP readers and views: log and carry on
+    "DJ012",   # member ordering in models.py, reordering 4000 lines is churn
+    "SIM102", "SIM105", "SIM108",  # style only
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101", "S105", "S106"]
 "conftest.py" = ["S101"]
+# Seed commands generate demo data, not secrets
+"app/management/commands/poblar_*.py" = ["S311"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "seguros.settings"
