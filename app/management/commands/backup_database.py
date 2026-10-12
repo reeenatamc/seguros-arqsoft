@@ -159,11 +159,9 @@ class Command(BaseCommand):
 
         compressed_path = Path(str(file_path) + ".gz")
 
-        with open(file_path, "rb") as f_in:
+        with open(file_path, "rb") as f_in, gzip.open(compressed_path, "wb") as f_out:
 
-            with gzip.open(compressed_path, "wb") as f_out:
-
-                shutil.copyfileobj(f_in, f_out)
+            shutil.copyfileobj(f_in, f_out)
 
         # Eliminar archivo original
 

@@ -35,7 +35,7 @@ jobs:
           cache: pip
 
       - name: Install linters
-        run: pip install black==24.1.1 isort==5.13.2 flake8==7.0.0
+        run: pip install black==24.1.1 isort==5.13.2 ruff==0.17.0
 
       - name: Byte-compile every module
         run: |
@@ -50,8 +50,8 @@ jobs:
       - name: isort
         run: isort --check-only --diff .
 
-      - name: flake8
-        run: flake8 . --count --statistics
+      - name: ruff
+        run: ruff check --output-format github .
 
   test:
     name: Test

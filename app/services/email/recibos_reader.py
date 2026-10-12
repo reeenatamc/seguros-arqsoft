@@ -27,16 +27,16 @@ class ReciboIndemnizacion:
     email_id: bytes
     from_address: str
     subject: str
-    date: Optional[str]
-    numero_reclamo: Optional[str] = None
-    numero_serie: Optional[str] = None
-    codigo_activo: Optional[str] = None
-    valor_indemnizacion: Optional[float] = None  # LA SUMA DE (monto neto final)
-    perdida_bruta: Optional[float] = None  # Valor Pérdida Bruta
-    deducible: Optional[float] = None  # Deducible aplicado
-    depreciacion: Optional[float] = None  # Depreciación aplicada
-    pdf_content: Optional[bytes] = None
-    pdf_filename: Optional[str] = None
+    date: str | None
+    numero_reclamo: str | None = None
+    numero_serie: str | None = None
+    codigo_activo: str | None = None
+    valor_indemnizacion: float | None = None  # LA SUMA DE (monto neto final)
+    perdida_bruta: float | None = None  # Valor Pérdida Bruta
+    deducible: float | None = None  # Deducible aplicado
+    depreciacion: float | None = None  # Depreciación aplicada
+    pdf_content: bytes | None = None
+    pdf_filename: str | None = None
 
 
 class RecibosIndemnizacionService:
@@ -47,7 +47,7 @@ class RecibosIndemnizacionService:
     ASUNTO_RECIBO = "RECIBO DE INDEMNIZACIÓN"
 
     def __init__(self):
-        self._connection: Optional[imaplib.IMAP4_SSL] = None
+        self._connection: imaplib.IMAP4_SSL | None = None
         self._host = getattr(settings, "EMAIL_IMAP_HOST", "imap.gmail.com")
         self._port = getattr(settings, "EMAIL_IMAP_PORT", 993)
         self._user = getattr(settings, "EMAIL_HOST_USER", "")
@@ -73,7 +73,7 @@ class RecibosIndemnizacionService:
                 pass
             self._connection = None
 
-    def buscar_emails_recibos(self) -> List[bytes]:
+    def buscar_emails_recibos(self) -> list[bytes]:
         """Busca emails no leídos con asunto de recibo de indemnización."""
         if not self._connection:
             return []
@@ -98,7 +98,7 @@ class RecibosIndemnizacionService:
             logger.error(f"Error buscando emails de recibos: {e}")
             return []
 
-    def procesar_email(self, email_id: bytes) -> Optional[ReciboIndemnizacion]:
+    def procesar_email(self, email_id: bytes) -> ReciboIndemnizacion | None:
         """Procesa un email y extrae los datos del recibo."""
         if not self._connection:
             return None
@@ -162,7 +162,7 @@ class RecibosIndemnizacionService:
             logger.error(f"Error procesando email {email_id}: {e}")
             return None
 
-    def _parsear_pdf(self, pdf_content: bytes) -> Dict[str, Any]:
+    def _parsear_pdf(self, pdf_content: bytes) -> dict[str, Any]:
         """
         Extrae datos del PDF del recibo de indemnización.
         Busca: número de reclamo, serie, código activo, valor.
@@ -312,7 +312,7 @@ class RecibosIndemnizacionService:
                 logger.error(f"Error marcando email como leído: {e}")
 
 
-def procesar_recibos_indemnizacion() -> Dict[str, Any]:
+def procesar_recibos_indemnizacion() -> dict[str, Any]:
     """
     Función principal para procesar recibos de indemnización.
     Busca emails, parsea PDFs y actualiza siniestros.

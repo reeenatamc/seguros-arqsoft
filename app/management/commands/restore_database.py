@@ -249,11 +249,9 @@ class Command(BaseCommand):
 
         decompressed_path = Path(str(file_path).replace(".gz", ""))
 
-        with gzip.open(file_path, "rb") as f_in:
+        with gzip.open(file_path, "rb") as f_in, open(decompressed_path, "wb") as f_out:
 
-            with open(decompressed_path, "wb") as f_out:
-
-                shutil.copyfileobj(f_in, f_out)
+            shutil.copyfileobj(f_in, f_out)
 
         return decompressed_path
 
@@ -276,7 +274,7 @@ class Command(BaseCommand):
 
         # Intentar detectar por contenido
 
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
 
             first_char = f.read(1)
 

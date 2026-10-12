@@ -32,7 +32,7 @@ class RespuestaBroker:
     email_id: str
     subject: str
     from_address: str
-    date: Optional[datetime]
+    date: datetime | None
     numero_siniestro: str
 
 
@@ -53,7 +53,7 @@ class BrokerReaderService:
         self.port = getattr(settings, "IMAP_PORT", 993)
         self.user = getattr(settings, "IMAP_EMAIL", "")
         self.password = getattr(settings, "IMAP_PASSWORD", "")
-        self._connection: Optional[imaplib.IMAP4_SSL] = None
+        self._connection: imaplib.IMAP4_SSL | None = None
 
     def esta_configurado(self) -> bool:
         """Verifica si el servicio está correctamente configurado."""
@@ -106,14 +106,14 @@ class BrokerReaderService:
                 result.append(part)
         return "".join(result)
 
-    def _extraer_numero_siniestro(self, subject: str) -> Optional[str]:
+    def _extraer_numero_siniestro(self, subject: str) -> str | None:
         """Extrae el número de siniestro del asunto."""
         match = re.search(self.PATRON_SINIESTRO, subject.upper())
         if match:
             return match.group()
         return None
 
-    def buscar_emails_respuestas(self) -> List[bytes]:
+    def buscar_emails_respuestas(self) -> list[bytes]:
         """Busca emails no leídos con asunto de respuesta del broker."""
         if not self._connection:
             return []
@@ -130,7 +130,7 @@ class BrokerReaderService:
             logger.error(f"Error buscando emails: {e}")
             return []
 
-    def procesar_email(self, email_id: bytes) -> Optional[RespuestaBroker]:
+    def procesar_email(self, email_id: bytes) -> RespuestaBroker | None:
         """Procesa un email y extrae los datos de la respuesta."""
         if not self._connection:
             return None
@@ -178,7 +178,7 @@ class BrokerReaderService:
             logger.error(f"Error procesando email {email_id}: {e}")
             return None
 
-    def vincular_a_siniestro(self, respuesta: RespuestaBroker) -> Tuple[bool, str, Optional[Any]]:
+    def vincular_a_siniestro(self, respuesta: RespuestaBroker) -> tuple[bool, str, Any | None]:
         """
         Vincula la respuesta del broker al siniestro correspondiente.
         Cambia el estado de 'notificado_broker' a 'documentacion_lista'.
@@ -213,7 +213,7 @@ class BrokerReaderService:
             except Exception as e:
                 logger.warning(f"Error marcando email como leído: {e}")
 
-    def procesar_respuestas(self, marcar_leidos: bool = True) -> Dict[str, Any]:
+    def procesar_respuestas(self, marcar_leidos: bool = True) -> dict[str, Any]:
         """
         Procesa todas las respuestas del broker pendientes.
         """
@@ -258,7 +258,7 @@ class BrokerReaderService:
         return resultados
 
 
-def procesar_respuestas_broker() -> Dict[str, Any]:
+def procesar_respuestas_broker() -> dict[str, Any]:
     """
     Función de conveniencia para procesar respuestas del broker.
     Usada por el task de Celery.

@@ -275,7 +275,7 @@ class BrokerNotifier(BaseNotifier):
 
         return notificacion
 
-    def _obtener_email_broker(self, siniestro) -> Optional[str]:
+    def _obtener_email_broker(self, siniestro) -> str | None:
         """Obtiene el email del broker desde el siniestro o la póliza."""
 
         email = getattr(siniestro, "email_broker", None)

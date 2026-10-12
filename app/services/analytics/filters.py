@@ -74,7 +74,7 @@ class DateRangePresets:
     }
 
     @classmethod
-    def get_date_range(cls, preset: str, custom_start: date = None, custom_end: date = None) -> Tuple[date, date]:
+    def get_date_range(cls, preset: str, custom_start: date = None, custom_end: date = None) -> tuple[date, date]:
         """
 
         Obtiene el rango de fechas para un preset dado.
@@ -222,7 +222,7 @@ class DashboardFiltersService:
     """
 
     @classmethod
-    def get_available_filters(cls) -> Dict[str, Any]:
+    def get_available_filters(cls) -> dict[str, Any]:
         """
 
         Obtiene todos los filtros disponibles con sus opciones.
@@ -253,7 +253,7 @@ class DashboardFiltersService:
         }
 
     @classmethod
-    def parse_filters_from_request(cls, request) -> Dict[str, Any]:
+    def parse_filters_from_request(cls, request) -> dict[str, Any]:
         """
 
         Parsea los filtros desde los parámetros GET de la request.
@@ -329,7 +329,7 @@ class DashboardFiltersService:
         }
 
     @classmethod
-    def get_filtered_stats(cls, filters: Dict[str, Any]) -> Dict[str, Any]:
+    def get_filtered_stats(cls, filters: dict[str, Any]) -> dict[str, Any]:
         """
 
         Obtiene estadísticas filtradas según los parámetros proporcionados.
@@ -449,7 +449,7 @@ class DashboardFiltersService:
         }
 
     @classmethod
-    def get_chart_data(cls, filters: Dict[str, Any]) -> Dict[str, Any]:
+    def get_chart_data(cls, filters: dict[str, Any]) -> dict[str, Any]:
         """
 
         Obtiene datos para gráficos filtrados.
@@ -580,7 +580,7 @@ class DashboardFiltersService:
         }
 
     @classmethod
-    def get_lists_data(cls, filters: Dict[str, Any], limit: int = 5) -> Dict[str, Any]:
+    def get_lists_data(cls, filters: dict[str, Any], limit: int = 5) -> dict[str, Any]:
         """
 
         Obtiene listas de registros filtrados para mostrar en el dashboard.
@@ -670,7 +670,7 @@ class DashboardFiltersService:
         }
 
     @classmethod
-    def export_filtered_data(cls, filters: Dict[str, Any], export_type: str = "summary") -> Dict[str, Any]:
+    def export_filtered_data(cls, filters: dict[str, Any], export_type: str = "summary") -> dict[str, Any]:
         """
 
         Prepara datos para exportación basados en los filtros.
@@ -698,7 +698,7 @@ class DashboardFiltersService:
     # =========================================================================
 
     @classmethod
-    def _build_policy_queryset(cls, filters: Dict[str, Any]):
+    def _build_policy_queryset(cls, filters: dict[str, Any]):
         """Construye el queryset de pólizas con los filtros aplicados."""
 
         from app.models import Poliza
@@ -748,7 +748,7 @@ class DashboardFiltersService:
         return qs.distinct()
 
     @classmethod
-    def _build_invoice_queryset(cls, filters: Dict[str, Any]):
+    def _build_invoice_queryset(cls, filters: dict[str, Any]):
         """Construye el queryset de facturas con los filtros aplicados."""
 
         from app.models import Factura
@@ -780,7 +780,7 @@ class DashboardFiltersService:
         return qs.distinct()
 
     @classmethod
-    def _build_claim_queryset(cls, filters: Dict[str, Any]):
+    def _build_claim_queryset(cls, filters: dict[str, Any]):
         """Construye el queryset de siniestros con los filtros aplicados."""
 
         from app.models import Siniestro
@@ -818,7 +818,7 @@ class DashboardFiltersService:
         return qs.distinct()
 
     @classmethod
-    def _get_date_range_label(cls, filters: Dict[str, Any]) -> str:
+    def _get_date_range_label(cls, filters: dict[str, Any]) -> str:
         """Genera una etiqueta legible para el rango de fechas."""
 
         preset = filters.get("date_preset")

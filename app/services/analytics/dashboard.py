@@ -63,8 +63,8 @@ class DashboardAnalyticsService:
 
     @classmethod
     def get_date_range_for_period(
-        cls, period_type: str, reference_date: Optional[date] = None, offset: int = 0
-    ) -> Tuple[date, date]:
+        cls, period_type: str, reference_date: date | None = None, offset: int = 0
+    ) -> tuple[date, date]:
         """
 
         Calcula el rango de fechas para un período específico.
@@ -175,8 +175,8 @@ class DashboardAnalyticsService:
 
     @classmethod
     def get_comparative_stats(
-        cls, period_type: str = PERIOD_MONTH, reference_date: Optional[date] = None
-    ) -> Dict[str, Any]:
+        cls, period_type: str = PERIOD_MONTH, reference_date: date | None = None
+    ) -> dict[str, Any]:
         """
 
         Obtiene estadísticas comparativas entre el período actual y el anterior.
@@ -217,7 +217,7 @@ class DashboardAnalyticsService:
 
         # Calcular variaciones
 
-        def calculate_variation(current: Decimal, previous: Decimal) -> Dict[str, Any]:
+        def calculate_variation(current: Decimal, previous: Decimal) -> dict[str, Any]:
             """Calcula variación porcentual y dirección del cambio."""
 
             if previous == 0:
@@ -288,7 +288,7 @@ class DashboardAnalyticsService:
         }
 
     @classmethod
-    def _get_policy_stats(cls, start_date: date, end_date: date) -> Dict[str, Any]:
+    def _get_policy_stats(cls, start_date: date, end_date: date) -> dict[str, Any]:
         """Obtiene estadísticas de pólizas para un rango de fechas."""
 
         from app.models import Poliza
@@ -312,7 +312,7 @@ class DashboardAnalyticsService:
         }
 
     @classmethod
-    def _get_invoice_stats(cls, start_date: date, end_date: date) -> Dict[str, Any]:
+    def _get_invoice_stats(cls, start_date: date, end_date: date) -> dict[str, Any]:
         """Obtiene estadísticas de facturas para un rango de fechas."""
 
         from app.models import Factura
@@ -339,7 +339,7 @@ class DashboardAnalyticsService:
         }
 
     @classmethod
-    def _get_claim_stats(cls, start_date: date, end_date: date) -> Dict[str, Any]:
+    def _get_claim_stats(cls, start_date: date, end_date: date) -> dict[str, Any]:
         """Obtiene estadísticas de siniestros para un rango de fechas."""
 
         from app.models import Siniestro
@@ -359,7 +359,7 @@ class DashboardAnalyticsService:
         }
 
     @classmethod
-    def get_trend_data(cls, period_type: str = PERIOD_MONTH, periods_count: int = 12) -> Dict[str, Any]:
+    def get_trend_data(cls, period_type: str = PERIOD_MONTH, periods_count: int = 12) -> dict[str, Any]:
         """
 
         Obtiene datos de tendencia para múltiples períodos.
@@ -473,7 +473,7 @@ class DashboardAnalyticsService:
         }
 
     @classmethod
-    def get_year_over_year_comparison(cls) -> Dict[str, Any]:
+    def get_year_over_year_comparison(cls) -> dict[str, Any]:
         """
 
         Compara el año actual con el año anterior mes a mes.
@@ -545,7 +545,7 @@ class DashboardAnalyticsService:
         }
 
     @classmethod
-    def get_quick_actions_data(cls) -> Dict[str, Any]:
+    def get_quick_actions_data(cls) -> dict[str, Any]:
         """
 
         Obtiene datos para las acciones rápidas del dashboard.
@@ -578,7 +578,7 @@ class DashboardAnalyticsService:
         }
 
     @classmethod
-    def get_top_performers(cls, limit: int = 5) -> Dict[str, Any]:
+    def get_top_performers(cls, limit: int = 5) -> dict[str, Any]:
         """
 
         Obtiene las entidades con mejor/peor rendimiento.
@@ -615,7 +615,7 @@ class DashboardAnalyticsService:
         }
 
     @classmethod
-    def get_dashboard_summary(cls, period_type: str = PERIOD_MONTH) -> Dict[str, Any]:
+    def get_dashboard_summary(cls, period_type: str = PERIOD_MONTH) -> dict[str, Any]:
         """
 
         Obtiene un resumen completo para el dashboard.

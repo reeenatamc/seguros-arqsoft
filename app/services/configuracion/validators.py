@@ -59,9 +59,10 @@ EXTENSIBILIDAD:
 import json
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 # ==============================================================================
 
@@ -80,7 +81,7 @@ class ValidadorConfig(ABC):
     """
 
     @abstractmethod
-    def validar(self, valor: str, tipo: str) -> Dict[str, str]:
+    def validar(self, valor: str, tipo: str) -> dict[str, str]:
         """
 
         Valida el valor de una configuración.
@@ -140,7 +141,7 @@ class PorcentajeValidator(ValidadorConfig):
 
         return f"Porcentaje entre {self.min_valor} y {self.max_valor}"
 
-    def validar(self, valor: str, tipo: str) -> Dict[str, str]:
+    def validar(self, valor: str, tipo: str) -> dict[str, str]:
 
         errores = {}
 
@@ -185,10 +186,10 @@ class RangoNumericoValidator(ValidadorConfig):
 
     def __init__(
         self,
-        min_valor: Optional[float] = None,
-        max_valor: Optional[float] = None,
+        min_valor: float | None = None,
+        max_valor: float | None = None,
         tipo_requerido: str = "entero",
-        mensaje_error: Optional[str] = None,
+        mensaje_error: str | None = None,
     ):
 
         self.min_valor = min_valor
@@ -214,7 +215,7 @@ class RangoNumericoValidator(ValidadorConfig):
 
         return f"Número {self.tipo_requerido} ({', '.join(partes) or 'sin límites'})"
 
-    def validar(self, valor: str, tipo: str) -> Dict[str, str]:
+    def validar(self, valor: str, tipo: str) -> dict[str, str]:
 
         errores = {}
 
@@ -272,8 +273,8 @@ class JsonValidator(ValidadorConfig):
 
     def __init__(
         self,
-        esquema: Optional[Dict[str, Any]] = None,
-        campos_requeridos: Optional[List[str]] = None,
+        esquema: dict[str, Any] | None = None,
+        campos_requeridos: list[str] | None = None,
     ):
 
         self.esquema = esquema
@@ -289,7 +290,7 @@ class JsonValidator(ValidadorConfig):
 
         return "JSON válido"
 
-    def validar(self, valor: str, tipo: str) -> Dict[str, str]:
+    def validar(self, valor: str, tipo: str) -> dict[str, str]:
 
         errores = {}
 
@@ -332,7 +333,7 @@ class EmailValidator(ValidadorConfig):
 
         return "Email válido"
 
-    def validar(self, valor: str, tipo: str) -> Dict[str, str]:
+    def validar(self, valor: str, tipo: str) -> dict[str, str]:
 
         errores = {}
 
@@ -367,7 +368,7 @@ class UrlValidator(ValidadorConfig):
 
         return "URL válida (http/https)"
 
-    def validar(self, valor: str, tipo: str) -> Dict[str, str]:
+    def validar(self, valor: str, tipo: str) -> dict[str, str]:
 
         errores = {}
 
@@ -387,7 +388,7 @@ class UrlValidator(ValidadorConfig):
 class ListaValoresValidator(ValidadorConfig):
     """Valida que un valor esté en una lista de valores permitidos."""
 
-    def __init__(self, valores_permitidos: List[str], case_sensitive: bool = False):
+    def __init__(self, valores_permitidos: list[str], case_sensitive: bool = False):
 
         self.valores_permitidos = valores_permitidos
 
@@ -398,7 +399,7 @@ class ListaValoresValidator(ValidadorConfig):
 
         return f"Uno de: {', '.join(self.valores_permitidos)}"
 
-    def validar(self, valor: str, tipo: str) -> Dict[str, str]:
+    def validar(self, valor: str, tipo: str) -> dict[str, str]:
 
         errores = {}
 
@@ -431,7 +432,7 @@ class TablaTasasValidator(ValidadorConfig):
 
         return "Tabla de tasas de emisión (JSON array)"
 
-    def validar(self, valor: str, tipo: str) -> Dict[str, str]:
+    def validar(self, valor: str, tipo: str) -> dict[str, str]:
 
         errores = {}
 
@@ -502,10 +503,10 @@ class RegistroValidadores:
 
     def __init__(self):
 
-        self._validadores: Dict[str, Union[ValidadorConfig, Callable]] = {}
+        self._validadores: dict[str, ValidadorConfig | Callable] = {}
 
     def registrar(
-        self, clave: str, validador: Union[ValidadorConfig, Callable[[str, str], Dict[str, str]]]
+        self, clave: str, validador: ValidadorConfig | Callable[[str, str], dict[str, str]]
     ) -> "RegistroValidadores":
         """
 
@@ -528,7 +529,7 @@ class RegistroValidadores:
         return self
 
     def registrar_multiples(
-        self, claves: List[str], validador: Union[ValidadorConfig, Callable[[str, str], Dict[str, str]]]
+        self, claves: list[str], validador: ValidadorConfig | Callable[[str, str], dict[str, str]]
     ) -> "RegistroValidadores":
         """Registra el mismo validador para múltiples claves."""
 
@@ -538,7 +539,7 @@ class RegistroValidadores:
 
         return self
 
-    def obtener(self, clave: str) -> Optional[Union[ValidadorConfig, Callable]]:
+    def obtener(self, clave: str) -> ValidadorConfig | Callable | None:
         """Obtiene el validador para una clave."""
 
         return self._validadores.get(clave)
@@ -548,7 +549,7 @@ class RegistroValidadores:
 
         return clave in self._validadores
 
-    def validar(self, clave: str, valor: str, tipo: str) -> Dict[str, str]:
+    def validar(self, clave: str, valor: str, tipo: str) -> dict[str, str]:
         """
 
         Ejecuta la validación para una clave.
@@ -578,12 +579,12 @@ class RegistroValidadores:
         return {}
 
     @property
-    def claves_registradas(self) -> List[str]:
+    def claves_registradas(self) -> list[str]:
         """Lista de claves que tienen validador registrado."""
 
         return list(self._validadores.keys())
 
-    def documentacion(self) -> Dict[str, str]:
+    def documentacion(self) -> dict[str, str]:
         """Genera documentación de todos los validadores registrados."""
 
         docs = {}
@@ -660,7 +661,7 @@ registro_validadores.registrar("TABLA_TASAS_EMISION", TablaTasasValidator())
 # ==============================================================================
 
 
-def validar_configuracion(clave: str, valor: str, tipo: str) -> Dict[str, str]:
+def validar_configuracion(clave: str, valor: str, tipo: str) -> dict[str, str]:
     """
 
     Función de conveniencia para validar una configuración.

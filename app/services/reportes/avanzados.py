@@ -308,7 +308,7 @@ class ReportesAvanzadosService:
 
             # Acumular totales
 
-            for key in totales.keys():
+            for key in totales:
 
                 if key in dato and dato[key]:
 

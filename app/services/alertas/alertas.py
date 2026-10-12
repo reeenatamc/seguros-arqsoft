@@ -37,7 +37,7 @@ class AlertasService:
 
         self._responsable_notifier = ResponsableNotifier()
 
-    def verificar_todas(self) -> Dict[str, any]:
+    def verificar_todas(self) -> dict[str, any]:
         """
 
         Verifica todas las alertas programadas.
@@ -84,7 +84,7 @@ class AlertasService:
 
         return resultados
 
-    def verificar_respuestas_pendientes(self) -> Dict[str, any]:
+    def verificar_respuestas_pendientes(self) -> dict[str, any]:
         """
 
         Verifica siniestros esperando respuesta de la aseguradora.
@@ -123,7 +123,7 @@ class AlertasService:
 
         return resultado
 
-    def verificar_notificacion_responsables(self) -> Dict[str, any]:
+    def verificar_notificacion_responsables(self) -> dict[str, any]:
         """
 
         Verifica siniestros que requieren notificar al responsable.
@@ -161,7 +161,7 @@ class AlertasService:
 
         return resultado
 
-    def verificar_documentacion_pendiente(self) -> Dict[str, any]:
+    def verificar_documentacion_pendiente(self) -> dict[str, any]:
         """
 
         Verifica siniestros con documentación pendiente (recordatorio cada 8 días).
@@ -200,7 +200,7 @@ class AlertasService:
 
         return resultado
 
-    def verificar_depositos_pendientes(self) -> Dict[str, any]:
+    def verificar_depositos_pendientes(self) -> dict[str, any]:
         """
 
         Verifica siniestros con depósito de indemnización pendiente.
