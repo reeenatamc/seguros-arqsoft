@@ -30,7 +30,6 @@ from app.models import (
     Siniestro,
     SubgrupoRamo,
     TipoPoliza,
-    TipoRamo,
     TipoSiniestro,
     User,
 )

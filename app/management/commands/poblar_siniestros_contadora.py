@@ -9,7 +9,7 @@ Uso: python manage.py poblar_siniestros_contadora
 """
 
 import random
-from datetime import date, timedelta
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
@@ -269,8 +269,6 @@ class Command(BaseCommand):
 
     def crear_siniestros_completos(self, polizas, tipos_siniestro, responsables, usuario):
         """Crea siniestros con TODAS las fechas de gestión para el reporte de contaduría"""
-
-        from django.db import connection
 
         hoy = timezone.now()
 

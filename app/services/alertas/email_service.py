@@ -15,7 +15,7 @@ from django.core.mail import EmailMultiAlternatives, send_mail
 from django.template.loader import render_to_string
 from django.utils import timezone
 
-from app.models import ConfiguracionSistema, Factura, NotificacionEmail, Poliza, Siniestro
+from app.models import ConfiguracionSistema, NotificacionEmail, Siniestro
 
 
 class NotificacionesService:
@@ -114,8 +114,6 @@ class NotificacionesService:
             NotificacionEmail: La notificación creada
 
         """
-
-        from django.conf import settings
 
         from app.models import ConfiguracionSistema
 

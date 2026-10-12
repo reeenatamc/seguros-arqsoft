@@ -51,7 +51,6 @@ import logging
 from datetime import timedelta
 
 from django.core.management import call_command
-from django.db.models import Case, CharField, F, Q, Value, When
 from django.utils import timezone
 
 from celery import shared_task
@@ -130,7 +129,7 @@ def actualizar_estados_polizas(self):
 def actualizar_estados_facturas(self):
     from decimal import Decimal
 
-    from django.db.models import OuterRef, Subquery, Sum
+    from django.db.models import Sum
 
     from .models import Factura
 
@@ -214,7 +213,6 @@ def limpiar_alertas_antiguas(self, dias=90):
 
 @shared_task(bind=True)
 def actualizar_descuentos_pronto_pago(self):
-    from decimal import Decimal
 
     from .models import Factura
 
@@ -457,9 +455,8 @@ def verificar_plazos_liquidacion(self):
 
     Programar cada hora: schedule(crontab(minute=0), verificar_plazos_liquidacion.s())
     """
-    from django.core.mail import EmailMultiAlternatives
 
-    from .models import ConfiguracionSistema, Siniestro
+    from .models import Siniestro
 
     try:
         ahora = timezone.now()

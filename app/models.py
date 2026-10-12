@@ -1,4 +1,3 @@
-import re
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -3987,7 +3986,7 @@ class BackupRegistro(models.Model):
     @classmethod
     def obtener_estadisticas(cls):
         """Obtiene estadísticas de backups."""
-        from django.db.models import Avg, Count, Sum
+        from django.db.models import Avg, Sum
 
         return {
             "total": cls.objects.count(),

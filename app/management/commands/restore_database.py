@@ -15,7 +15,6 @@ Uso:
 """
 
 import gzip
-import os
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -23,7 +22,6 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
-from django.db import connection
 
 
 class Command(BaseCommand):

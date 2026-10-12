@@ -8,22 +8,20 @@ Gestiona la generación de documentos Word, PDF y firma electrónica.
 
 import hashlib
 import os
-from datetime import datetime
-from io import BytesIO, StringIO
+from io import BytesIO
 
 from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.http import HttpResponse
 from django.utils import timezone
 
-from app.models import AdjuntoSiniestro, ConfiguracionSistema, Siniestro
+from app.models import AdjuntoSiniestro, ConfiguracionSistema
 
 try:
 
     # Usamos plantillas Word con docxtpl
 
-    from docx.shared import Mm
-    from docxtpl import DocxTemplate, InlineImage
+    from docxtpl import DocxTemplate
 
     DOCX_AVAILABLE = True
 

@@ -14,27 +14,15 @@ Incluye:
 
 """
 
-import json
 from collections import defaultdict
 from datetime import timedelta
 from decimal import Decimal
 
-from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
-from django.db.models.functions import Coalesce, Extract, TruncMonth, TruncYear
+from django.db.models import Count, F, Sum, Value
+from django.db.models.functions import Coalesce, TruncMonth
 from django.utils import timezone
 
-from app.models import (
-    CompaniaAseguradora,
-    Factura,
-    GrupoRamo,
-    Pago,
-    PolicyRenewal,
-    Poliza,
-    Siniestro,
-    SubgrupoRamo,
-    TipoPoliza,
-    TipoSiniestro,
-)
+from app.models import CompaniaAseguradora, GrupoRamo, Pago, Poliza, Siniestro
 
 
 class AdvancedAnalyticsService:

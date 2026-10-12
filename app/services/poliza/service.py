@@ -53,7 +53,6 @@ Versión: 1.0.0
 """
 
 from datetime import date
-from typing import Any, Optional
 
 from django.db import transaction
 from django.db.models import Q

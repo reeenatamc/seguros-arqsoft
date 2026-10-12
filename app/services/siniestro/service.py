@@ -61,7 +61,6 @@ Versión: 1.0.0
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, Optional
 
 from django.db import transaction
 from django.db.models import Max

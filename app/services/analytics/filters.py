@@ -8,12 +8,11 @@ filtros por entidad, y generación de reportes personalizables.
 
 """
 
-import json
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from django.db.models import Avg, Count, F, Max, Min, Q, Sum, Value
+from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce, TruncDay, TruncMonth, TruncWeek
 from django.utils import timezone
 
@@ -336,7 +335,7 @@ class DashboardFiltersService:
 
         """
 
-        from app.models import Alerta, Factura, Poliza, Siniestro
+        from app.models import Alerta
 
         date_from = filters.get("date_from")
 
@@ -455,8 +454,6 @@ class DashboardFiltersService:
         Obtiene datos para gráficos filtrados.
 
         """
-
-        from app.models import Factura, Poliza, Siniestro
 
         date_from = filters.get("date_from")
 

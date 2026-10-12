@@ -17,10 +17,9 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from email.header import decode_header
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from django.conf import settings
-from django.utils import timezone
 
 logger = logging.getLogger("app")
 

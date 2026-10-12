@@ -16,8 +16,6 @@ class Command(BaseCommand):
 
         """
 
-        from app.models import CompaniaAseguradora  # import local para evitar ciclos
-
         self.stdout.write(self.style.MIGRATE_HEADING("Poblando brokers autorizados por aseguradora..."))
 
         total_relaciones = 0

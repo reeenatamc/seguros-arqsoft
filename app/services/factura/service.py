@@ -8,12 +8,11 @@ Responsabilidad única: Gestión del ciclo de vida de facturas.
 
 from datetime import date
 from decimal import Decimal
-from typing import Optional
 
 from django.db import transaction
 from django.db.models import Sum
 
-from ..base import BaseService, ResultadoOperacion, ResultadoValidacion
+from ..base import BaseService, ResultadoOperacion
 
 
 class FacturaService(BaseService):

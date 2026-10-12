@@ -71,7 +71,7 @@ USO:
 from dataclasses import asdict, dataclass, field  # noqa: F401
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # ==============================================================================
 
@@ -757,8 +757,6 @@ class DashboardStats(BaseDTO):
     @classmethod
     def calcular(cls) -> "DashboardStats":
         """Calcula todas las estadísticas en queries optimizadas."""
-
-        from datetime import timedelta
 
         from django.db.models import Avg, Count, Q, Sum
         from django.utils import timezone

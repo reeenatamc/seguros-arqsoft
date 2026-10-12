@@ -9,13 +9,12 @@ import logging
 import re
 from dataclasses import dataclass
 from email.header import decode_header
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from app.models import Siniestro
 
 from django.conf import settings
-from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -317,7 +316,6 @@ def procesar_recibos_indemnizacion() -> dict[str, Any]:
     Función principal para procesar recibos de indemnización.
     Busca emails, parsea PDFs y actualiza siniestros.
     """
-    from app.models import Siniestro
 
     resultado = {"procesados": 0, "vinculados": 0, "errores": 0, "detalles": []}
 

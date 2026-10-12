@@ -7,11 +7,10 @@ Responsabilidad única: Gestión de notas de crédito sobre facturas.
 """
 
 from decimal import Decimal
-from typing import Optional
 
 from django.db.models import Sum
 
-from ..base import BaseService, ResultadoOperacion, ResultadoValidacion
+from ..base import BaseService, ResultadoValidacion
 
 
 class NotaCreditoService(BaseService):
