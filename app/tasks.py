@@ -67,7 +67,7 @@ def generar_alertas_automaticas(self):
         return {"status": "success", "message": "Alertas generadas exitosamente"}
     except Exception as e:
         logger.error(f"Error al generar alertas: {str(e)}")
-        raise self.retry(exc=e, countdown=60)
+        raise self.retry(exc=e, countdown=60) from e
 
 
 @shared_task(bind=True, max_retries=3)
@@ -79,7 +79,7 @@ def enviar_alertas_email(self):
         return {"status": "success", "message": "Alertas enviadas por email exitosamente"}
     except Exception as e:
         logger.error(f"Error al enviar alertas por email: {str(e)}")
-        raise self.retry(exc=e, countdown=60)
+        raise self.retry(exc=e, countdown=60) from e
 
 
 @shared_task(bind=True, max_retries=3)
@@ -122,7 +122,7 @@ def actualizar_estados_polizas(self):
         return {"status": "success", "vencidas": vencidas, "por_vencer": por_vencer, "vigentes": vigentes}
     except Exception as e:
         logger.error(f"Error al actualizar estados de pólizas: {str(e)}")
-        raise self.retry(exc=e, countdown=60)
+        raise self.retry(exc=e, countdown=60) from e
 
 
 @shared_task(bind=True, max_retries=3)
@@ -177,7 +177,7 @@ def actualizar_estados_facturas(self):
         }
     except Exception as e:
         logger.error(f"Error al actualizar estados de facturas: {str(e)}")
-        raise self.retry(exc=e, countdown=60)
+        raise self.retry(exc=e, countdown=60) from e
 
 
 @shared_task(bind=True, max_retries=3)
@@ -189,7 +189,7 @@ def generar_reporte_siniestros_mensual(self):
         return {"status": "success", "message": "Reporte mensual generado exitosamente"}
     except Exception as e:
         logger.error(f"Error al generar reporte mensual: {str(e)}")
-        raise self.retry(exc=e, countdown=60)
+        raise self.retry(exc=e, countdown=60) from e
 
 
 @shared_task(bind=True, max_retries=3)
@@ -208,7 +208,7 @@ def limpiar_alertas_antiguas(self, dias=90):
         return {"status": "success", "eliminadas": cantidad}
     except Exception as e:
         logger.error(f"Error al limpiar alertas antiguas: {str(e)}")
-        raise self.retry(exc=e, countdown=60)
+        raise self.retry(exc=e, countdown=60) from e
 
 
 @shared_task(bind=True)
@@ -333,7 +333,7 @@ def backup_automatico(self):
 
     except Exception as e:
         logger.error(f"Error en backup automático: {str(e)}")
-        raise self.retry(exc=e, countdown=300)
+        raise self.retry(exc=e, countdown=300) from e
 
 
 @shared_task
@@ -492,7 +492,7 @@ def verificar_plazos_liquidacion(self):
 
     except Exception as e:
         logger.error(f"Error en verificar_plazos_liquidacion: {str(e)}")
-        raise self.retry(exc=e, countdown=300)
+        raise self.retry(exc=e, countdown=300) from e
 
 
 def _enviar_notificacion_vencimiento(siniestro):
@@ -577,7 +577,7 @@ def revisar_inbox_broker(self):
 
     except Exception as e:
         logger.error(f"Error en revisar_inbox_broker: {str(e)}")
-        raise self.retry(exc=e, countdown=300)
+        raise self.retry(exc=e, countdown=300) from e
 
 
 @shared_task(bind=True, max_retries=3)
@@ -612,7 +612,7 @@ def revisar_inbox_recibos(self):
 
     except Exception as e:
         logger.error(f"Error en revisar_inbox_recibos: {str(e)}")
-        raise self.retry(exc=e, countdown=300)
+        raise self.retry(exc=e, countdown=300) from e
 
 
 @shared_task(bind=True)

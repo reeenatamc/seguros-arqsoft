@@ -116,7 +116,7 @@ class Command(BaseCommand):
 
         except Exception as e:
 
-            raise CommandError(f"Error al crear backup: {str(e)}")
+            raise CommandError(f"Error al crear backup: {str(e)}") from e
 
     def _get_backup_dir(self):
         """Obtiene el directorio de backups desde configuración o usa default."""

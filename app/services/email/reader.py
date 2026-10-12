@@ -275,7 +275,7 @@ class EmailReaderService:
 
         except (imaplib.IMAP4.error, OSError, TimeoutError) as e:
 
-            raise IMAPConnectionError(f"No se pudo conectar a {self.host}:{self.port}. Error: {str(e)}")
+            raise IMAPConnectionError(f"No se pudo conectar a {self.host}:{self.port}. Error: {str(e)}") from e
 
         try:
 
@@ -287,7 +287,7 @@ class EmailReaderService:
 
             raise IMAPAuthenticationError(
                 f"Error de autenticación para {self.email_address}. " f"Verifica las credenciales. Error: {str(e)}"
-            )
+            ) from e
 
     def disconnect(self) -> None:
         """Cierra la conexión IMAP de forma segura."""
@@ -441,7 +441,7 @@ class EmailReaderService:
 
         except Exception as e:
 
-            raise EmailParsingError(f"Error parseando correo con mailparser: {e}")
+            raise EmailParsingError(f"Error parseando correo con mailparser: {e}") from e
 
     def _parse_with_email_lib(self, raw_email: bytes, email_id: bytes) -> dict[str, Any]:
         """Parsea el correo usando la librería estándar email."""
@@ -600,7 +600,7 @@ class EmailReaderService:
 
         except Exception as e:
 
-            raise EmailParsingError(f"Error parseando correo: {e}")
+            raise EmailParsingError(f"Error parseando correo: {e}") from e
 
     def extract_report_data(self, body_text: str) -> dict[str, str]:
         """

@@ -158,7 +158,7 @@ class Command(BaseCommand):
 
         except Exception as e:
 
-            raise CommandError(f"Error durante la restauración: {str(e)}")
+            raise CommandError(f"Error durante la restauración: {str(e)}") from e
 
     def _get_backup_dir(self):
         """Obtiene el directorio de backups."""

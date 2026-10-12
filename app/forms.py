@@ -1830,13 +1830,13 @@ class ConfiguracionSistemaForm(forms.ModelForm):
             try:
                 Decimal(valor)
             except Exception:
-                raise ValidationError("Debe ser un valor decimal válido (ej: 0.035)")
+                raise ValidationError("Debe ser un valor decimal válido (ej: 0.035)") from None
 
         elif tipo == "entero":
             try:
                 int(valor)
             except Exception:
-                raise ValidationError("Debe ser un número entero válido")
+                raise ValidationError("Debe ser un número entero válido") from None
 
         elif tipo == "json":
             import json
@@ -1844,7 +1844,7 @@ class ConfiguracionSistemaForm(forms.ModelForm):
             try:
                 json.loads(valor)
             except json.JSONDecodeError as e:
-                raise ValidationError(f"JSON inválido: {str(e)}")
+                raise ValidationError(f"JSON inválido: {str(e)}") from e
 
         return valor
 

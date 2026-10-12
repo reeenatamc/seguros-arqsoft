@@ -287,7 +287,7 @@ class Command(BaseCommand):
 
         except IMAPConnectionError as e:
 
-            raise CommandError(f"Error de conexión: {e}")
+            raise CommandError(f"Error de conexión: {e}") from e
 
         except IMAPAuthenticationError as e:
 
@@ -297,11 +297,11 @@ class Command(BaseCommand):
                 '1. Habilitar "Verificación en 2 pasos"\n'
                 '2. Generar una "Contraseña de aplicación"\n'
                 "3. Configurar IMAP_PASSWORD con esa contraseña en .env"
-            )
+            ) from e
 
         except Exception as e:
 
-            raise CommandError(f"Error inesperado: {e}")
+            raise CommandError(f"Error inesperado: {e}") from e
 
     def _check_configuration(self) -> bool:
         """Verifica que la configuración IMAP esté presente."""
