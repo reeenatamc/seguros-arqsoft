@@ -886,7 +886,7 @@ class Command(BaseCommand):
 
         self.stdout.write(f"      Enviando a {len(custodios_siniestros)} custodio(s)...")
 
-        for custodio_id, data in custodios_siniestros.items():
+        for _custodio_id, data in custodios_siniestros.items():
             custodio = data["custodio"]
             siniestros = data["siniestros"]
             nombre = custodio.nombre

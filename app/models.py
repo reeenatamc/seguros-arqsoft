@@ -696,7 +696,7 @@ class Poliza(models.Model):
         import random
 
         while True:
-            numero = str(random.randint(100000, 999999))
+            numero = str(random.randint(100000, 999999))  # noqa: S311 - a document number, not a secret
             if not cls.objects.filter(numero_poliza=numero).exists():
                 return numero
 
@@ -861,7 +861,7 @@ class Factura(models.Model):
         import random
 
         while True:
-            numero = str(random.randint(100000, 999999))
+            numero = str(random.randint(100000, 999999))  # noqa: S311 - a document number, not a secret
             if not cls.objects.filter(numero_factura=numero).exists():
                 return numero
 
@@ -1412,7 +1412,7 @@ class Siniestro(models.Model):
         import random
 
         while True:
-            numero = str(random.randint(100000, 999999))
+            numero = str(random.randint(100000, 999999))  # noqa: S311 - a document number, not a secret
             if not cls.objects.filter(numero_siniestro=numero).exists():
                 return numero
 

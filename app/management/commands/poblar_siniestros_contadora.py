@@ -247,7 +247,7 @@ class Command(BaseCommand):
 
         polizas = []
 
-        for i in range(10):
+        for _ in range(10):
 
             poliza = Poliza.objects.create(
                 numero_poliza=f"POL-{hoy.year}-{random.randint(10000, 99999)}",

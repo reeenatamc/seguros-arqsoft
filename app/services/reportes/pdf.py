@@ -413,7 +413,7 @@ class PDFReportesService:
 
             cells = []
 
-            for i, cell in enumerate(row):
+            for _i, cell in enumerate(row):
 
                 txt = str(cell) if cell is not None else "—"
 

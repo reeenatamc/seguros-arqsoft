@@ -928,7 +928,9 @@ def documento_descargar(request, pk):
     file_name = os.path.basename(documento.archivo.name)
     content_type, _ = mimetypes.guess_type(file_path)
 
-    response = FileResponse(open(file_path, "rb"), content_type=content_type or "application/octet-stream")
+    # FileResponse closes the file once it has streamed it
+    file = open(file_path, "rb")  # noqa: SIM115
+    response = FileResponse(file, content_type=content_type or "application/octet-stream")
     response["Content-Disposition"] = f'attachment; filename="{file_name}"'
 
     return response
@@ -4619,7 +4621,9 @@ def backup_descargar(request, pk):
         messages.error(request, "El archivo de backup no existe.")
         return redirect("backups_lista")
 
-    response = FileResponse(open(archivo, "rb"), as_attachment=True, filename=backup.nombre)
+    # FileResponse closes the file once it has streamed it
+    file = open(archivo, "rb")  # noqa: SIM115
+    response = FileResponse(file, as_attachment=True, filename=backup.nombre)
 
     return response
 
