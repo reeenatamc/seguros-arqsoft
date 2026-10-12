@@ -104,7 +104,7 @@ class PolizaService(BaseService):
 
     @classmethod
     def validar_fechas(
-        cls, fecha_inicio: date, fecha_fin: date, numero_poliza: str, poliza_pk: Optional[int] = None
+        cls, fecha_inicio: date, fecha_fin: date, numero_poliza: str, poliza_pk: int | None = None
     ) -> ResultadoValidacion:
         """Valida fechas y evita duplicidad de pólizas con fechas superpuestas."""
 

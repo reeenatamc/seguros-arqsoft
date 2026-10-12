@@ -98,7 +98,7 @@ class FacturaCalculationService:
     """
 
     @staticmethod
-    def calcular_contribuciones(subtotal: Decimal, config_provider=None) -> Dict[str, Decimal]:
+    def calcular_contribuciones(subtotal: Decimal, config_provider=None) -> dict[str, Decimal]:
         """
 
         Calcula las contribuciones de superintendencia y seguro campesino.
@@ -136,7 +136,7 @@ class FacturaCalculationService:
 
     @staticmethod
     def calcular_descuento_pronto_pago(
-        subtotal: Decimal, fecha_emision, fecha_primer_pago: Optional[Any] = None, config_provider=None
+        subtotal: Decimal, fecha_emision, fecha_primer_pago: Any | None = None, config_provider=None
     ) -> Decimal:
         """
 
@@ -255,7 +255,7 @@ class FacturaCalculationService:
         fecha_primer_pago=None,
         retenciones: Decimal = Decimal("0.00"),
         total_pagado: Decimal = Decimal("0.00"),
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
 
         Calcula todos los valores de una factura en una sola llamada.
@@ -391,7 +391,7 @@ class DetalleRamoCalculationService:
     @classmethod
     def calcular_valores_detalle(
         cls, suma_asegurada: Decimal, tasa: Decimal, es_gran_contribuyente: bool = False, config_provider=None
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """
 
         Calcula todos los valores de un detalle de ramo.
@@ -541,11 +541,7 @@ class PolizaCalculationService:
 
             return "por_vencer"
 
-        elif fecha_inicio <= fecha_actual <= fecha_fin:
-
-            return "vigente"
-
-        elif fecha_actual < fecha_inicio and estado_actual != "cancelada":
+        elif fecha_inicio <= fecha_actual <= fecha_fin or fecha_actual < fecha_inicio and estado_actual != "cancelada":
 
             return "vigente"
 

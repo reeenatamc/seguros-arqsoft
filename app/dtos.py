@@ -84,7 +84,7 @@ from typing import Any, Dict, List, Optional
 class BaseDTO:
     """Clase base para todos los DTOs."""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convierte el DTO a diccionario para JSON."""
 
         result = {}
@@ -156,7 +156,7 @@ class PolizaResumen(BaseDTO):
         )
 
     @classmethod
-    def from_queryset(cls, queryset) -> List["PolizaResumen"]:
+    def from_queryset(cls, queryset) -> list["PolizaResumen"]:
         """Optimizado para querysets."""
 
         return [cls.from_model(p) for p in queryset.select_related("compania_aseguradora")]
@@ -196,9 +196,9 @@ class PolizaDetalle(BaseDTO):
 
     prima_total: Decimal
 
-    corredor: Optional[str] = None
+    corredor: str | None = None
 
-    corredor_email: Optional[str] = None
+    corredor_email: str | None = None
 
     dias_para_vencer: int = 0
 
@@ -387,7 +387,7 @@ class SiniestroLista(BaseDTO):
         )
 
     @classmethod
-    def from_queryset(cls, queryset) -> List["SiniestroLista"]:
+    def from_queryset(cls, queryset) -> list["SiniestroLista"]:
 
         return [cls.from_model(s) for s in queryset.select_related("tipo_siniestro", "poliza")]
 
@@ -434,9 +434,9 @@ class SiniestroDetalle(BaseDTO):
 
     # Responsable
 
-    responsable_nombre: Optional[str]
+    responsable_nombre: str | None
 
-    responsable_email: Optional[str]
+    responsable_email: str | None
 
     # Ubicación y descripción
 
@@ -450,9 +450,9 @@ class SiniestroDetalle(BaseDTO):
 
     monto_estimado: Decimal
 
-    monto_indemnizado: Optional[Decimal]
+    monto_indemnizado: Decimal | None
 
-    deducible_aplicado: Optional[Decimal]
+    deducible_aplicado: Decimal | None
 
     # Métricas
 
@@ -663,7 +663,7 @@ class BienAseguradoLista(BaseDTO):
 
     ubicacion: str
 
-    responsable: Optional[str]
+    responsable: str | None
 
     valor_asegurado: Decimal
 
@@ -845,7 +845,7 @@ class ReporteSiniestroContadora(BaseDTO):
 
     monto_estimado: Decimal
 
-    monto_indemnizado: Optional[Decimal]
+    monto_indemnizado: Decimal | None
 
     @classmethod
     def from_model(cls, siniestro) -> "ReporteSiniestroContadora":

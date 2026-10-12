@@ -47,7 +47,7 @@ class PagoService(BaseService):
     """
 
     @classmethod
-    def validar_monto(cls, factura, monto: Decimal, pago_pk: Optional[int] = None) -> ResultadoValidacion:
+    def validar_monto(cls, factura, monto: Decimal, pago_pk: int | None = None) -> ResultadoValidacion:
         """Valida que el monto del pago no exceda el saldo pendiente."""
 
         from app.models import Pago

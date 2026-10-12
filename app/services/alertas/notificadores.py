@@ -75,11 +75,12 @@ EXTENSIBILIDAD:
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field  # noqa: F401
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, send_mail
@@ -163,31 +164,31 @@ class Alerta:
 
     mensaje: str
 
-    destinatarios: List[str]  # emails, teléfonos, etc.
+    destinatarios: list[str]  # emails, teléfonos, etc.
 
     # Datos adicionales para templates
 
-    datos: Dict[str, Any] = field(default_factory=dict)
+    datos: dict[str, Any] = field(default_factory=dict)
 
     # Opciones de envío
 
     prioridad: str = "normal"  # 'alta', 'normal', 'baja'
 
-    cc: List[str] = field(default_factory=list)
+    cc: list[str] = field(default_factory=list)
 
     # Referencias a entidades (para tracking)
 
-    siniestro_id: Optional[int] = None
+    siniestro_id: int | None = None
 
-    poliza_id: Optional[int] = None
+    poliza_id: int | None = None
 
-    factura_id: Optional[int] = None
+    factura_id: int | None = None
 
     # Metadata
 
     fecha_creacion: datetime = field(default_factory=timezone.now)
 
-    usuario_id: Optional[int] = None
+    usuario_id: int | None = None
 
 
 @dataclass
@@ -200,9 +201,9 @@ class ResultadoEnvio:
 
     mensaje: str = ""
 
-    error: Optional[str] = None
+    error: str | None = None
 
-    id_externo: Optional[str] = None  # ID del mensaje en el servicio externo
+    id_externo: str | None = None  # ID del mensaje en el servicio externo
 
     fecha_envio: datetime = field(default_factory=timezone.now)
 
@@ -293,7 +294,7 @@ class EmailNotifier(Notificador):
 
     def __init__(
         self,
-        from_email: Optional[str] = None,
+        from_email: str | None = None,
         template_html: str = "emails/base_notificacion.html",
         fail_silently: bool = False,
     ):
@@ -369,7 +370,7 @@ class EmailNotifier(Notificador):
 
             return ResultadoEnvio(canal=self.canal, exitoso=False, error=str(e))
 
-    def _renderizar_html(self, alerta: Alerta) -> Optional[str]:
+    def _renderizar_html(self, alerta: Alerta) -> str | None:
         """Renderiza el contenido HTML usando el template."""
 
         try:
@@ -384,7 +385,7 @@ class EmailNotifier(Notificador):
 
             return None
 
-    def _construir_contexto(self, alerta: Alerta) -> Dict[str, Any]:
+    def _construir_contexto(self, alerta: Alerta) -> dict[str, Any]:
         """Construye el contexto para el template de email."""
 
         return {
@@ -416,9 +417,9 @@ class SMSNotifier(Notificador):
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        api_secret: Optional[str] = None,
-        from_number: Optional[str] = None,
+        api_key: str | None = None,
+        api_secret: str | None = None,
+        from_number: str | None = None,
     ):
 
         self._api_key = api_key
@@ -501,8 +502,8 @@ class WhatsAppNotifier(Notificador):
 
     def __init__(
         self,
-        api_token: Optional[str] = None,
-        phone_number_id: Optional[str] = None,
+        api_token: str | None = None,
+        phone_number_id: str | None = None,
     ):
 
         self._api_token = api_token
@@ -566,7 +567,7 @@ class WebhookNotifier(Notificador):
     def __init__(
         self,
         webhook_url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
         timeout: int = 10,
     ):
 
@@ -648,9 +649,9 @@ class NotificacionDispatcher:
 
     """
 
-    def __init__(self, notificadores: Optional[List[Notificador]] = None):
+    def __init__(self, notificadores: list[Notificador] | None = None):
 
-        self._notificadores: List[Notificador] = notificadores or []
+        self._notificadores: list[Notificador] = notificadores or []
 
     def registrar_notificador(self, notificador: Notificador) -> "NotificacionDispatcher":
         """
@@ -675,7 +676,7 @@ class NotificacionDispatcher:
         return len(self._notificadores) < original_len
 
     @property
-    def canales_activos(self) -> List[CanalNotificacion]:
+    def canales_activos(self) -> list[CanalNotificacion]:
         """Lista de canales activos."""
 
         return [n.canal for n in self._notificadores]
@@ -683,8 +684,8 @@ class NotificacionDispatcher:
     def enviar(
         self,
         alerta: Alerta,
-        canales: Optional[List[CanalNotificacion]] = None,
-    ) -> List[ResultadoEnvio]:
+        canales: list[CanalNotificacion] | None = None,
+    ) -> list[ResultadoEnvio]:
         """
 
         Envía una alerta por todos los canales configurados (o los especificados).
@@ -728,8 +729,8 @@ class NotificacionDispatcher:
     def enviar_con_persistencia(
         self,
         alerta: Alerta,
-        canales: Optional[List[CanalNotificacion]] = None,
-    ) -> List[ResultadoEnvio]:
+        canales: list[CanalNotificacion] | None = None,
+    ) -> list[ResultadoEnvio]:
         """
 
         Envía una alerta y persiste el resultado en la base de datos.
@@ -836,7 +837,7 @@ def crear_dispatcher_desde_config() -> NotificacionDispatcher:
 # ==============================================================================
 
 
-_dispatcher_global: Optional[NotificacionDispatcher] = None
+_dispatcher_global: NotificacionDispatcher | None = None
 
 
 def get_dispatcher() -> NotificacionDispatcher:

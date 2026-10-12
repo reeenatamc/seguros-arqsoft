@@ -84,7 +84,7 @@ class ResultadoValidacion:
     """
 
     es_valido: bool
-    errores: Dict[str, str] = None
+    errores: dict[str, str] = None
 
     def __post_init__(self):
         """Inicializa el diccionario de errores si no fue proporcionado."""
@@ -177,7 +177,7 @@ class ResultadoOperacion:
 
     exitoso: bool
     objeto: Any = None
-    errores: Dict[str, str] = None
+    errores: dict[str, str] = None
     mensaje: str = ""
 
     def __post_init__(self):
@@ -204,7 +204,7 @@ class ResultadoOperacion:
         return cls(exitoso=True, objeto=objeto, mensaje=mensaje)
 
     @classmethod
-    def fallo(cls, errores: Dict[str, str], mensaje: str = "") -> "ResultadoOperacion":
+    def fallo(cls, errores: dict[str, str], mensaje: str = "") -> "ResultadoOperacion":
         """
         Factory method para crear un resultado fallido.
 

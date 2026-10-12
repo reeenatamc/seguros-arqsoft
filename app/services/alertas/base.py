@@ -96,11 +96,11 @@ class BaseNotifier:
     def _renderizar_email(
         self,
         titulo: str,
-        intro: List[str],
-        bloques: List[Dict[str, Any]],
-        cta_text: Optional[str] = None,
-        cta_url: Optional[str] = None,
-        nota: Optional[str] = None,
+        intro: list[str],
+        bloques: list[dict[str, Any]],
+        cta_text: str | None = None,
+        cta_url: str | None = None,
+        nota: str | None = None,
     ) -> str:
         """Renderiza el contenido HTML usando el template base."""
 

@@ -38,7 +38,7 @@ class NotaCreditoService(BaseService):
     """
 
     @classmethod
-    def validar_monto(cls, factura, monto: Decimal, nota_pk: Optional[int] = None) -> ResultadoValidacion:
+    def validar_monto(cls, factura, monto: Decimal, nota_pk: int | None = None) -> ResultadoValidacion:
         """Valida que el monto total de notas de crédito no exceda la factura."""
 
         from app.models import NotaCredito

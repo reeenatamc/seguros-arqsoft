@@ -310,7 +310,7 @@ class SiniestroService(BaseService):
         ubicacion: str,
         monto_estimado: Decimal,
         responsable=None,
-        fecha_reporte_str: Optional[str] = None,
+        fecha_reporte_str: str | None = None,
         usuario=None,
     ) -> ResultadoOperacion:
         """

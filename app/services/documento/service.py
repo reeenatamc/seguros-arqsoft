@@ -42,7 +42,7 @@ class DocumentoService(BaseService):
 
     @classmethod
     def validar_relaciones(
-        cls, tipo_documento: str, poliza_id: Optional[int], siniestro_id: Optional[int], factura_id: Optional[int]
+        cls, tipo_documento: str, poliza_id: int | None, siniestro_id: int | None, factura_id: int | None
     ) -> ResultadoValidacion:
         """Valida que el documento tenga al menos una relación y sea coherente."""
 

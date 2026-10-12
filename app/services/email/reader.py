@@ -117,7 +117,7 @@ class DatosEquipo:
 
     serie: str = ""
 
-    activo: Optional[str] = None  # Opcional
+    activo: str | None = None  # Opcional
 
 
 @dataclass
@@ -130,7 +130,7 @@ class ReporteSiniestro:
 
     from_address: str
 
-    date: Optional[datetime]
+    date: datetime | None
 
     responsable: str
 
@@ -144,9 +144,9 @@ class ReporteSiniestro:
 
     raw_body: str = ""
 
-    attachments: List[Dict[str, Any]] = field(default_factory=list)
+    attachments: list[dict[str, Any]] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convierte el reporte a diccionario."""
 
         return {
@@ -208,10 +208,10 @@ class EmailReaderService:
 
     def __init__(
         self,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
-        email_address: Optional[str] = None,
-        password: Optional[str] = None,
+        host: str | None = None,
+        port: int | None = None,
+        email_address: str | None = None,
+        password: str | None = None,
         use_ssl: bool = True,
     ):
         """
@@ -244,7 +244,7 @@ class EmailReaderService:
 
         self.subject_tag = getattr(settings, "SINIESTRO_EMAIL_SUBJECT_TAG", "[SINIESTRO]")
 
-        self._connection: Optional[imaplib.IMAP4_SSL] = None
+        self._connection: imaplib.IMAP4_SSL | None = None
 
     def connect(self) -> None:
         """
@@ -324,7 +324,7 @@ class EmailReaderService:
 
         return False
 
-    def search_siniestro_emails(self, folder: str = "INBOX", unseen_only: bool = False) -> List[bytes]:
+    def search_siniestro_emails(self, folder: str = "INBOX", unseen_only: bool = False) -> list[bytes]:
         """
 
         Busca correos que contengan [SINIESTRO] en el asunto.
@@ -379,7 +379,7 @@ class EmailReaderService:
 
         return email_ids
 
-    def fetch_email(self, email_id: bytes) -> Dict[str, Any]:
+    def fetch_email(self, email_id: bytes) -> dict[str, Any]:
         """
 
         Obtiene y parsea un correo específico.
@@ -414,7 +414,7 @@ class EmailReaderService:
 
             return self._parse_with_email_lib(raw_email, email_id)
 
-    def _parse_with_mailparser(self, raw_email: bytes, email_id: bytes) -> Dict[str, Any]:
+    def _parse_with_mailparser(self, raw_email: bytes, email_id: bytes) -> dict[str, Any]:
         """Parsea el correo usando la librería mail-parser."""
 
         try:
@@ -443,7 +443,7 @@ class EmailReaderService:
 
             raise EmailParsingError(f"Error parseando correo con mailparser: {e}")
 
-    def _parse_with_email_lib(self, raw_email: bytes, email_id: bytes) -> Dict[str, Any]:
+    def _parse_with_email_lib(self, raw_email: bytes, email_id: bytes) -> dict[str, Any]:
         """Parsea el correo usando la librería estándar email."""
 
         try:
@@ -602,7 +602,7 @@ class EmailReaderService:
 
             raise EmailParsingError(f"Error parseando correo: {e}")
 
-    def extract_report_data(self, body_text: str) -> Dict[str, str]:
+    def extract_report_data(self, body_text: str) -> dict[str, str]:
         """
 
         Extrae los datos estructurados del cuerpo del correo.
@@ -668,7 +668,7 @@ class EmailReaderService:
 
         return data
 
-    def validate_report_data(self, data: Dict[str, str]) -> List[str]:
+    def validate_report_data(self, data: dict[str, str]) -> list[str]:
         """
 
         Valida que el reporte contenga todos los campos requeridos.
@@ -699,7 +699,7 @@ class EmailReaderService:
 
         return missing
 
-    def parse_siniestro_email(self, email_data: Dict[str, Any]) -> Optional[ReporteSiniestro]:
+    def parse_siniestro_email(self, email_data: dict[str, Any]) -> ReporteSiniestro | None:
         """
 
         Convierte los datos del correo en un ReporteSiniestro.
@@ -787,8 +787,8 @@ class EmailReaderService:
             return None
 
     def process_siniestro_emails(
-        self, folder: str = "INBOX", limit: Optional[int] = None, unseen_only: bool = False, mark_as_read: bool = False
-    ) -> List[ReporteSiniestro]:
+        self, folder: str = "INBOX", limit: int | None = None, unseen_only: bool = False, mark_as_read: bool = False
+    ) -> list[ReporteSiniestro]:
         """
 
         Procesa todos los correos de siniestros en la bandeja.
@@ -899,7 +899,7 @@ class EmailReaderService:
 
 def leer_correos_siniestros(
     limit: int = 10, unseen_only: bool = False, mark_as_read: bool = False
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
 
     Función de conveniencia para leer correos de siniestros.
@@ -1082,7 +1082,7 @@ def guardar_reporte_en_bd(reporte: ReporteSiniestro, intentar_crear_siniestro: b
 
 def procesar_y_guardar_correos(
     limit: int = 10, unseen_only: bool = False, mark_as_read: bool = False, crear_siniestros: bool = True
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
 
     Lee correos de siniestros y los guarda en la base de datos.
