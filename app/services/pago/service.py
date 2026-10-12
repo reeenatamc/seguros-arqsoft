@@ -8,7 +8,6 @@ Responsabilidad única: Gestión del ciclo de vida de pagos.
 
 from datetime import date
 from decimal import Decimal
-from typing import Optional
 
 from django.db import transaction
 

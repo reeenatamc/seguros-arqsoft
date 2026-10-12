@@ -15,7 +15,6 @@ Uso:
 """
 
 import gzip
-import os
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -23,7 +22,6 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
-from django.db import connection
 
 
 class Command(BaseCommand):
@@ -160,7 +158,7 @@ class Command(BaseCommand):
 
         except Exception as e:
 
-            raise CommandError(f"Error durante la restauración: {str(e)}")
+            raise CommandError(f"Error durante la restauración: {str(e)}") from e
 
     def _get_backup_dir(self):
         """Obtiene el directorio de backups."""
@@ -316,7 +314,7 @@ class Command(BaseCommand):
                 notas=f'Restauración desde {backup_file.name} el {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
             )
 
-        except Exception:
+        except Exception:  # noqa: S110 - history model may not exist yet
 
             pass
 

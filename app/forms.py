@@ -3,6 +3,7 @@ Formularios Custom para el Sistema de Seguros.
 Formularios Django para gestión de pólizas, siniestros, ramos y bienes asegurados.
 """
 
+import logging
 from decimal import Decimal
 
 from django import forms
@@ -25,15 +26,16 @@ from .models import (  # Alias de compatibilidad (deprecados)
     NotaCredito,
     Pago,
     Poliza,
-    Ramo,
     ResponsableCustodio,
     Siniestro,
     SubgrupoRamo,
-    SubtipoRamo,
     TipoPoliza,
     TipoRamo,
     TipoSiniestro,
 )
+
+logger = logging.getLogger(__name__)
+
 
 # ==============================================================================
 # WIDGETS PERSONALIZADOS
@@ -859,7 +861,7 @@ class SiniestroForm(forms.ModelForm):
                 if poliza_obj and poliza_obj.corredor_seguros and poliza_obj.corredor_seguros.email:
                     self.fields["email_broker"].initial = poliza_obj.corredor_seguros.email
         except Exception:
-            pass
+            logger.warning("No se pudo precargar el email del broker", exc_info=True)
 
         # Formatos de fecha compatibles con datetime-local
         self.fields["fecha_siniestro"].input_formats = [
@@ -1832,13 +1834,13 @@ class ConfiguracionSistemaForm(forms.ModelForm):
             try:
                 Decimal(valor)
             except Exception:
-                raise ValidationError("Debe ser un valor decimal válido (ej: 0.035)")
+                raise ValidationError("Debe ser un valor decimal válido (ej: 0.035)") from None
 
         elif tipo == "entero":
             try:
                 int(valor)
             except Exception:
-                raise ValidationError("Debe ser un número entero válido")
+                raise ValidationError("Debe ser un número entero válido") from None
 
         elif tipo == "json":
             import json
@@ -1846,7 +1848,7 @@ class ConfiguracionSistemaForm(forms.ModelForm):
             try:
                 json.loads(valor)
             except json.JSONDecodeError as e:
-                raise ValidationError(f"JSON inválido: {str(e)}")
+                raise ValidationError(f"JSON inválido: {str(e)}") from e
 
         return valor
 

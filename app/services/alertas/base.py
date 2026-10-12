@@ -6,7 +6,7 @@ Contiene la lógica compartida de persistencia y envío.
 
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, send_mail

@@ -7,25 +7,14 @@ Gestiona la generación de reportes especializados para análisis de seguros.
 """
 
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 
-from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
-from django.db.models.functions import Coalesce, TruncMonth
+from django.db.models import Avg, Count, F, Q, Sum
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
-from app.models import (
-    CompaniaAseguradora,
-    DetallePolizaRamo,
-    Factura,
-    Pago,
-    Poliza,
-    Ramo,
-    ResponsableCustodio,
-    Siniestro,
-    TipoPoliza,
-    TipoSiniestro,
-)
+from app.models import CompaniaAseguradora, DetallePolizaRamo, Pago, Poliza, Siniestro
 
 
 class ReportesAvanzadosService:

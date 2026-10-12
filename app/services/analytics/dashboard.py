@@ -6,13 +6,12 @@ Proporciona estadísticas comparativas entre períodos, tendencias y KPIs dinám
 
 """
 
-import json
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from django.db.models import Avg, Case, Count, F, Q, Sum, Value, When
-from django.db.models.functions import Coalesce, TruncDay, TruncMonth, TruncWeek, TruncYear
+from django.db.models import Count, Sum, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 
@@ -188,8 +187,6 @@ class DashboardAnalyticsService:
             y etiquetas de período.
 
         """
-
-        from app.models import Alerta, Factura, Poliza, Siniestro
 
         # Calcular rangos de fechas
 
@@ -585,7 +582,7 @@ class DashboardAnalyticsService:
 
         """
 
-        from app.models import CompaniaAseguradora, Poliza, Siniestro
+        from app.models import Poliza, Siniestro
 
         today = timezone.now().date()
 

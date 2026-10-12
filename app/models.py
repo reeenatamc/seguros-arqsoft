@@ -1,4 +1,4 @@
-import re
+import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -12,6 +12,9 @@ from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
 from .validators import validate_document
+
+logger = logging.getLogger(__name__)
+
 
 # ==================== MANAGERS PERSONALIZADOS (DRY) ====================
 # Centralizan reglas de negocio para evitar duplicación de lógica de filtrado
@@ -693,7 +696,7 @@ class Poliza(models.Model):
         import random
 
         while True:
-            numero = str(random.randint(100000, 999999))
+            numero = str(random.randint(100000, 999999))  # noqa: S311 - a document number, not a secret
             if not cls.objects.filter(numero_poliza=numero).exists():
                 return numero
 
@@ -858,7 +861,7 @@ class Factura(models.Model):
         import random
 
         while True:
-            numero = str(random.randint(100000, 999999))
+            numero = str(random.randint(100000, 999999))  # noqa: S311 - a document number, not a secret
             if not cls.objects.filter(numero_factura=numero).exists():
                 return numero
 
@@ -1409,7 +1412,7 @@ class Siniestro(models.Model):
         import random
 
         while True:
-            numero = str(random.randint(100000, 999999))
+            numero = str(random.randint(100000, 999999))  # noqa: S311 - a document number, not a secret
             if not cls.objects.filter(numero_siniestro=numero).exists():
                 return numero
 
@@ -3980,14 +3983,14 @@ class BackupRegistro(models.Model):
                 backup.save()
                 eliminados += 1
             except Exception:
-                pass
+                logger.warning("No se pudo marcar el backup como eliminado", exc_info=True)
 
         return eliminados
 
     @classmethod
     def obtener_estadisticas(cls):
         """Obtiene estadísticas de backups."""
-        from django.db.models import Avg, Count, Sum
+        from django.db.models import Avg, Sum
 
         return {
             "total": cls.objects.count(),

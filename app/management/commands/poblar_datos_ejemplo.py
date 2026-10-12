@@ -3,7 +3,6 @@ Comando para poblar la base de datos con datos de ejemplo completos.
 Incluye: Compañías, Corredores, Tipos, Pólizas, Siniestros, Checklist, Alertas, etc.
 """
 
-import random
 from datetime import timedelta
 from decimal import Decimal
 
@@ -36,7 +35,6 @@ class Command(BaseCommand):
             CompaniaAseguradora,
             CorredorSeguros,
             Factura,
-            Pago,
             Poliza,
             Ramo,
             ResponsableCustodio,
@@ -298,7 +296,7 @@ class Command(BaseCommand):
         try:
             Ramo.crear_ramos_predefinidos()
             self.stdout.write(self.style.SUCCESS("  ✅ Ramos predefinidos inicializados"))
-        except Exception:
+        except Exception:  # noqa: S110 - seed data, the method may not exist
             pass
 
         # 9. Pólizas
@@ -510,22 +508,7 @@ class Command(BaseCommand):
 
     def limpiar_datos(self):
         """Elimina todos los datos existentes"""
-        from app.models import (
-            AdjuntoSiniestro,
-            Alerta,
-            ChecklistSiniestro,
-            ChecklistSiniestroConfig,
-            CompaniaAseguradora,
-            CorredorSeguros,
-            Documento,
-            Factura,
-            Pago,
-            Poliza,
-            ResponsableCustodio,
-            Siniestro,
-            TipoPoliza,
-            TipoSiniestro,
-        )
+        from app.models import AdjuntoSiniestro, Alerta, ChecklistSiniestro, Documento, Factura, Pago, Poliza, Siniestro
 
         self.stdout.write(self.style.WARNING("⚠️  Limpiando datos existentes..."))
 

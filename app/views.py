@@ -2,7 +2,6 @@ import logging
 import mimetypes
 import os
 from decimal import Decimal
-from itertools import chain
 
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -17,13 +16,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from .forms import SubtipoRamoForm  # Alias de compatibilidad
 from .forms import (  # Formularios de entidades base
     AdjuntoSiniestroFormSet,
     BienAseguradoForm,
-    ChecklistSiniestroConfigForm,
     CompaniaAseguradoraForm,
     ConfiguracionBulkForm,
     ConfiguracionSistemaForm,
@@ -31,23 +28,15 @@ from .forms import (  # Formularios de entidades base
     DetallePolizaRamoFormSet,
     DocumentoForm,
     FacturaForm,
-    FiltroPolizasForm,
-    FiltroReportesForm,
-    FiltroSiniestrosForm,
     GrupoBienesForm,
-    GrupoRamoForm,
-    NotaCreditoForm,
     PagoForm,
     PolizaForm,
     RamoForm,
     ResponsableCustodioForm,
     SiniestroForm,
     SiniestroGestionForm,
-    SubgrupoRamoForm,
-    TipoRamoForm,
     TipoSiniestroForm,
 )
-from .models import SubtipoRamo  # Alias de compatibilidad
 from .models import (
     AdjuntoSiniestro,
     Alerta,
@@ -65,21 +54,18 @@ from .models import (
     Factura,
     GrupoBienes,
     GrupoRamo,
-    NotaCredito,
     NotificacionEmail,
     Pago,
     PaymentApproval,
     PolicyRenewal,
     Poliza,
     Quote,
-    QuoteOption,
     Ramo,
     ResponsableCustodio,
     Siniestro,
     SiniestroEmail,
     SubgrupoRamo,
     TipoPoliza,
-    TipoRamo,
     TipoSiniestro,
 )
 from .services import (
@@ -323,8 +309,6 @@ def desglose_ramos_lista(request):
 def desglose_ramos_exportar(request):
     """Exportar desglose por ramos a Excel o CSV"""
     import csv
-
-    from django.db.models import Sum
 
     import openpyxl
     from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -944,7 +928,9 @@ def documento_descargar(request, pk):
     file_name = os.path.basename(documento.archivo.name)
     content_type, _ = mimetypes.guess_type(file_path)
 
-    response = FileResponse(open(file_path, "rb"), content_type=content_type or "application/octet-stream")
+    # FileResponse closes the file once it has streamed it
+    file = open(file_path, "rb")  # noqa: SIM115
+    response = FileResponse(file, content_type=content_type or "application/octet-stream")
     response["Content-Disposition"] = f'attachment; filename="{file_name}"'
 
     return response
@@ -1488,7 +1474,6 @@ def calendar_view(request):
 @require_GET
 def api_calendar_events(request):
     """API para obtener eventos del calendario (para FullCalendar)"""
-    import json
     from datetime import datetime
 
     start = request.GET.get("start")
@@ -2773,7 +2758,6 @@ def _generar_html_email(siniestro, tipo, asunto, contenido_texto, notas_adiciona
     """
     Genera el contenido HTML del email usando la plantilla moderna base_notificacion.html.
     """
-    from django.conf import settings
     from django.template.loader import render_to_string
     from django.utils import timezone
 
@@ -2890,9 +2874,6 @@ def siniestro_email_enviar(request, pk, tipo):
     Procesa el envío del email con el contenido editado por el usuario.
     Usa la plantilla HTML base_notificacion.html para emails con formato profesional.
     """
-    from django.conf import settings
-    from django.core.mail import EmailMultiAlternatives
-    from django.template.loader import render_to_string
 
     siniestro = get_object_or_404(Siniestro, pk=pk)
 
@@ -2937,7 +2918,7 @@ def siniestro_email_enviar(request, pk, tipo):
                     try:
                         email.attach_file(adjunto.archivo.path)
                     except Exception:
-                        pass  # Ignorar adjuntos que no se puedan cargar
+                        logger.warning("No se pudo adjuntar %s", adjunto.archivo.name, exc_info=True)
 
         # Enviar
         email.send(fail_silently=False)
@@ -4640,7 +4621,9 @@ def backup_descargar(request, pk):
         messages.error(request, "El archivo de backup no existe.")
         return redirect("backups_lista")
 
-    response = FileResponse(open(archivo, "rb"), as_attachment=True, filename=backup.nombre)
+    # FileResponse closes the file once it has streamed it
+    file = open(archivo, "rb")  # noqa: SIM115
+    response = FileResponse(file, as_attachment=True, filename=backup.nombre)
 
     return response
 

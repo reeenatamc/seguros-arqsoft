@@ -17,10 +17,9 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from email.header import decode_header
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from django.conf import settings
-from django.utils import timezone
 
 logger = logging.getLogger("app")
 
@@ -81,7 +80,7 @@ class BrokerReaderService:
             try:
                 self._connection.close()
                 self._connection.logout()
-            except Exception:
+            except Exception:  # noqa: S110 - closing a dead IMAP connection can fail
                 pass
             finally:
                 self._connection = None
@@ -163,7 +162,7 @@ class BrokerReaderService:
             if date_str:
                 try:
                     date = email.utils.parsedate_to_datetime(date_str)
-                except Exception:
+                except Exception:  # noqa: S110 - unparseable Date header, date stays None
                     pass
 
             return RespuestaBroker(

@@ -75,12 +75,10 @@ EXTENSIBILIDAD:
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 from dataclasses import dataclass, field  # noqa: F401
 from datetime import datetime
-from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, send_mail

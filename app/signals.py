@@ -35,13 +35,15 @@ Versión: 1.0.0
 Última Actualización: Enero 2026
 """
 
-from decimal import Decimal
+import logging
 
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
-from .models import ConfiguracionSistema, Siniestro
+from .models import Siniestro
 from .services.alertas import NotificacionesService
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(pre_save, sender=Siniestro)
@@ -99,7 +101,7 @@ def siniestro_post_save(sender, instance: Siniestro, created: bool, **kwargs):
 
             # Evitar que un fallo de email rompa el flujo de guardado
 
-            pass
+            logger.warning("Falló la notificación al broker", exc_info=True)
 
         # Notificar al usuario reportante (si tiene email)
 
@@ -116,7 +118,7 @@ def siniestro_post_save(sender, instance: Siniestro, created: bool, **kwargs):
 
             except Exception:
 
-                pass
+                logger.warning("Falló la notificación al reportante", exc_info=True)
 
         return
 
@@ -143,4 +145,4 @@ def siniestro_post_save(sender, instance: Siniestro, created: bool, **kwargs):
 
         except Exception:
 
-            pass
+            logger.warning("Falló la notificación del siniestro", exc_info=True)

@@ -7,7 +7,6 @@ Responsabilidad única: notificar al corredor de seguros.
 """
 
 from datetime import timedelta
-from typing import Optional
 
 from django.utils import timezone
 

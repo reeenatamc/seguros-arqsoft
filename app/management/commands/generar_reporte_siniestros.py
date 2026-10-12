@@ -1,23 +1,22 @@
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand
-from django.db.models import Avg, Count, F, Q, Sum
+from django.db.models import Avg, Count, Sum
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 import openpyxl
-from openpyxl.chart import BarChart, PieChart, Reference
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, letter
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from app.models import Poliza, Siniestro, TipoSiniestro
+from app.models import Siniestro, TipoSiniestro
 
 
 class Command(BaseCommand):

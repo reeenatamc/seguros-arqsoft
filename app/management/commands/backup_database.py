@@ -17,7 +17,6 @@ Uso:
 """
 
 import gzip
-import os
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -117,7 +116,7 @@ class Command(BaseCommand):
 
         except Exception as e:
 
-            raise CommandError(f"Error al crear backup: {str(e)}")
+            raise CommandError(f"Error al crear backup: {str(e)}") from e
 
     def _get_backup_dir(self):
         """Obtiene el directorio de backups desde configuración o usa default."""
@@ -210,7 +209,7 @@ class Command(BaseCommand):
                 notas=f'Backup creado el {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
             )
 
-        except Exception:
+        except Exception:  # noqa: S110 - history model may not exist yet
 
             # Si el modelo no existe aún, ignorar
 

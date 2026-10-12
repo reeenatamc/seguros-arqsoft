@@ -1,8 +1,7 @@
 import json
 from datetime import timedelta
-from decimal import Decimal
 
-from django.db.models import Avg, Count, Q, Sum
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
 
@@ -258,7 +257,7 @@ class ReportesService:
 
         colors = ["#EF4444", "#F97316", "#F59E0B", "#EAB308", "#84CC16", "#22C55E", "#14B8A6", "#06B6D4"]
 
-        for i, item in enumerate(por_tipo):
+        for _i, item in enumerate(por_tipo):
 
             nombre = item["tipo_siniestro__nombre"] or "Sin tipo"
 
