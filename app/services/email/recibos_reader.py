@@ -68,7 +68,7 @@ class RecibosIndemnizacionService:
         if self._connection:
             try:
                 self._connection.logout()
-            except Exception:
+            except Exception:  # noqa: S110 - logout on a dead connection can fail
                 pass
             self._connection = None
 
@@ -227,7 +227,7 @@ class RecibosIndemnizacionService:
                 valor_str = match_valor.group(1).replace(",", "").replace(" ", "")
                 try:
                     valor = float(valor_str)
-                except Exception:
+                except Exception:  # noqa: S112 - not a number, try the next match
                     continue
 
                 # LA SUMA DE - monto final a indemnizar (prioridad máxima)

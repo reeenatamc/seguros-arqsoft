@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -11,6 +12,9 @@ from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
 from .validators import validate_document
+
+logger = logging.getLogger(__name__)
+
 
 # ==================== MANAGERS PERSONALIZADOS (DRY) ====================
 # Centralizan reglas de negocio para evitar duplicación de lógica de filtrado
@@ -3979,7 +3983,7 @@ class BackupRegistro(models.Model):
                 backup.save()
                 eliminados += 1
             except Exception:
-                pass
+                logger.warning("No se pudo marcar el backup como eliminado", exc_info=True)
 
         return eliminados
 

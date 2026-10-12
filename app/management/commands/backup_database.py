@@ -209,7 +209,7 @@ class Command(BaseCommand):
                 notas=f'Backup creado el {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
             )
 
-        except Exception:
+        except Exception:  # noqa: S110 - history model may not exist yet
 
             # Si el modelo no existe aún, ignorar
 

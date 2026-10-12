@@ -296,7 +296,7 @@ class Command(BaseCommand):
         try:
             Ramo.crear_ramos_predefinidos()
             self.stdout.write(self.style.SUCCESS("  ✅ Ramos predefinidos inicializados"))
-        except Exception:
+        except Exception:  # noqa: S110 - seed data, the method may not exist
             pass
 
         # 9. Pólizas

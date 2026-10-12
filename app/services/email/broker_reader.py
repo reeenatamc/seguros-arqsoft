@@ -80,7 +80,7 @@ class BrokerReaderService:
             try:
                 self._connection.close()
                 self._connection.logout()
-            except Exception:
+            except Exception:  # noqa: S110 - closing a dead IMAP connection can fail
                 pass
             finally:
                 self._connection = None
@@ -162,7 +162,7 @@ class BrokerReaderService:
             if date_str:
                 try:
                     date = email.utils.parsedate_to_datetime(date_str)
-                except Exception:
+                except Exception:  # noqa: S110 - unparseable Date header, date stays None
                     pass
 
             return RespuestaBroker(

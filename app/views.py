@@ -2916,7 +2916,7 @@ def siniestro_email_enviar(request, pk, tipo):
                     try:
                         email.attach_file(adjunto.archivo.path)
                     except Exception:
-                        pass  # Ignorar adjuntos que no se puedan cargar
+                        logger.warning("No se pudo adjuntar %s", adjunto.archivo.name, exc_info=True)
 
         # Enviar
         email.send(fail_silently=False)

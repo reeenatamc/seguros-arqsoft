@@ -3,6 +3,7 @@ Formularios Custom para el Sistema de Seguros.
 Formularios Django para gestión de pólizas, siniestros, ramos y bienes asegurados.
 """
 
+import logging
 from decimal import Decimal
 
 from django import forms
@@ -32,6 +33,9 @@ from .models import (  # Alias de compatibilidad (deprecados)
     TipoRamo,
     TipoSiniestro,
 )
+
+logger = logging.getLogger(__name__)
+
 
 # ==============================================================================
 # WIDGETS PERSONALIZADOS
@@ -857,7 +861,7 @@ class SiniestroForm(forms.ModelForm):
                 if poliza_obj and poliza_obj.corredor_seguros and poliza_obj.corredor_seguros.email:
                     self.fields["email_broker"].initial = poliza_obj.corredor_seguros.email
         except Exception:
-            pass
+            logger.warning("No se pudo precargar el email del broker", exc_info=True)
 
         # Formatos de fecha compatibles con datetime-local
         self.fields["fecha_siniestro"].input_formats = [

@@ -480,7 +480,7 @@ class EmailReaderService:
 
                     date = email.utils.parsedate_to_datetime(date_str)
 
-                except Exception:
+                except Exception:  # noqa: S110 - unparseable Date header, date stays None
 
                     pass
 
@@ -540,7 +540,7 @@ class EmailReaderService:
                                         decoded = base64.b64decode(payload_data)
                                         if any(decoded.startswith(h) for h in valid_headers):
                                             payload_data = decoded
-                                    except Exception:
+                                    except Exception:  # noqa: S110 - payload is not base64, keep the raw data
                                         pass
 
                             attachments.append(
