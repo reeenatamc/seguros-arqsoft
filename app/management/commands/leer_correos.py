@@ -35,7 +35,7 @@ Opciones:
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from app.services.email_reader import (
+from app.services.email.reader import (
     EmailReaderService,
     IMAPAuthenticationError,
     IMAPConnectionError,
